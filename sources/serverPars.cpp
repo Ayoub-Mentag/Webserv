@@ -81,6 +81,31 @@ static bool	bracketsBalance(const std::string& str) {
 	return (stack.empty());
 }
 
+static void	parseBlock(std::string res, const char* block) {
+	
+}
+
+
+static void	splitBlocks(std::string& res, const char* block) {
+		while (res.size()) {
+		std::string	serverBlock;
+		size_t fserv = res.find(block);
+		if (fserv != std::string::npos) {
+			res = res.substr(6, std::string::npos);
+			fserv = res.find(block);
+			if (fserv != std::string::npos) {
+				parseBlock(res.substr(0, fserv), block);
+				std::cout << "res: " << res.substr(0, fserv) << "\n";
+				res = res.substr(fserv, std::string::npos);
+			}
+		} else if (fserv == std::string::npos && res.size()) {
+			parseBlock(res, block);
+			std::cout << "res: " << res << "\n";
+			break ;
+		}
+	}
+}
+
 void	parseConFile(const char* file) {
 	t_location	currentLocation;
 	t_server	currentServer;
@@ -109,19 +134,7 @@ void	parseConFile(const char* file) {
 	if (!bracketsBalance(res)) {
 		std::cerr << "Error: Unclosed bracket in configuration file." << std::endl;
 	}
-
-	for (size_t i = 0; i < res.size(); i++) { // loop infiny hhhhhhhh
-		size_t fserv = res.find("Server");
-		if (fserv != std::string::npos) {
-			res += fserv;
-			fserv = res.find("Server");
-			std::string	serverBlock = res.substr(0, fserv);
-		
-			std::cout << serverBlock << "\n";
-			
-		}
-	}
-	
+	iterInResult();
 	//     // Split the line into tokens (directive and arguments)
 	//     std::vector<std::string> tokens = split(line);
 	//     // Parse directives and their arguments

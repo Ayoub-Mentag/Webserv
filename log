@@ -1,0 +1,1 @@
+ {listen 8080;server_name example.com;root /var/www/html;index index.html;error_page [404 /404.html];error_page 500 jdksfhk, 404 /404.html;location / {allowed_methods [GET POST];index index.html;autoindex on;redirect /old /new;}location /uploads {root /var/www/uploads;}}

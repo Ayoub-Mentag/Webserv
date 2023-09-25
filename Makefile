@@ -22,12 +22,12 @@ all:                                    $(NAME)
 
 $(OBJ_DIR)/%.o:							$(SRC_DIR)/%.cpp $(INCLUDES) | $(OBJ_DIR)
 										@echo $(YELLOW)Compiling $<...$(RESET)
-										@sleep 0.3
+										@sleep 0.1
 										@$(CXX) $(CXXFLAGS) -I$(INC_DIR) -c $< -o $@
 
 $(NAME):                                $(OBJECTS)
 										@echo $(ORANGE)Linking $(OBJECTS) to $(NAME)...$(RESET)
-										@sleep 0.3
+										@sleep 0.1
 										@$(CXX) $(CXXFLAGS) $(OBJECTS) -o $(NAME)
 										@echo $(CYAN)$(NAME) is ready!$(RESET)
 
@@ -36,13 +36,13 @@ $(OBJ_DIR):
 										@mkdir -p $(OBJ_DIR)
 clean:
 										@echo $(MAGENTA)Cleaning object files...$(RESET)
-										@sleep 0.5
+										@sleep 0.2
 										@rm -rf $(OBJ_DIR)
 										@echo $(GREEN)---DONE!---$(RESET)
 
 fclean:                                 clean
 										@echo $(MAGENTA)Cleaning $(NAME) executable...$(RESET)
-										@sleep 0.5
+										@sleep 0.2
 										@rm -f $(NAME)
 										@rm -f *_shrubbery
 										@echo $(GREEN)---DONE!---$(RESET)
