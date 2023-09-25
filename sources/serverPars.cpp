@@ -110,7 +110,18 @@ void	parseConFile(const char* file) {
 		std::cerr << "Error: Unclosed bracket in configuration file." << std::endl;
 	}
 
-	std::cout << res << "\n";
+	for (size_t i = 0; i < res.size(); i++) { // loop infiny hhhhhhhh
+		size_t fserv = res.find("Server");
+		if (fserv != std::string::npos) {
+			res += fserv;
+			fserv = res.find("Server");
+			std::string	serverBlock = res.substr(0, fserv);
+		
+			std::cout << serverBlock << "\n";
+			
+		}
+	}
+	
 	//     // Split the line into tokens (directive and arguments)
 	//     std::vector<std::string> tokens = split(line);
 	//     // Parse directives and their arguments
