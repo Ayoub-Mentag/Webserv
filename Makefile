@@ -50,3 +50,9 @@ fclean:                                 clean
 re:                                     fclean all
 
 .PHONY:                                 all clean fclean re
+
+push:
+	current_time=$(date "+%Y-%m-%d %H:%M:%S")
+	git add .
+	git commit -m "parsing - $current_time"
+	git push || git push --set-upstream origin parsing
