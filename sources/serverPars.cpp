@@ -43,6 +43,19 @@ void	usage(const char* programName) {
 #include <vector>
 #include <map>
 
+// std::vector<std::string> split(const std::string& str) {
+// 	std::vector<std::string> tokens;
+// 	std::istringstream tokenStream(str);
+// 	std::string token;
+
+// 	std::cerr << str << "\n";
+// 	while (tokenStream >> token) {
+// 		tokens.push_back(token);
+// 	}
+// 	std::cout << token << " <=====\n";
+// 	return tokens;
+// }
+
 std::string trim(const std::string& str) {
 	size_t first = str.find_first_not_of(" \t\n\r");
 	if (first == std::string::npos) {
@@ -50,19 +63,6 @@ std::string trim(const std::string& str) {
 	}
 	size_t last = str.find_last_not_of(" \t\n\r");
 	return str.substr(first, (last - first + 1));
-}
-
-std::vector<std::string> split(const std::string& str) {
-	std::vector<std::string> tokens;
-	std::istringstream tokenStream(str);
-	std::string token;
-
-	std::cerr << str << "\n";
-	while (tokenStream >> token) {
-		tokens.push_back(token);
-	}
-	std::cout << token << " <=====\n";
-	return tokens;
 }
 
 static bool	bracketsBalance(const std::string& str) {
@@ -82,9 +82,15 @@ static bool	bracketsBalance(const std::string& str) {
 }
 
 static void	parseBlock(std::string res, const char* block) {
+	res = res.substr(res.find("{") + 1, -1);
+	// std::cout << "res: " << res << "\n";
+	std::string line = res.substr(0, res.find(";"));
+	std::cout << "line: " << line << "\n";
+	// while (res.size()) {
+		
+	// }
 	
 }
-
 
 static void	splitBlocks(std::string& res, const char* block) {
 		while (res.size()) {
@@ -95,12 +101,12 @@ static void	splitBlocks(std::string& res, const char* block) {
 			fserv = res.find(block);
 			if (fserv != std::string::npos) {
 				parseBlock(res.substr(0, fserv), block);
-				std::cout << "res: " << res.substr(0, fserv) << "\n";
+				// std::cout << "res: " << res.substr(0, fserv) << "\n";
 				res = res.substr(fserv, std::string::npos);
 			}
 		} else if (fserv == std::string::npos && res.size()) {
 			parseBlock(res, block);
-			std::cout << "res: " << res << "\n";
+			// std::cout << "res: " << res << "\n";
 			break ;
 		}
 	}
@@ -134,7 +140,7 @@ void	parseConFile(const char* file) {
 	if (!bracketsBalance(res)) {
 		std::cerr << "Error: Unclosed bracket in configuration file." << std::endl;
 	}
-	iterInResult();
+	splitBlocks(res, "Server");
 	//     // Split the line into tokens (directive and arguments)
 	//     std::vector<std::string> tokens = split(line);
 	//     // Parse directives and their arguments
