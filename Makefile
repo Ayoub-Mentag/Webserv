@@ -54,5 +54,5 @@ re:                                     fclean all
 push:
 	current_time=$(date "+%Y-%m-%d %H:%M:%S")
 	git add .
-	git commit -m "parsing - \$current_time"
+	git commit -m "parsing - $$current_time"
 	git push || git push --set-upstream origin parsing
