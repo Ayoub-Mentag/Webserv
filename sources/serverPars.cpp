@@ -109,6 +109,10 @@ static void	parseLocationDirectives(std::string& key, std::string& value, t_loca
 		location.index = value;
 	} else if (key == "autoindex") {
 		location.autoindex = atoi(value.c_str());
+	} else if (key == "redirect") {
+		// location.redirect = atoi(value.c_str());
+	} else if (key == "root") {
+		location.root = value;;
 	} else {
 		std::cerr << RED_TEXT "Error: " GREEN_TEXT "Invalid location Directive." << RESET_COLOR << "\n";
 	}
@@ -117,7 +121,6 @@ static void	parseLocationDirectives(std::string& key, std::string& value, t_loca
 static void	fillLocationStruct(t_location& location, std::vector<std::string>& tokens) {
 
 	for (size_t i = 0; i < tokens.size(); i++) {
-		// parseDirectives();
 		if (tokens[i].find("location") != tokens[i].npos)
 				break ;
 		std::istringstream	tokenStream(tokens[i]);
@@ -128,9 +131,7 @@ static void	fillLocationStruct(t_location& location, std::vector<std::string>& t
 		std::getline(tokenStream, value);
 		key = trim(key);
 		value = trim(value);
-		parseLocationDirectives(key, value, location);
-		// std::cerr << "location_key: " << key << "\n"; // for debuging
-		// std::cerr << "location_value: " << value << "\n"; // for debuging  
+		parseLocationDirectives(key, value, location); 
 	}
 }
 
@@ -142,6 +143,7 @@ static t_location&	parseLocationBlock(std::string res) {
 	std::string					token;
 	if (findBrack != res.npos) {
 		std::string path = res.substr(0, findBrack);
+		location->path = path;
 		res = res.substr(findBrack + 1, -1);
 		// location->path = path;
 		// std::cerr << "path: " << path << "\n"; // for debuging  
@@ -171,7 +173,7 @@ static void	splitLocationBlocks(t_server& server, std::string res) {
 				res = res.substr(fserv, std::string::npos);
 			}
 		} else if (fserv == std::string::npos && res.size()) {
-			// server.locations.push_back(parseLocationBlock(res));
+			server.locations.push_back(parseLocationBlock(res));
 			std::cout << "location: " << res << "\n"; // for debuging  
 			break ;
 		}
@@ -238,7 +240,6 @@ static t_server& parseServerBlock(std::string res) {
 }
 
 static void	splitServerBlocks(t_config& config, std::string res) {
-	size_t	i = 0;
 	while (res.size()) {
 		std::string	serverBlock;
 		size_t fserv = res.find("Server");
@@ -290,20 +291,18 @@ void	parseConFile(const char* file) {
 	splitServerBlocks(*config, res);
 
 	for (size_t i = 0; i < config->servers.size(); i++) {
-		std::cerr << "host: -" << config->servers[i].host  << "\n";
-		std::cerr << "index: -" << config->servers[i].index  << "\n";
-		std::cerr << "port: -" << config->servers[i].port  << "\n";
-		std::cerr << "root: -" << config->servers[i].root  << "\n";
-		std::cerr << "servername: -" << config->servers[i].serverName << "\n";
-		for (size_t j = 0; j < config->servers.size(); j++) {
-			std::cerr << "	location_host: -" << config->servers[i].host  << "\n";
-			std::cerr << "	location_allowedMethods: -" << config->servers[i].locations[j].allowedMethods  << "\n";
-			std::cerr << "	location_autoindex: -" << config->servers[i].locations[j].autoindex  << "\n";
-			std::cerr << "	location_index: -" << config->servers[i].locations[j].index  << "\n";
-			std::cerr << "	location_path: -" << config->servers[i].locations[j].path << "\n";
-			// std::cerr << "location_redirectFrom: -" << config->servers[i].locations[j].redirectFrom << "\n";
-			// std::cerr << "location_redirectTo: -" << config->servers[i].locations[j].redirectTo << "\n";
-		
+		std::cerr << "host:" << config->servers[i].host  << "\n";
+		std::cerr << "index:" << config->servers[i].index  << "\n";
+		std::cerr << "port:" << config->servers[i].port  << "\n";
+		std::cerr << "root:" << config->servers[i].root  << "\n";
+		std::cerr << "servername:" << config->servers[i].serverName << "\n";
+		for (size_t j = 0; j < config->servers[i].locations.size(); j++) {
+			// std::cerr << j << "	location_allowedMethods			" << config->servers[i].locations[j].allowedMethods  << "\n";
+			std::cerr << j << "	location_autoindex			" << config->servers[i].locations[j].autoindex  << "\n";
+			std::cerr << j << "	location_index			" << config->servers[i].locations[j].index  << "\n";
+			std::cerr << j << "	location_path			" << config->servers[i].locations[j].path << "\n";
+			std::cerr << j << "	location_redirectFrom			" << config->servers[i].locations[j].redirectFrom << "\n";
+			std::cerr << j << "	location_redirectTo			" << config->servers[i].locations[j].redirectTo << "\n";
 		}
 	}
 	

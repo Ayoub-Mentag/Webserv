@@ -19,6 +19,7 @@ void	usage(const char* programName);
 typedef struct LocationDirectives {
     bool						autoindex;
     std::string					path;
+    std::string					root;
     std::string					index;
     std::string					redirectFrom;
     std::string 				redirectTo;
