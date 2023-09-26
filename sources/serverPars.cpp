@@ -12,8 +12,7 @@
 
 // 		std::getline(tokenStream, key, '=');
 // 		std::getline(tokenStream, value);
-// 		std::cerr << "location_key: " << key << "\n"; // for debuging
-// 		std::cerr << "location_value: " << value << "\n"; // for debuging  
+// 		std::cerr << "location_key: " << key << "\n"; // for debuging  
 // 	}
 // 	return (location);
 // }
@@ -135,7 +134,7 @@ static void	fillLocationStruct(t_location& location, std::vector<std::string>& t
 	}
 }
 
-static t_location&	parseLocationBlock(std::string res) {
+static t_location*	parseLocationBlock(std::string res) {
 	std::vector<std::string>	locationTokens;
 	t_location					*location = new t_location;
 
@@ -145,19 +144,17 @@ static t_location&	parseLocationBlock(std::string res) {
 		std::string path = res.substr(0, findBrack);
 		location->path = path;
 		res = res.substr(findBrack + 1, -1);
-		// location->path = path;
-		// std::cerr << "path: " << path << "\n"; // for debuging  
+		// location->path = path;  
 	}
 	std::istringstream			tokenStream(res);
 	while (std::getline(tokenStream, token, ';')) {
 		if (token == "}" || token == "}}") {
 			continue ;
 		}
-		locationTokens.push_back(token);
-		std::cout << "token_location: " << token << "\n"; // for debuging  
+		locationTokens.push_back(token);  
 	}
 	fillLocationStruct(*location, locationTokens);
-	return (*location);
+	return (location);
 }
 
 static void	splitLocationBlocks(t_server& server, std::string res) {
@@ -168,13 +165,15 @@ static void	splitLocationBlocks(t_server& server, std::string res) {
 			res = res.substr(9, std::string::npos);
 			fserv = res.find("location");
 			if (fserv != std::string::npos) {
-				server.locations.push_back(parseLocationBlock(res.substr(0, fserv)));
-				std::cout << "location: " << res.substr(0, fserv) << "\n"; // for debuging  
+				t_location *tmp = parseLocationBlock(res.substr(0, fserv));
+				server.locations.push_back(*tmp);
+				delete tmp;
 				res = res.substr(fserv, std::string::npos);
 			}
 		} else if (fserv == std::string::npos && res.size()) {
-			server.locations.push_back(parseLocationBlock(res));
-			std::cout << "location: " << res << "\n"; // for debuging  
+			t_location *tmp = parseLocationBlock(res);
+			server.locations.push_back(*tmp);
+			delete tmp;
 			break ;
 		}
 	}
@@ -210,13 +209,11 @@ static void	fillServerStruct(t_server& server, std::vector<std::string>& tokens)
 		std::getline(tokenStream, value);
 		key = trim(key);
 		value = trim(value);
-		parseServerDirectives(key, value, server);
-		// std::cerr << "server_key: " << key << "\n"; // for debuging
-		// std::cerr << "server_value: " << value << "\n"; // for debuging  
+		parseServerDirectives(key, value, server);  
 	}
 }
 
-static t_server& parseServerBlock(std::string res) {
+static t_server* parseServerBlock(std::string res) {
 	std::vector<std::string>	serverTokens;
 	t_server					*server = new t_server;
 
@@ -230,13 +227,11 @@ static t_server& parseServerBlock(std::string res) {
 		if (token.find("location") != token.npos) {
 			break ;
 		}
-		serverTokens.push_back(token);
-		std::cout << "server_token: " << token << "\n"; // for debuging  
+		serverTokens.push_back(token);  
 	}
 	fillServerStruct(*server, serverTokens);
 	splitLocationBlocks(*server, res.substr(res.find("location"), -1));
-	// // server.locations = ;
-	return (*server);
+	return (server);
 }
 
 static void	splitServerBlocks(t_config& config, std::string res) {
@@ -247,13 +242,15 @@ static void	splitServerBlocks(t_config& config, std::string res) {
 			res = res.substr(6, std::string::npos);
 			fserv = res.find("Server");
 			if (fserv != std::string::npos) {
-				config.servers.push_back(parseServerBlock(res.substr(0, fserv)));
-				std::cout << "Server: " << res.substr(0, fserv) << "\n"; // for debuging  
+				t_server *tmp = parseServerBlock(res.substr(0, fserv));
+				config.servers.push_back(*tmp);
+				delete tmp;
 				res = res.substr(fserv, std::string::npos);
 			}
 		} else if (fserv == std::string::npos && res.size()) {
-			config.servers.push_back(parseServerBlock(res));
-			std::cout << "Server: " << res << "\n"; // for debuging
+			t_server *tmp = parseServerBlock(res);
+			config.servers.push_back(*tmp);
+			delete tmp;
 			break ;
 		}
 	}

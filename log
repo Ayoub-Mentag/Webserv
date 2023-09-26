@@ -1,24 +1,23 @@
-server_token: server_name = example.com
-server_token: listen = 8080
-server_token: root  = /var/www/html
-server_token: index = index.html
-server_token: error_page  = [404 /404.html]
-server_token: error_page = [500 jdksfhk], [404 /404.html]
-token_location: allowed_methods = [GET POST]
-token_location: index = index.html
-token_location: autoindex = 1
-token_location: redirect = /old /new
-location: /www/data {allowed_methods = [GET POST];index = index.html;autoindex = 1;redirect = /old /new;}
-token_location: root = /var/www/uploads
-location: /uploads {root = /var/www/uploads;}}
-Server:  {server_name = example.com;listen = 8080;root  = /var/www/html;index = index.html;error_page  = [404 /404.html];error_page = [500 jdksfhk], [404 /404.html];location /www/data {allowed_methods = [GET POST];index = index.html;autoindex = 1;redirect = /old /new;}location /uploads {root = /var/www/uploads;}}
-server_token: server_name = sub.example.com
-server_token: listen = 8081
-server_token: root = /var/www/sub
-server_token: index = index.html
-server_token: error_page = [404 /sub404.html]
-token_location: allowed_methods = [GET]
-token_location: index = index.html
-token_location: autoindex = 0
-location: / {allowed_methods = [GET];index = index.html;autoindex = 0;}}
-Server:  {server_name = sub.example.com;listen = 8081;root = /var/www/sub;index = index.html;error_page = [404 /sub404.html];location / {allowed_methods = [GET];index = index.html;autoindex = 0;}}
+Process:         webservParsing [34722]
+Path:            /Volumes/VOLUME/*/webservParsing
+Load Address:    0x10ab53000
+Identifier:      webservParsing
+Version:         ???
+Code Type:       X86-64
+Parent Process:  zsh [26023]
+
+Date/Time:       2023-09-26 22:08:08.950 +0100
+Launch Time:     2023-09-26 22:08:08.554 +0100
+OS Version:      Mac OS X 10.15.7 (19H2026)
+Report Version:  7
+Analysis Tool:   /Applications/Xcode.app/Contents/Developer/usr/bin/leaks
+Analysis Tool Version:  Xcode 12.4 (12D4e)
+
+Physical footprint:         352K
+Physical footprint (peak):  352K
+----
+
+leaks Report Version: 4.0
+Process 34722: 155 nodes malloced for 8 KB
+Process 34722: 0 leaks for 0 total leaked bytes.
+
