@@ -22,8 +22,6 @@ int main(int ac, char **av)
     serverAddr.sin_family = AF_INET;
     serverAddr.sin_port = htons(80);  // Replace with the port your server is listening on
     inet_pton(AF_INET, av[1], &serverAddr.sin_addr);
-    // serverAddr.sin_addr.s_addr = inet_addr("127.0.0.1");
-
     if (connect(clientFd, (struct sockaddr*)&serverAddr, sizeof(serverAddr)) == -1)
         perror("error");
     write(clientFd, "GET / HTTP/1.1\r\n\r\n", 18);
@@ -33,7 +31,9 @@ int main(int ac, char **av)
 
     while (( n = read(clientFd, recieved, 1024)) > 0)
     {
-        printf("%s %d\n", recieved, n);
+        if (!strcmp(recieved, "\0"))
+            break;
+        printf("%s %d----\n", recieved, n);
         bzero(recieved, sizeof(recieved));
     }
     close(clientFd);
