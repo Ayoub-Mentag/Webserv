@@ -80,33 +80,67 @@ static bool	bracketsBalance(const std::string& str) {
     }
 	return (stack.empty());
 }
+static void	splitBlocks(std::string res, const std::string& block);
 
-static void	parseBlock(std::string res, const char* block) {
-	res = res.substr(res.find("{") + 1, -1);
+static void	parseBlock(std::string res, const std::string& block) {
 	// std::cout << "res: " << res << "\n";
-	std::string line = res.substr(0, res.find(";"));
-	std::cout << "line: " << line << "\n";
+	// std::string line = res.substr(0, res.find(";"));
+	// std::cout << "line: " << line << "\n";
 	// while (res.size()) {
 		
 	// }
+
+	if (block == "Server") {
+		size_t findBrack = res.find("{");
+		if (findBrack != res.npos)
+			res = res.substr(findBrack + 1, -1);
+		std::vector<std::string>	tokens;
+		std::istringstream			tokenStream(res);
+		std::string					token;
+		while (std::getline(tokenStream, token, ';')) {
+			if (token.find("location") != token.npos)
+				break ;
+		    tokens.push_back(token);
+			std::cout << "server_token: " << token << "\n";
+		}
+		splitBlocks(res.substr(res.find("location"), -1), "location");
+
+	} else {
+		size_t findBrack = res.find("{");
+		if (findBrack != res.npos) {
+			std::string path = res.substr(0, findBrack);
+			res = res.substr(findBrack + 1, -1);
+			std::cerr << "path: " << path << "\n";
+		}
+		std::vector<std::string>	tokens;
+		std::istringstream			tokenStream(res);
+		std::string					token;
+		while (std::getline(tokenStream, token, ';')) {
+			if (token == "}" || token == "}}") {
+				continue ;
+			}
+		    tokens.push_back(token);
+			std::cout << "token_location: " << token << "\n";
+		}
+	}
 	
 }
 
-static void	splitBlocks(std::string& res, const char* block) {
+static void	splitBlocks(std::string res, const std::string& block) {
 		while (res.size()) {
 		std::string	serverBlock;
 		size_t fserv = res.find(block);
 		if (fserv != std::string::npos) {
-			res = res.substr(6, std::string::npos);
+			res = res.substr(block.length(), std::string::npos);
 			fserv = res.find(block);
 			if (fserv != std::string::npos) {
 				parseBlock(res.substr(0, fserv), block);
-				// std::cout << "res: " << res.substr(0, fserv) << "\n";
+				std::cout << block << ": " << res.substr(0, fserv) << "\n";
 				res = res.substr(fserv, std::string::npos);
 			}
 		} else if (fserv == std::string::npos && res.size()) {
 			parseBlock(res, block);
-			// std::cout << "res: " << res << "\n";
+			std::cout << block << ": " << res << "\n";
 			break ;
 		}
 	}
