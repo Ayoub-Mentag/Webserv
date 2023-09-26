@@ -80,53 +80,68 @@ static bool	bracketsBalance(const std::string& str) {
     }
 	return (stack.empty());
 }
-static void	splitBlocks(std::string res, const std::string& block);
 
-static void	parseBlock(std::string res, const std::string& block) {
-	// std::cout << "res: " << res << "\n";
-	// std::string line = res.substr(0, res.find(";"));
-	// std::cout << "line: " << line << "\n";
-	// while (res.size()) {
+static void	parseDirectives();
+
+static void	fillConfigStruct(t_config& config, std::vector<std::string>& tokens) {
+	for (size_t i = 0; i < tokens.size(); i++) {
+		// parseDirectives();
+		if (tokens[i].find("location") != tokens[i].npos)
+				break ;
+		std::istringstream tokenStream(tokens[i]);
+		std::string key;
+		std::string value;
+		std::getline(tokenStream, key, '=');
+		std::getline(tokenStream, value);
+		std::cerr << "key: " << key << "\n"; // for debuging  
+		std::cerr << "value: " << value << "\n"; // for debuging  
+	}
 		
-	// }
+	// std::find(tokens.begin(), tokens.end(), );
+}
 
+static void	splitBlocks(t_config& config, std::string res, const std::string& block);
+
+static void	parseBlock(t_config& config, std::string res, const std::string& block) {
 	if (block == "Server") {
 		size_t findBrack = res.find("{");
 		if (findBrack != res.npos)
 			res = res.substr(findBrack + 1, -1);
-		std::vector<std::string>	tokens;
+		std::vector<std::string>	serverTokens;
 		std::istringstream			tokenStream(res);
 		std::string					token;
 		while (std::getline(tokenStream, token, ';')) {
 			if (token.find("location") != token.npos)
 				break ;
-		    tokens.push_back(token);
-			std::cout << "server_token: " << token << "\n";
+		    serverTokens.push_back(token);
+			std::cout << "server_token: " << token << "\n"; // for debuging  
 		}
-		splitBlocks(res.substr(res.find("location"), -1), "location");
+		fillConfigStruct(config, serverTokens);
+		splitBlocks(config, res.substr(res.find("location"), -1), "location");
 
 	} else {
 		size_t findBrack = res.find("{");
-		if (findBrack != res.npos) {
-			std::string path = res.substr(0, findBrack);
-			res = res.substr(findBrack + 1, -1);
-			std::cerr << "path: " << path << "\n";
-		}
-		std::vector<std::string>	tokens;
+		std::vector<std::string>	locationTokens;
 		std::istringstream			tokenStream(res);
 		std::string					token;
+		if (findBrack != res.npos) {
+			std::string path = res.substr(0, findBrack);
+			res = res.substr(findBrack, -1);
+			std::cerr << "path: " << path << "\n"; // for debuging  
+		}
 		while (std::getline(tokenStream, token, ';')) {
 			if (token == "}" || token == "}}") {
 				continue ;
 			}
-		    tokens.push_back(token);
-			std::cout << "token_location: " << token << "\n";
+		    locationTokens.push_back(token);
+			std::cout << "token_location: " << token << "\n"; // for debuging  
 		}
+		fillConfigStruct(config, locationTokens);
 	}
 	
 }
 
-static void	splitBlocks(std::string res, const std::string& block) {
+static void	splitBlocks(t_config& config, std::string res, const std::string& block) {
 		while (res.size()) {
 		std::string	serverBlock;
 		size_t fserv = res.find(block);
@@ -134,13 +149,13 @@ static void	splitBlocks(std::string res, const std::string& block) {
 			res = res.substr(block.length(), std::string::npos);
 			fserv = res.find(block);
 			if (fserv != std::string::npos) {
-				parseBlock(res.substr(0, fserv), block);
-				std::cout << block << ": " << res.substr(0, fserv) << "\n";
+				parseBlock(config, res.substr(0, fserv), block);
+				std::cout << block << ": " << res.substr(0, fserv) << "\n"; // for debuging  
 				res = res.substr(fserv, std::string::npos);
 			}
 		} else if (fserv == std::string::npos && res.size()) {
-			parseBlock(res, block);
-			std::cout << block << ": " << res << "\n";
+			parseBlock(config, res, block);
+			std::cout << block << ": " << res << "\n"; // for debuging  
 			break ;
 		}
 	}
@@ -174,7 +189,8 @@ void	parseConFile(const char* file) {
 	if (!bracketsBalance(res)) {
 		std::cerr << "Error: Unclosed bracket in configuration file." << std::endl;
 	}
-	splitBlocks(res, "Server");
+
+	splitBlocks(config, res, "Server");
 	//     // Split the line into tokens (directive and arguments)
 	//     std::vector<std::string> tokens = split(line);
 	//     // Parse directives and their arguments
