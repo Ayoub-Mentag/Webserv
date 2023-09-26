@@ -1,47 +1,39 @@
-#include "../includes/serverPars.hpp"
+
+// /* ************************** Parse Location ****************************** */
+// static void	fillLocationStruct(std::vector<std::string>& tokens) {
+// 	t_location	location;
+// 	for (size_t i = 0; i < tokens.size(); i++) {
+// 		// parseDirectives();
+// 		if (tokens[i].find("location") != tokens[i].npos)
+// 				break ;
+// 		std::istringstream	tokenStream(tokens[i]);
+// 		std::string			key;
+// 		std::string			value;
+
+// 		std::getline(tokenStream, key, '=');
+// 		std::getline(tokenStream, value);
+// 		std::cerr << "location_key: " << key << "\n"; // for debuging
+// 		std::cerr << "location_value: " << value << "\n"; // for debuging  
+// 	}
+// 	return (location);
+// }
+
+
+
+
+
+
+
+
+
+
+
+#include "serverPars.hpp"
 
 void	usage(const char* programName) {
 	std::cerr << GREEN_TEXT "Usage: " RED_TEXT << programName << " [config_file_path]" << RESET_COLOR << std::endl;
 	exit(1);
 }
-
-// void	parseConFile(const char* file) {
-// 	std::ifstream	conFile;
-// 	std::string		line;
-
-// 	conFile.open(file);
-// 	if (!conFile) {
-// 		std::cerr << RED_TEXT "Failed to open the file." RESET_COLOR << std::endl;
-// 		exit(1);
-// 	}
-// 	std::getline(conFile, line);
-// 	while (std::getline(conFile, line)) {
-// 		if (line.find("server {") != std::string::npos) {
-// 			// Start of a server block, create a new t_server instance
-// 			t_server server;
-// 			// Parse and populate server-specific settings
-// 			// Add the server to the config.servers vector
-// 		} else if (line.find("location {") != std::string::npos) {
-// 			// Start of a location block, create a new t_location instance
-// 			t_location location;
-// 			// Parse and populate location-specific settings
-// 			// Add the location to the current server's locations vector
-// 		} else if (line.find("}") != std::string::npos) {
-// 			// End of a block (server or location), continue processing
-// 		} else {
-// 			// Handle other directive-specific parsing and population logic
-// 		}
-
-// 	}
-	
-// 	conFile.close();
-// }
-#include <iostream>
-#include <fstream>
-#include <sstream>
-#include <string>
-#include <vector>
-#include <map>
 
 // std::vector<std::string> split(const std::string& str) {
 // 	std::vector<std::string> tokens;
@@ -55,8 +47,15 @@ void	usage(const char* programName) {
 // 	std::cout << token << " <=====\n";
 // 	return tokens;
 // }
+#include <iostream>
+#include <fstream>
+#include <sstream>
+#include <string>
+#include <vector>
+#include <map>
+// static void	parseDirectives();
 
-std::string trim(const std::string& str) {
+static std::string trim(const std::string& str) {
 	size_t first = str.find_first_not_of(" \t\n\r");
 	if (first == std::string::npos) {
 		return ("");
@@ -81,9 +80,123 @@ static bool	bracketsBalance(const std::string& str) {
 	return (stack.empty());
 }
 
-static void	parseDirectives();
 
-static void	fillConfigStruct(t_config& config, std::vector<std::string>& tokens) {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+static void	parseLocationDirectives(std::string& key, std::string& value, t_location& location) {
+	if (key == "allowed_methods") {
+		// location.allowedMethods = value;
+	} else if (key == "index") {
+		location.index = value;
+	} else if (key == "autoindex") {
+		location.autoindex = atoi(value.c_str());
+	} else {
+		std::cerr << RED_TEXT "Error: " GREEN_TEXT "Invalid location Directive." << RESET_COLOR << "\n";
+	}
+}
+
+static void	fillLocationStruct(t_location& location, std::vector<std::string>& tokens) {
+
+	for (size_t i = 0; i < tokens.size(); i++) {
+		// parseDirectives();
+		if (tokens[i].find("location") != tokens[i].npos)
+				break ;
+		std::istringstream	tokenStream(tokens[i]);
+		std::string			key;
+		std::string			value;
+
+		std::getline(tokenStream, key, '=');
+		std::getline(tokenStream, value);
+		key = trim(key);
+		value = trim(value);
+		parseLocationDirectives(key, value, location);
+		// std::cerr << "location_key: " << key << "\n"; // for debuging
+		// std::cerr << "location_value: " << value << "\n"; // for debuging  
+	}
+}
+
+static t_location&	parseLocationBlock(std::string res) {
+	std::vector<std::string>	locationTokens;
+	t_location					*location = new t_location;
+
+	size_t findBrack = res.find("{");
+	std::string					token;
+	if (findBrack != res.npos) {
+		std::string path = res.substr(0, findBrack);
+		res = res.substr(findBrack + 1, -1);
+		// location->path = path;
+		// std::cerr << "path: " << path << "\n"; // for debuging  
+	}
+	std::istringstream			tokenStream(res);
+	while (std::getline(tokenStream, token, ';')) {
+		if (token == "}" || token == "}}") {
+			continue ;
+		}
+		locationTokens.push_back(token);
+		std::cout << "token_location: " << token << "\n"; // for debuging  
+	}
+	fillLocationStruct(*location, locationTokens);
+	return (*location);
+}
+
+static void	splitLocationBlocks(t_server& server, std::string res) {
+	while (res.size()) {
+		std::string	serverBlock;
+		size_t fserv = res.find("location");
+		if (fserv != std::string::npos) {
+			res = res.substr(9, std::string::npos);
+			fserv = res.find("location");
+			if (fserv != std::string::npos) {
+				server.locations.push_back(parseLocationBlock(res.substr(0, fserv)));
+				std::cout << "location: " << res.substr(0, fserv) << "\n"; // for debuging  
+				res = res.substr(fserv, std::string::npos);
+			}
+		} else if (fserv == std::string::npos && res.size()) {
+			// server.locations.push_back(parseLocationBlock(res));
+			std::cout << "location: " << res << "\n"; // for debuging  
+			break ;
+		}
+	}
+}
+
+// /* **************************** Parse Server ****************************** */
+
+static void	parseServerDirectives(std::string& key, std::string& value, t_server& server) {
+	if (key == "server_name") {
+		server.serverName = value;
+	} else if (key == "listen") {
+		server.port = atoi(value.c_str());
+	} else if (key == "root") {
+		server.root = value;
+	} else if (key == "index") {
+		server.index = value;
+	} else if (key == "error_page") {
+		// server.errorPages
+	} else {
+		std::cerr << RED_TEXT "Error: " GREEN_TEXT "Invalid Directive." << RESET_COLOR << "\n";
+	}
+}
+
+static void	fillServerStruct(t_server& server, std::vector<std::string>& tokens) {
 	for (size_t i = 0; i < tokens.size(); i++) {
 		// parseDirectives();
 		if (tokens[i].find("location") != tokens[i].npos)
@@ -93,69 +206,53 @@ static void	fillConfigStruct(t_config& config, std::vector<std::string>& tokens)
 		std::string value;
 		std::getline(tokenStream, key, '=');
 		std::getline(tokenStream, value);
-		std::cerr << "key: " << key << "\n"; // for debuging  
-		std::cerr << "value: " << value << "\n"; // for debuging  
+		key = trim(key);
+		value = trim(value);
+		parseServerDirectives(key, value, server);
+		// std::cerr << "server_key: " << key << "\n"; // for debuging
+		// std::cerr << "server_value: " << value << "\n"; // for debuging  
 	}
-		
-	// std::find(tokens.begin(), tokens.end(), );
 }
 
-static void	splitBlocks(t_config& config, std::string res, const std::string& block);
+static t_server& parseServerBlock(std::string res) {
+	std::vector<std::string>	serverTokens;
+	t_server					*server = new t_server;
 
-static void	parseBlock(t_config& config, std::string res, const std::string& block) {
-	if (block == "Server") {
-		size_t findBrack = res.find("{");
-		if (findBrack != res.npos)
-			res = res.substr(findBrack + 1, -1);
-		std::vector<std::string>	serverTokens;
-		std::istringstream			tokenStream(res);
-		std::string					token;
-		while (std::getline(tokenStream, token, ';')) {
-			if (token.find("location") != token.npos)
-				break ;
-		    serverTokens.push_back(token);
-			std::cout << "server_token: " << token << "\n"; // for debuging  
-		}
-		fillConfigStruct(config, serverTokens);
-		splitBlocks(config, res.substr(res.find("location"), -1), "location");
-
-	} else {
-		size_t findBrack = res.find("{");
-		std::vector<std::string>	locationTokens;
-		std::istringstream			tokenStream(res);
-		std::string					token;
-		if (findBrack != res.npos) {
-			std::string path = res.substr(0, findBrack);
-			res = res.substr(findBrack, -1);
-			std::cerr << "path: " << path << "\n"; // for debuging  
-		}
-		while (std::getline(tokenStream, token, ';')) {
-			if (token == "}" || token == "}}") {
-				continue ;
-			}
-		    locationTokens.push_back(token);
-			std::cout << "token_location: " << token << "\n"; // for debuging  
-		}
-		fillConfigStruct(config, locationTokens);
+	size_t findBrack = res.find("{");
+	if (findBrack != res.npos) {
+		res = res.substr(findBrack + 1, -1);
 	}
-	
+	std::istringstream			tokenStream(res);
+	std::string					token;
+	while (std::getline(tokenStream, token, ';')) {
+		if (token.find("location") != token.npos) {
+			break ;
+		}
+		serverTokens.push_back(token);
+		std::cout << "server_token: " << token << "\n"; // for debuging  
+	}
+	fillServerStruct(*server, serverTokens);
+	splitLocationBlocks(*server, res.substr(res.find("location"), -1));
+	// // server.locations = ;
+	return (*server);
 }
 
-static void	splitBlocks(t_config& config, std::string res, const std::string& block) {
-		while (res.size()) {
+static void	splitServerBlocks(t_config& config, std::string res) {
+	size_t	i = 0;
+	while (res.size()) {
 		std::string	serverBlock;
-		size_t fserv = res.find(block);
+		size_t fserv = res.find("Server");
 		if (fserv != std::string::npos) {
-			res = res.substr(block.length(), std::string::npos);
-			fserv = res.find(block);
+			res = res.substr(6, std::string::npos);
+			fserv = res.find("Server");
 			if (fserv != std::string::npos) {
-				parseBlock(config, res.substr(0, fserv), block);
-				std::cout << block << ": " << res.substr(0, fserv) << "\n"; // for debuging  
+				config.servers.push_back(parseServerBlock(res.substr(0, fserv)));
+				std::cout << "Server: " << res.substr(0, fserv) << "\n"; // for debuging  
 				res = res.substr(fserv, std::string::npos);
 			}
 		} else if (fserv == std::string::npos && res.size()) {
-			parseBlock(config, res, block);
-			std::cout << block << ": " << res << "\n"; // for debuging  
+			config.servers.push_back(parseServerBlock(res));
+			std::cout << "Server: " << res << "\n"; // for debuging
 			break ;
 		}
 	}
@@ -164,7 +261,7 @@ static void	splitBlocks(t_config& config, std::string res, const std::string& bl
 void	parseConFile(const char* file) {
 	t_location	currentLocation;
 	t_server	currentServer;
-	t_config	config;
+	t_config	*config = new t_config;
 	std::string	line;
 	std::string res;
 
@@ -190,47 +287,26 @@ void	parseConFile(const char* file) {
 		std::cerr << "Error: Unclosed bracket in configuration file." << std::endl;
 	}
 
-	splitBlocks(config, res, "Server");
-	//     // Split the line into tokens (directive and arguments)
-	//     std::vector<std::string> tokens = split(line);
-	//     // Parse directives and their arguments
-	//     if (!tokens.empty()) {
-	//         std::string directive = tokens[0];
-			
-	//         // Handle server block
-	//         if (directive == "server") {
-	//             // If we were parsing a previous server block, push it to the config
-	//             if (currentServer.port != 0) {
-	//                 config.servers.push_back(currentServer);
-	//             }
-	//             // Initialize a new server block
-	//             currentServer = t_server();
-	//         }
-	//         // Handle location block
-	//         else if (directive == "location") {
-	//             // If we were parsing a previous location block, push it to the current server's locations
-	//             if (!currentLocation.path.empty()) {
-	//                 currentServer.locations.push_back(currentLocation);
-	//             }
-	//             // Initialize a new location block
-	//             currentLocation = t_location();
-	//             currentLocation.path = tokens[1];
-	//         }
-	//         // Parse other directives
-	//         else {
-	//             // Parse and store other directives and their arguments in the appropriate data structure
-	//             // parseAndStoreDirective(tokens, currentServer, currentLocation);
-	//         }
-	//     }
-	// }
-	
-	// // Push the last server and location blocks into the config
-	// if (currentServer.port != 0) {
-	//     config.servers.push_back(currentServer);
-	// }
-	// if (!currentLocation.path.empty()) {
-	//     currentServer.locations.push_back(currentLocation);
-	// }
+	splitServerBlocks(*config, res);
 
+	for (size_t i = 0; i < config->servers.size(); i++) {
+		std::cerr << "host: -" << config->servers[i].host  << "\n";
+		std::cerr << "index: -" << config->servers[i].index  << "\n";
+		std::cerr << "port: -" << config->servers[i].port  << "\n";
+		std::cerr << "root: -" << config->servers[i].root  << "\n";
+		std::cerr << "servername: -" << config->servers[i].serverName << "\n";
+		for (size_t j = 0; j < config->servers.size(); j++) {
+			std::cerr << "	location_host: -" << config->servers[i].host  << "\n";
+			std::cerr << "	location_allowedMethods: -" << config->servers[i].locations[j].allowedMethods  << "\n";
+			std::cerr << "	location_autoindex: -" << config->servers[i].locations[j].autoindex  << "\n";
+			std::cerr << "	location_index: -" << config->servers[i].locations[j].index  << "\n";
+			std::cerr << "	location_path: -" << config->servers[i].locations[j].path << "\n";
+			// std::cerr << "location_redirectFrom: -" << config->servers[i].locations[j].redirectFrom << "\n";
+			// std::cerr << "location_redirectTo: -" << config->servers[i].locations[j].redirectTo << "\n";
+		
+		}
+	}
+	
+	delete config;
 	configFile.close();    
 }

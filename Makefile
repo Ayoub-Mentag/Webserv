@@ -41,6 +41,7 @@ clean:
 										@echo $(GREEN)---DONE!---$(RESET)
 
 fclean:                                 clean
+										@rm -rf .vscode
 										@echo $(MAGENTA)Cleaning $(NAME) executable...$(RESET)
 										@sleep 0.2
 										@rm -f $(NAME)

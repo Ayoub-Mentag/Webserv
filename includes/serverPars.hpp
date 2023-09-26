@@ -27,13 +27,13 @@ typedef struct LocationDirectives {
 
 typedef struct ServerDirectives {
     int								port;
-    int								clientMaxBodySize;
+    // int					    		clientMaxBodySize;
     std::map<int, std::string> 		errorPages;
     std::string						host;
     std::string						serverName;
     std::string						root;
     std::string						index;
-    std::vector<LocationDirectives>	locations;
+    std::vector<t_location>     	locations;
 }									t_server;
 
 typedef struct ConfigSettings {
