@@ -60,6 +60,24 @@ static bool bracketsBalance(const std::string& str) {
 
 
 
+/* ************************** Parse Directives ****************************** */
+std::vector<std::string>	getAllowedMethodes(std::string& value) {
+	std::istringstream	toSplit(value);
+	std::string			token;
+	std::vector<std::string>	allowedMethods;
+	while (std::getline(toSplit, token, ' ')) {
+		size_t last = value.find_last_not_of(";"); // not working
+		if (token[last - 1] == ';')
+			token = token.substr(0, last - 1);
+		allowedMethods.push_back(token);
+		std::cout <<  "-" + token + "-\n";
+	}
+	return (allowedMethods);
+}
+
+// std::string	getIndex(std::string& value) {
+
+// }
 
 /* ************************** Parse Location ****************************** */
 static void	parseLocationDirectives(std::string& key, std::string& value, t_location& location) {
@@ -68,17 +86,17 @@ static void	parseLocationDirectives(std::string& key, std::string& value, t_loca
 		std::cerr << YELLOW "[file: " << __FILE__ << "]\n[line: " << __LINE__ << "]\n" RESET_COLOR;
 		// exit(1);
 	}
-	// std::cerr << "location_value:" << value << "\n";
+	std::cerr << "location_value:" << value << "\n";
 	if (key == "allowed_methods") {
-		// location.allowedMethods = value;
+		location.allowedMethods = getAllowedMethodes(value);
 	} else if (key == "index") {
-		location.index = value;
+
 	} else if (key == "autoindex") {
 		location.autoindex = atoi(value.c_str());
 	} else if (key == "redirect") {
 		// location.redirect = atoi(value.c_str());
 	} else if (key == "root") {
-		location.root = value;;
+		// location.root = value;;
 	} else {
 		std::cerr << RED "Error: " GREEN "Invalid location Directive." << RESET_COLOR << "\n";
 		std::cerr << YELLOW "[file: " << __FILE__ << "]\n[line: " << __LINE__ << "]\n" RESET_COLOR;
@@ -103,14 +121,14 @@ static void	fillLocationStruct(t_location& location, std::vector<std::string>& t
 	}
 }
 
-static t_location*	parseLocationBlock(std::string res) {
+static t_location	parseLocationBlock(std::string res) {
 	std::vector<std::string>	locationTokens;
-	t_location					*location = new t_location;
+	t_location					location;
 	std::string					token;
 
 	size_t findBrack = res.find("{");
 	if (findBrack != res.npos) {
-		location->path = res.substr(0, findBrack);
+		location.path = res.substr(0, findBrack);
 		res = res.substr(findBrack + 1, -1); 
 	}
 	if (res[0] == UNKNOWN_CHAR)
@@ -122,7 +140,7 @@ static t_location*	parseLocationBlock(std::string res) {
 		}
 		locationTokens.push_back(token);
 	}
-	fillLocationStruct(*location, locationTokens);
+	fillLocationStruct(location, locationTokens);
 	return (location);
 }
 
@@ -134,15 +152,11 @@ static void	splitLocationBlocks(t_server& server, std::string res) {
 			res = res.substr(9, std::string::npos);
 			fserv = res.find("location");
 			if (fserv != std::string::npos) {
-				t_location *tmp = parseLocationBlock(res.substr(0, fserv));
-				server.locations.push_back(*tmp);
-				delete tmp;
+				server.locations.push_back(parseLocationBlock(res.substr(0, fserv)));
 				res = res.substr(fserv, std::string::npos);
 			}
 		} else if (fserv == std::string::npos && res.size()) {
-			t_location *tmp = parseLocationBlock(res);
-			server.locations.push_back(*tmp);
-			delete tmp;
+			server.locations.push_back(parseLocationBlock(res));
 			break ;
 		}
 	}
@@ -155,7 +169,7 @@ static void	parseServerDirectives(std::string& key, std::string& value, t_server
 		std::cerr << YELLOW "[file: " << __FILE__ << "]\n[line: " << __LINE__ << "]\n" RESET_COLOR;
 		exit(1);
 	}
-	// std::cerr << "server_value:" << value << "\n";
+	std::cerr << "server_value:" << value << "\n";
 	if (key == "server_name") {
 		server.serverName = value;
 	} else if (key == "listen") {
@@ -188,20 +202,14 @@ static void	fillServerStruct(t_server& server, std::vector<std::string>& tokens)
 	}
 }
 
-static t_server*	parseServerBlock(std::string res) {
+static t_server	parseServerBlock(std::string res) {
 	std::vector<std::string>	serverTokens;
-	t_server					*server = new t_server;
+	t_server					server;
 
 	size_t findBrack = res.find("{");
 	if (findBrack != res.npos) {
 		res = res.substr(findBrack + 1, -1);
 	}
-	// size_t last = res.find_last_not_of("}");
-	// if (last != res.npos && res[last] != ';') {
-	// 	std::cerr << RED "Error: " GREEN "expected ';' at end of declaration." << RESET_COLOR << "\n";
-	// 	std::cerr << YELLOW "[file: " << __FILE__ << "]\n[line: " << __LINE__ << "]\n" RESET_COLOR;
-		// exit(1);
-	// }
 	if (res[0] == UNKNOWN_CHAR)
 		res[0] = ' ';
 	std::istringstream			tokenStream(res);
@@ -215,10 +223,10 @@ static t_server*	parseServerBlock(std::string res) {
 		}
 		serverTokens.push_back(token);  
 	}
-	fillServerStruct(*server, serverTokens);
+	fillServerStruct(server, serverTokens);
 	size_t	floc = res.find("location");
 	if (floc != res.npos)
-		splitLocationBlocks(*server, res.substr(floc, -1));
+		splitLocationBlocks(server, res.substr(floc, -1));
 	return (server);
 }
 
@@ -230,15 +238,11 @@ static void	splitServerBlocks(t_config& config, std::string res) {
 			res = res.substr(6, std::string::npos);
 			fserv = res.find("Server");
 			if (fserv != std::string::npos) {
-				t_server *tmp = parseServerBlock(res.substr(0, fserv));
-				config.servers.push_back(*tmp);
-				delete tmp;
+				config.servers.push_back(parseServerBlock(res.substr(0, fserv)));
 				res = res.substr(fserv, std::string::npos);
 			}
 		} else if (fserv == std::string::npos && res.size()) {
-			t_server *tmp = parseServerBlock(res);
-			config.servers.push_back(*tmp);
-			delete tmp;
+			config.servers.push_back(parseServerBlock(res));
 			break ;
 		}
 	}
