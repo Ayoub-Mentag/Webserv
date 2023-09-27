@@ -1,5 +1,5 @@
 CXX										= c++
-CXXFLAGS								= -std=c++98#-Wall -Wextra -Werror 
+CXXFLAGS								= -std=c++98 -Wall -Wextra -Werror 
 NAME									= server
 SOURCES									= $(addprefix $(SRC_DIR)/, main.cpp server.cpp)
 OBJECTS									= $(SOURCES:$(SRC_DIR)/%.cpp=$(OBJ_DIR)/%.o)
