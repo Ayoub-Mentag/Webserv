@@ -10,7 +10,7 @@ INC_DIR                                 = ./includes
 
 #====== Colors =======#
 RESET                                   = "\033[0m"
-RED                                             = "\033[1;31m"
+RED                                     = "\033[1;31m"
 GREEN                                   = "\033[1;32m"
 YELLOW                                  = "\033[1;33m"
 ORANGE                                  = "\033[1;34m"

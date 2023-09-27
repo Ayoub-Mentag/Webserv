@@ -5,7 +5,7 @@ void	func() {
 }
 
 int	main(int argc, char* argv[]) {
-	atexit(func);
+	// atexit(func);
 	argv[1] = (argc == 2) ? argv[1] : (char*)DEFAULT_CONFIG_FILE;
 
 	if (argc <= 2) {
