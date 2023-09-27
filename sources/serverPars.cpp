@@ -3,7 +3,7 @@
 void	usage(const char* programName) {
 	std::cerr << GREEN "Usage: " RED << programName << " [config_file_path]" << RESET_COLOR << std::endl;
 	std::cerr << YELLOW "[file: " << __FILE__ << "]\n[line: " << __LINE__ << "]\n" RESET_COLOR;
-	exit(1);
+	// exit(1);
 }
 
 // std::vector<std::string> split(const std::string& str) {
@@ -34,22 +34,42 @@ static std::string trim(const std::string& str) {
 	return str.substr(first, (last - first + 1));
 }
 
-static bool	bracketsBalance(const std::string& str) {
-	std::stack<char> stack;
-	char c;
-	for (size_t i = 0; i < str.length(); i++) {
-		c = str[i];
-		if (c == '{' || c == '[') {
-			stack.push(c);
-		} else if (c == '}' && (!stack.empty() && stack.top() == '{')) {
-			stack.pop();
-		} else if (c == ']' && (!stack.empty() && stack.top() == '[')) {
-			stack.pop();
-		}
-    }
-	return (stack.empty());
-}
+// static bool	bracketsBalance(const std::string& str) {
+// 	std::stack<char> stack;
+// 	char c;
+// 	for (size_t i = 0; i < str.length(); i++) {
+// 		c = str[i];
+// 		if (c == '{' || c == '[') {
+// 			stack.push(c);
+// 		} else if (c == '}' && (!stack.empty() && stack.top() == '{')) {
+// 			stack.pop();
+// 		} else if (c == ']' && (!stack.empty() && stack.top() == '[')) {
+// 			stack.pop();
+// 		}
+//     }
+// 	return (stack.empty());
+// }
 
+static bool bracketsBalance(const std::string& str) {
+    std::stack<char> stack;
+    for (size_t i = 0; i < str.length(); i++) {
+        char c = str[i];
+        if (c == '{' || c == '[') {
+            stack.push(c);
+        } else if (c == '}' || c == ']') {
+            if (stack.empty()) {
+                return false; // Closing bracket with no matching opening bracket
+            }
+            char top = stack.top();
+            if ((c == '}' && top == '{') || (c == ']' && top == '[')) {
+                stack.pop();
+            } else {
+                return false; // Mismatched brackets
+            }
+        }
+    }
+    return stack.empty(); // Check for extra opening brackets
+}
 
 
 
@@ -59,9 +79,9 @@ static void	parseLocationDirectives(std::string& key, std::string& value, t_loca
 	if (value[value.length() - 1] != ';') {
 		std::cerr << RED "Error: " GREEN "expected ';' at end of declaration." << RESET_COLOR << "\n";
 		std::cerr << YELLOW "[file: " << __FILE__ << "]\n[line: " << __LINE__ << "]\n" RESET_COLOR;
-		exit(1);
+		// exit(1);
 	}
-	std::cerr << "location_value:" << value << "\n";
+	// std::cerr << "location_value:" << value << "\n";
 	if (key == "allowed_methods") {
 		// location.allowedMethods = value;
 	} else if (key == "index") {
@@ -75,7 +95,7 @@ static void	parseLocationDirectives(std::string& key, std::string& value, t_loca
 	} else {
 		std::cerr << RED "Error: " GREEN "Invalid location Directive." << RESET_COLOR << "\n";
 		std::cerr << YELLOW "[file: " << __FILE__ << "]\n[line: " << __LINE__ << "]\n" RESET_COLOR;
-		// exit(1);
+		exit(1);
 	}
 }
 
@@ -111,12 +131,12 @@ static t_location*	parseLocationBlock(std::string res) {
 	// 	// std::cout << "res: " << res[last] << "\n";
 	// 	std::cerr << RED "Error: " GREEN "expected ';' at end of declaration." << RESET_COLOR << "\n";
 	// 	std::cerr << YELLOW "[file: " << __FILE__ << "]\n[line: " << __LINE__ << "]\n" RESET_COLOR;
-	// 	exit(1);
+		// exit(1);
 	// }
 	if (res[0] == UNKNOWN_CHAR)
 		res[0] = ' ';
 	std::istringstream			tokenStream(res);
-	std::cout << "istringstream:" << res << "\n";
+	// std::cout << "istringstream:" << res << "\n";
 	while (std::getline(tokenStream, token, UNKNOWN_CHAR)) {
 		if (token[0] == '}' && token[token.length() - 1] == '}') {
 			continue ;
@@ -156,7 +176,7 @@ static void	parseServerDirectives(std::string& key, std::string& value, t_server
 		std::cerr << YELLOW "[file: " << __FILE__ << "]\n[line: " << __LINE__ << "]\n" RESET_COLOR;
 		exit(1);
 	}
-	std::cerr << "server_value:" << value << "\n";
+	// std::cerr << "server_value:" << value << "\n";
 	if (key == "server_name") {
 		server.serverName = value;
 	} else if (key == "listen") {
@@ -170,7 +190,7 @@ static void	parseServerDirectives(std::string& key, std::string& value, t_server
 	} else {
 		std::cerr << RED "Error: " GREEN "Invalid Directive." << RESET_COLOR << "\n";
 		std::cerr << YELLOW "[file: " << __FILE__ << "]\n[line: " << __LINE__ << "]\n" RESET_COLOR;
-		// exit(1);
+		exit(1);
 	}
 }
 
@@ -201,7 +221,7 @@ static t_server*	parseServerBlock(std::string res) {
 	// if (last != res.npos && res[last] != ';') {
 	// 	std::cerr << RED "Error: " GREEN "expected ';' at end of declaration." << RESET_COLOR << "\n";
 	// 	std::cerr << YELLOW "[file: " << __FILE__ << "]\n[line: " << __LINE__ << "]\n" RESET_COLOR;
-	// 	exit(1);
+		// exit(1);
 	// }
 	if (res[0] == UNKNOWN_CHAR)
 		res[0] = ' ';
@@ -276,7 +296,7 @@ t_config*	parseConFile(const char* file) {
 		std::cerr << YELLOW "[file: " << __FILE__ << "]\n[line: " << __LINE__ << "]\n" RESET_COLOR;
 		exit(1);
 	}
-	std::cout << "res:" << res;
+	// std::cout << "res:" << res;
 	splitServerBlocks(*config, res);
 
 	// for (size_t i = 0; i < config->servers.size(); i++) {
