@@ -61,36 +61,54 @@ static bool bracketsBalance(const std::string& str) {
 
 
 /* ************************** Parse Directives ****************************** */
-std::vector<std::string>	getAllowedMethodes(std::string& value) {
-	std::istringstream	toSplit(value);
-	std::string			token;
+std::vector<std::string>		getAllowedMethods(std::string& value) {
+	std::string					token;
 	std::vector<std::string>	allowedMethods;
+		
+	if (value.empty() || value == "") {
+		std::cerr << RED "Error: " GREEN "Directive has no value." << RESET_COLOR << "\n";
+		std::cerr << YELLOW "[file: " << __FILE__ << "]\n[line: " << __LINE__ << "]\n" RESET_COLOR;
+		// exit(1);
+	}
+	std::istringstream			toSplit(value);
 	while (std::getline(toSplit, token, ' ')) {
-		size_t last = value.find_last_not_of(";"); // not working
-		if (token[last - 1] == ';')
-			token = token.substr(0, last - 1);
+		if (token == "") continue;
+		if (token != "GET" && token != "POST" && token != "DELETE") {
+			std::cerr << RED "Error: " GREEN "Invalid method." << RESET_COLOR << "\n";
+			std::cerr << YELLOW "[file: " << __FILE__ << "]\n[line: " << __LINE__ << "]\n" RESET_COLOR;
+			exit(1);
+		}
 		allowedMethods.push_back(token);
-		std::cout <<  "-" + token + "-\n";
 	}
 	return (allowedMethods);
 }
 
-// std::string	getIndex(std::string& value) {
+std::string	getIndex(std::string& value) {
+	if (value.empty() || value == "") {
+		std::cerr << RED "Error: " GREEN "Directive has no value." << RESET_COLOR << "\n";
+		std::cerr << YELLOW "[file: " << __FILE__ << "]\n[line: " << __LINE__ << "]\n" RESET_COLOR;
+		// exit(1);
+	}
 
-// }
+	return (value);
+}
 
 /* ************************** Parse Location ****************************** */
 static void	parseLocationDirectives(std::string& key, std::string& value, t_location& location) {
 	if (value[value.length() - 1] != ';') {
 		std::cerr << RED "Error: " GREEN "expected ';' at end of declaration." << RESET_COLOR << "\n";
 		std::cerr << YELLOW "[file: " << __FILE__ << "]\n[line: " << __LINE__ << "]\n" RESET_COLOR;
-		// exit(1);
+		exit(1);
 	}
-	std::cerr << "location_value:" << value << "\n";
+	size_t last = value.find_last_not_of(';');
+	if (last != value.npos && value[last + 1] == ';')
+		value = value.substr(0, last + 1);
+	std::cout << "-" << value << "-\n";
+	std::cerr << "location_value:" << value << "\n"; // empty value 
 	if (key == "allowed_methods") {
-		location.allowedMethods = getAllowedMethodes(value);
+		location.allowedMethods = getAllowedMethods(value);
 	} else if (key == "index") {
-
+		location.index = getIndex(value);
 	} else if (key == "autoindex") {
 		location.autoindex = atoi(value.c_str());
 	} else if (key == "redirect") {
