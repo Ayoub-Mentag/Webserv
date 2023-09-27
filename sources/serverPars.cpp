@@ -3,21 +3,9 @@
 void	usage(const char* programName) {
 	std::cerr << GREEN "Usage: " RED << programName << " [config_file_path]" << RESET_COLOR << std::endl;
 	std::cerr << YELLOW "[file: " << __FILE__ << "]\n[line: " << __LINE__ << "]\n" RESET_COLOR;
-	// exit(1);
+	exit(1);
 }
 
-// std::vector<std::string> split(const std::string& str) {
-// 	std::vector<std::string> tokens;
-// 	std::istringstream tokenStream(str);
-// 	std::string token;
-
-// 	std::cerr << str << "\n";
-// 	while (tokenStream >> token) {
-// 		tokens.push_back(token);
-// 	}
-// 	std::cout << token << " <=====\n";
-// 	return tokens;
-// }
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -60,8 +48,7 @@ static bool bracketsBalance(const std::string& str) {
             if (stack.empty()) {
                 return false; // Closing bracket with no matching opening bracket
             }
-            char top = stack.top();
-            if ((c == '}' && top == '{') || (c == ']' && top == '[')) {
+            if ((c == '}' &&  stack.top() == '{') || (c == ']' &&  stack.top() == '[')) {
                 stack.pop();
             } else {
                 return false; // Mismatched brackets
@@ -126,17 +113,9 @@ static t_location*	parseLocationBlock(std::string res) {
 		location->path = res.substr(0, findBrack);
 		res = res.substr(findBrack + 1, -1); 
 	}
-	// size_t last = res.find_last_not_of("}");
-	// if (last != res.npos && res[last] != ';') {
-	// 	// std::cout << "res: " << res[last] << "\n";
-	// 	std::cerr << RED "Error: " GREEN "expected ';' at end of declaration." << RESET_COLOR << "\n";
-	// 	std::cerr << YELLOW "[file: " << __FILE__ << "]\n[line: " << __LINE__ << "]\n" RESET_COLOR;
-		// exit(1);
-	// }
 	if (res[0] == UNKNOWN_CHAR)
 		res[0] = ' ';
 	std::istringstream			tokenStream(res);
-	// std::cout << "istringstream:" << res << "\n";
 	while (std::getline(tokenStream, token, UNKNOWN_CHAR)) {
 		if (token[0] == '}' && token[token.length() - 1] == '}') {
 			continue ;
