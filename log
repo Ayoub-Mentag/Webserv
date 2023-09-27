@@ -1,23 +1,23 @@
-Process:         webservParsing [34722]
+Process:         webservParsing [45830]
 Path:            /Volumes/VOLUME/*/webservParsing
-Load Address:    0x10ab53000
+Load Address:    0x1015db000
 Identifier:      webservParsing
 Version:         ???
 Code Type:       X86-64
-Parent Process:  zsh [26023]
+Parent Process:  zsh [44146]
 
-Date/Time:       2023-09-26 22:08:08.950 +0100
-Launch Time:     2023-09-26 22:08:08.554 +0100
+Date/Time:       2023-09-27 09:03:41.344 +0100
+Launch Time:     2023-09-27 09:03:40.822 +0100
 OS Version:      Mac OS X 10.15.7 (19H2026)
 Report Version:  7
 Analysis Tool:   /Applications/Xcode.app/Contents/Developer/usr/bin/leaks
 Analysis Tool Version:  Xcode 12.4 (12D4e)
 
-Physical footprint:         352K
-Physical footprint (peak):  352K
+Physical footprint:         340K
+Physical footprint (peak):  340K
 ----
 
 leaks Report Version: 4.0
-Process 34722: 155 nodes malloced for 8 KB
-Process 34722: 0 leaks for 0 total leaked bytes.
+Process 45830: 155 nodes malloced for 8 KB
+Process 45830: 0 leaks for 0 total leaked bytes.
 

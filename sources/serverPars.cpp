@@ -1,32 +1,3 @@
-
-// /* ************************** Parse Location ****************************** */
-// static void	fillLocationStruct(std::vector<std::string>& tokens) {
-// 	t_location	location;
-// 	for (size_t i = 0; i < tokens.size(); i++) {
-// 		// parseDirectives();
-// 		if (tokens[i].find("location") != tokens[i].npos)
-// 				break ;
-// 		std::istringstream	tokenStream(tokens[i]);
-// 		std::string			key;
-// 		std::string			value;
-
-// 		std::getline(tokenStream, key, '=');
-// 		std::getline(tokenStream, value);
-// 		std::cerr << "location_key: " << key << "\n"; // for debuging  
-// 	}
-// 	return (location);
-// }
-
-
-
-
-
-
-
-
-
-
-
 #include "serverPars.hpp"
 
 void	usage(const char* programName) {
@@ -52,7 +23,6 @@ void	usage(const char* programName) {
 #include <string>
 #include <vector>
 #include <map>
-// static void	parseDirectives();
 
 static std::string trim(const std::string& str) {
 	size_t first = str.find_first_not_of(" \t\n\r");
@@ -83,24 +53,7 @@ static bool	bracketsBalance(const std::string& str) {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/* ************************** Parse Location ****************************** */
 static void	parseLocationDirectives(std::string& key, std::string& value, t_location& location) {
 	if (key == "allowed_methods") {
 		// location.allowedMethods = value;
@@ -141,10 +94,8 @@ static t_location*	parseLocationBlock(std::string res) {
 	size_t findBrack = res.find("{");
 	std::string					token;
 	if (findBrack != res.npos) {
-		std::string path = res.substr(0, findBrack);
-		location->path = path;
-		res = res.substr(findBrack + 1, -1);
-		// location->path = path;  
+		location->path = res.substr(0, findBrack);
+		res = res.substr(findBrack + 1, -1); 
 	}
 	std::istringstream			tokenStream(res);
 	while (std::getline(tokenStream, token, ';')) {
@@ -180,7 +131,6 @@ static void	splitLocationBlocks(t_server& server, std::string res) {
 }
 
 // /* **************************** Parse Server ****************************** */
-
 static void	parseServerDirectives(std::string& key, std::string& value, t_server& server) {
 	if (key == "server_name") {
 		server.serverName = value;
@@ -256,7 +206,7 @@ static void	splitServerBlocks(t_config& config, std::string res) {
 	}
 }
 
-void	parseConFile(const char* file) {
+t_config*	parseConFile(const char* file) {
 	t_location	currentLocation;
 	t_server	currentServer;
 	t_config	*config = new t_config;
@@ -287,22 +237,22 @@ void	parseConFile(const char* file) {
 
 	splitServerBlocks(*config, res);
 
-	for (size_t i = 0; i < config->servers.size(); i++) {
-		std::cerr << "host:" << config->servers[i].host  << "\n";
-		std::cerr << "index:" << config->servers[i].index  << "\n";
-		std::cerr << "port:" << config->servers[i].port  << "\n";
-		std::cerr << "root:" << config->servers[i].root  << "\n";
-		std::cerr << "servername:" << config->servers[i].serverName << "\n";
-		for (size_t j = 0; j < config->servers[i].locations.size(); j++) {
-			// std::cerr << j << "	location_allowedMethods			" << config->servers[i].locations[j].allowedMethods  << "\n";
-			std::cerr << j << "	location_autoindex			" << config->servers[i].locations[j].autoindex  << "\n";
-			std::cerr << j << "	location_index			" << config->servers[i].locations[j].index  << "\n";
-			std::cerr << j << "	location_path			" << config->servers[i].locations[j].path << "\n";
-			std::cerr << j << "	location_redirectFrom			" << config->servers[i].locations[j].redirectFrom << "\n";
-			std::cerr << j << "	location_redirectTo			" << config->servers[i].locations[j].redirectTo << "\n";
-		}
-	}
+	// for (size_t i = 0; i < config->servers.size(); i++) {
+	// 	std::cerr << "host:" << config->servers[i].host  << "\n";
+	// 	std::cerr << "index:" << config->servers[i].index  << "\n";
+	// 	std::cerr << "port:" << config->servers[i].port  << "\n";
+	// 	std::cerr << "root:" << config->servers[i].root  << "\n";
+	// 	std::cerr << "servername:" << config->servers[i].serverName << "\n";
+	// 	for (size_t j = 0; j < config->servers[i].locations.size(); j++) {
+	// 		// std::cerr << j << "	location_allowedMethods			" << config->servers[i].locations[j].allowedMethods  << "\n";
+	// 		std::cerr << j << "	location_autoindex			" << config->servers[i].locations[j].autoindex  << "\n";
+	// 		std::cerr << j << "	location_index			" << config->servers[i].locations[j].index  << "\n";
+	// 		std::cerr << j << "	location_path			" << config->servers[i].locations[j].path << "\n";
+	// 		std::cerr << j << "	location_redirectFrom			" << config->servers[i].locations[j].redirectFrom << "\n";
+	// 		std::cerr << j << "	location_redirectTo			" << config->servers[i].locations[j].redirectTo << "\n";
+	// 	}
+	// }
 	
-	delete config;
 	configFile.close();    
+	return (config);
 }

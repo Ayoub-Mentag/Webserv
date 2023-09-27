@@ -13,9 +13,6 @@
 #include <vector>
 #include <map>
 
-void	parseConFile(const char* file);
-void	usage(const char* programName);
-
 typedef struct LocationDirectives {
     bool						autoindex;
     std::string					path;
@@ -40,3 +37,6 @@ typedef struct ServerDirectives {
 typedef struct ConfigSettings {
 	std::vector<t_server>	servers;
 }							t_config;
+
+t_config*	parseConFile(const char* file);
+void    	usage(const char* programName);
