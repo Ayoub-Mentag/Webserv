@@ -104,7 +104,7 @@ static void	parseLocationDirectives(std::string& key, std::string& value, t_loca
 	if (last != value.npos && value[last + 1] == ';')
 		value = value.substr(0, last + 1);
 	std::cout << "-" << value << "-\n";
-	std::cerr << "location_value:" << value << "\n"; // empty value 
+	std::cerr << "location_value:" << value << "\n";
 	if (key == "allowed_methods") {
 		location.allowedMethods = getAllowedMethods(value);
 	} else if (key == "index") {
