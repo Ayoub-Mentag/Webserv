@@ -18,7 +18,7 @@
 #include <vector>
 #include <map>
 
-#define UNKNOWN_CHAR 200
+#define UNKNOWN_CHAR (char)200
 
 typedef struct LocationDirectives {
     bool						autoindex;
