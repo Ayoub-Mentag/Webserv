@@ -94,16 +94,20 @@ std::string	getIndex(std::string& value) {
 }
 
 /* ************************** Parse Location ****************************** */
-static void	parseLocationDirectives(std::string& key, std::string& value, t_location& location) {
+static void	parseLocationDirectives(std::string& key, std::string value, t_location& location) {
 	if (value[value.length() - 1] != ';') {
 		std::cerr << RED "Error: " GREEN "expected ';' at end of declaration." << RESET_COLOR << "\n";
 		std::cerr << YELLOW "[file: " << __FILE__ << "]\n[line: " << __LINE__ << "]\n" RESET_COLOR;
 		exit(1);
 	}
+	// these is not working !!!!!!!!!!!!!!!!!!!!!!
 	size_t last = value.find_last_not_of(';');
-	if (last != value.npos && value[last + 1] == ';')
+	if (last != value.npos && value[last + 1] == ';') {
+
 		value = value.substr(0, last + 1);
+	}
 	std::cout << "-" << value << "-\n";
+	// std::cout << "====> -" << value << "-\n";
 	std::cerr << "location_value:" << value << "\n";
 	if (key == "allowed_methods") {
 		location.allowedMethods = getAllowedMethods(value);
