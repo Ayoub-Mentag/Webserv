@@ -101,12 +101,12 @@ static void	parseLocationDirectives(std::string& key, std::string value, t_locat
 		exit(1);
 	}
 	// these is not working !!!!!!!!!!!!!!!!!!!!!!
-	size_t last = value.find_last_not_of(';');
-	if (last != value.npos && value[last + 1] == ';') {
+	// size_t last = value.find_last_not_of(';');
+	// if (last != value.npos && value[last + 1] == ';') {
 
-		value = value.substr(0, last + 1);
-	}
-	std::cout << "-" << value << "-\n";
+	// 	value = value.substr(0, last + 1);
+	// }
+		std::cout << "-" << value << "-\n";
 	// std::cout << "====> -" << value << "-\n";
 	std::cerr << "location_value:" << value << "\n";
 	if (key == "allowed_methods") {
