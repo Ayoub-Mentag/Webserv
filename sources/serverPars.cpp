@@ -1,4 +1,4 @@
-#include "serverPars.hpp"
+#include "parsingHeader.hpp"
 
 # define INVALID_ARGUMENT		RED "Error: " GREEN << key << " Invalid argument." << RESET_COLOR << "\n"
 # define NO_VALUE				RED "Error: " GREEN << key << " Directive has no value." << RESET_COLOR << "\n"
@@ -13,13 +13,6 @@ void	usage(const char* programName) {
 	std::cerr << PRINT_LINE_AND_FILE;
 	exit(1);
 }
-
-#include <iostream>
-#include <fstream>
-#include <sstream>
-#include <string>
-#include <vector>
-#include <map>
 
 static std::string trim(const std::string& str) {
 	size_t first = str.find_first_not_of(" \t\n\r");
@@ -215,7 +208,6 @@ static void	parseLocationDirectives(std::string& key, std::string value, t_locat
 	size_t last = value.find_last_not_of(';');
 	if (last != value.npos && value[last + 1] == ';')
 		value = value.substr(0, last + 1);
-	std::cerr << "location_value:" << value << "\n";
 	if (key == "allowed_methods") {
 		location.allowedMethods = getAllowedMethods(value, key);
 	} else if (key == "index") {
@@ -302,7 +294,6 @@ static void	parseServerDirectives(std::string& key, std::string& value, t_server
 	if (last != value.npos && value[last + 1] == ';')
 		value = value.substr(0, last + 1);
 
-	std::cerr << "server_value:" << value << "\n";
 	if (key == "server_name") {
 		server.serverName = getServerName(value, key);
 	} else if (key == "listen") {
@@ -413,7 +404,7 @@ t_config	parseConFile(const char* file) {
 		exit(1);
 	}
 	splitServerBlocks(config, res);
-	printConfigStruct(config);
+	// printConfigStruct(config);
 	configFile.close();    
 	return (config);
 }
