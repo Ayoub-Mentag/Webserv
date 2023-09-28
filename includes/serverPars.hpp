@@ -34,7 +34,6 @@ typedef struct ServerDirectives {
     int								port;
     // int					    		clientMaxBodySize;
     std::map<int, std::string> 		errorPages;
-    std::string						host;
     std::string						serverName;
     std::string						root;
     std::string						index;

@@ -54,16 +54,16 @@ static bool bracketsBalance(const std::string& str) {
             stack.push(c);
         } else if (c == '}' || c == ']') {
             if (stack.empty()) {
-                return false; // Closing bracket with no matching opening bracket
+                return (false); // Closing bracket with no matching opening bracket
             }
             if ((c == '}' &&  stack.top() == '{') || (c == ']' &&  stack.top() == '[')) {
                 stack.pop();
             } else {
-                return false; // Mismatched brackets
+                return (false); // Mismatched brackets
             }
         }
     }
-    return stack.empty(); // Check for extra opening brackets
+    return (stack.empty()); // Check for extra opening brackets
 }
 
 
@@ -92,6 +92,7 @@ std::vector<std::string>		getAllowedMethods(std::string& value, std::string& key
 }
 
 std::string	getIndex(std::string& value, std::string& key) {
+	value = trim(value);
 	if (value.empty() || value == ";") {
 		std::cerr << NO_VALUE;
 		std::cerr << PRINT_LINE_AND_FILE;
@@ -101,12 +102,12 @@ std::string	getIndex(std::string& value, std::string& key) {
 }
 
 bool	getAutoIndex(std::string& value, std::string& key) {
+	value = trim(value);
 	if (value.empty() || value == ";") {
 		std::cerr << NO_VALUE;
 		std::cerr << PRINT_LINE_AND_FILE;
 		exit(1);
 	}
-	value = trim(value);
 	if (value == "0" || value == "false" || value == "FALSE") {
 		return (false);
 	} else if (value == "1" || value == "true" || value == "TRUE") {
@@ -137,6 +138,7 @@ void	getRedirect(std::string& value, std::string& key, std::string& redirectFrom
 }
 
 std::string	getRoot(std::string& value, std::string& key) {
+	value = trim(value);
 	if (value.empty() || value == ";") {
 		std::cerr << NO_VALUE;
 		std::cerr << PRINT_LINE_AND_FILE;
@@ -146,6 +148,7 @@ std::string	getRoot(std::string& value, std::string& key) {
 }
 
 std::string getServerName(std::string& value, std::string& key) {
+	value = trim(value);
 	if (value.empty() || value == ";") {
 		std::cerr << NO_VALUE;
 		std::cerr << PRINT_LINE_AND_FILE;
@@ -155,6 +158,7 @@ std::string getServerName(std::string& value, std::string& key) {
 }
 
 int	getPort(std::string& value, std::string& key) {
+	value = trim(value);
 	if (value.empty() || value == ";") {
 		std::cerr << NO_VALUE;
 		std::cerr << PRINT_LINE_AND_FILE;
@@ -253,7 +257,7 @@ static t_location	parseLocationBlock(std::string res) {
 
 	size_t findBrack = res.find("{");
 	if (findBrack != res.npos) {
-		location.path = res.substr(0, findBrack);
+		location.path = trim(res.substr(0, findBrack));
 		res = res.substr(findBrack + 1, -1); 
 	}
 	if (res[0] == UNKNOWN_CHAR)
@@ -410,7 +414,6 @@ t_config*	parseConFile(const char* file) {
 	splitServerBlocks(*config, res);
 
 	for (size_t i = 0; i < config->servers.size(); i++) {
-		std::cout << "host: ---" << config->servers[i].host  << "---\n";
 		std::cout << "index: ---" << config->servers[i].index  << "---\n";
 		std::cout << "port: ---" << config->servers[i].port  << "---\n";
 		std::cout << "root: ---" << config->servers[i].root  << "---\n";
