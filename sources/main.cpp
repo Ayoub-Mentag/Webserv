@@ -1,8 +1,8 @@
 #include "parsingHeader.hpp"
 
-// void	func() {
-// 	system("leaks webservParsing");
-// }
+void	func() {
+	system("leaks webservParsing");
+}
 
 int	main(int argc, char* argv[]) {
 	// atexit(func);
