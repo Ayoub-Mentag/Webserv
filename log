@@ -1,0 +1,36 @@
+host: ------
+index: ---index.html---
+port: ---8080---
+root: ---/var/www/html---
+servername: ---example.com---
+
+0		location_allowedMethods ---GET---
+1		location_allowedMethods ---POST---
+2		location_allowedMethods ---DELETE---
+0	location_autoindex ---1---
+0	location_index ---/path/html/index.html---
+0	location_path ---/www/data ---
+0	location_redirectFrom ---/old---
+0	location_redirectTo ---/new---
+1	location_autoindex ---1---
+1	location_index ------
+1	location_path ---/uploads ---
+1	location_redirectFrom ------
+1	location_redirectTo ------
+2	location_autoindex ---0---
+2	location_index ------
+2	location_path ---/www/data ---
+2	location_redirectFrom ---/test---
+2	location_redirectTo ---/new---
+host: ------
+index: ---index.html---
+port: ---8081---
+root: ---/var/www/sub---
+servername: ---sub.example.com---
+
+0		location_allowedMethods ---GET---
+0	location_autoindex ---1---
+0	location_index ---index.html---
+0	location_path ---/ ---
+0	location_redirectFrom ------
+0	location_redirectTo ------
