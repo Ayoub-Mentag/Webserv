@@ -1,9 +1,9 @@
 CXX                                     = c++
 CXXFLAGS                                = -Wall -Wextra -Werror -std=c++98
-NAME                                    = webservParsing
-SOURCES                                 = $(addprefix $(SRC_DIR)/, main.cpp serverPars.cpp)
+NAME                                    = parsing
+SOURCES                                 = $(addprefix $(SRC_DIR)/, main.cpp serverPars.cpp requestParse.cpp)
 OBJECTS                                 = $(SOURCES:$(SRC_DIR)/%.cpp=$(OBJ_DIR)/%.o)
-INCLUDES                                = $(addprefix $(INC_DIR)/, serverPars.hpp)
+INCLUDES                                = $(addprefix $(INC_DIR)/, parsingHeader.hpp)
 OBJ_DIR                                 = ./objects
 SRC_DIR                                 = ./sources
 INC_DIR                                 = ./includes

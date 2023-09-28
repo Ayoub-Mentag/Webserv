@@ -15,6 +15,7 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <sstream>
 #include <vector>
 #include <map>
 
@@ -34,7 +35,6 @@ typedef struct ServerDirectives {
     int								port;
     // int					    		clientMaxBodySize;
     std::map<int, std::string> 		errorPages;
-    std::string						host;
     std::string						serverName;
     std::string						root;
     std::string						index;
@@ -45,5 +45,17 @@ typedef struct ConfigSettings {
 	std::vector<t_server>	servers;
 }							t_config;
 
-t_config*	parseConFile(const char* file);
+t_config	parseConFile(const char* file);
 void    	usage(const char* programName);
+
+
+
+typedef struct Request {
+    std::string	method;
+    std::string	path;
+    std::string	httpVersion;
+    std::string	serverName;
+    int			port;
+}				t_request;
+
+void 	requestParse(t_request& request, std::string buffer);

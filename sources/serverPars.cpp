@@ -1,4 +1,4 @@
-#include "serverPars.hpp"
+#include "parsingHeader.hpp"
 
 # define INVALID_ARGUMENT		RED "Error: " GREEN << key << " Invalid argument." << RESET_COLOR << "\n"
 # define NO_VALUE				RED "Error: " GREEN << key << " Directive has no value." << RESET_COLOR << "\n"
@@ -13,13 +13,6 @@ void	usage(const char* programName) {
 	std::cerr << PRINT_LINE_AND_FILE;
 	exit(1);
 }
-
-#include <iostream>
-#include <fstream>
-#include <sstream>
-#include <string>
-#include <vector>
-#include <map>
 
 static std::string trim(const std::string& str) {
 	size_t first = str.find_first_not_of(" \t\n\r");
@@ -54,16 +47,16 @@ static bool bracketsBalance(const std::string& str) {
             stack.push(c);
         } else if (c == '}' || c == ']') {
             if (stack.empty()) {
-                return false; // Closing bracket with no matching opening bracket
+                return (false); // Closing bracket with no matching opening bracket
             }
             if ((c == '}' &&  stack.top() == '{') || (c == ']' &&  stack.top() == '[')) {
                 stack.pop();
             } else {
-                return false; // Mismatched brackets
+                return (false); // Mismatched brackets
             }
         }
     }
-    return stack.empty(); // Check for extra opening brackets
+    return (stack.empty()); // Check for extra opening brackets
 }
 
 
@@ -92,6 +85,7 @@ std::vector<std::string>		getAllowedMethods(std::string& value, std::string& key
 }
 
 std::string	getIndex(std::string& value, std::string& key) {
+	value = trim(value);
 	if (value.empty() || value == ";") {
 		std::cerr << NO_VALUE;
 		std::cerr << PRINT_LINE_AND_FILE;
@@ -101,12 +95,12 @@ std::string	getIndex(std::string& value, std::string& key) {
 }
 
 bool	getAutoIndex(std::string& value, std::string& key) {
+	value = trim(value);
 	if (value.empty() || value == ";") {
 		std::cerr << NO_VALUE;
 		std::cerr << PRINT_LINE_AND_FILE;
 		exit(1);
 	}
-	value = trim(value);
 	if (value == "0" || value == "false" || value == "FALSE") {
 		return (false);
 	} else if (value == "1" || value == "true" || value == "TRUE") {
@@ -137,6 +131,7 @@ void	getRedirect(std::string& value, std::string& key, std::string& redirectFrom
 }
 
 std::string	getRoot(std::string& value, std::string& key) {
+	value = trim(value);
 	if (value.empty() || value == ";") {
 		std::cerr << NO_VALUE;
 		std::cerr << PRINT_LINE_AND_FILE;
@@ -146,6 +141,7 @@ std::string	getRoot(std::string& value, std::string& key) {
 }
 
 std::string getServerName(std::string& value, std::string& key) {
+	value = trim(value);
 	if (value.empty() || value == ";") {
 		std::cerr << NO_VALUE;
 		std::cerr << PRINT_LINE_AND_FILE;
@@ -155,6 +151,7 @@ std::string getServerName(std::string& value, std::string& key) {
 }
 
 int	getPort(std::string& value, std::string& key) {
+	value = trim(value);
 	if (value.empty() || value == ";") {
 		std::cerr << NO_VALUE;
 		std::cerr << PRINT_LINE_AND_FILE;
@@ -211,7 +208,6 @@ static void	parseLocationDirectives(std::string& key, std::string value, t_locat
 	size_t last = value.find_last_not_of(';');
 	if (last != value.npos && value[last + 1] == ';')
 		value = value.substr(0, last + 1);
-	std::cerr << "location_value:" << value << "\n";
 	if (key == "allowed_methods") {
 		location.allowedMethods = getAllowedMethods(value, key);
 	} else if (key == "index") {
@@ -253,7 +249,7 @@ static t_location	parseLocationBlock(std::string res) {
 
 	size_t findBrack = res.find("{");
 	if (findBrack != res.npos) {
-		location.path = res.substr(0, findBrack);
+		location.path = trim(res.substr(0, findBrack));
 		res = res.substr(findBrack + 1, -1); 
 	}
 	if (res[0] == UNKNOWN_CHAR)
@@ -298,7 +294,6 @@ static void	parseServerDirectives(std::string& key, std::string& value, t_server
 	if (last != value.npos && value[last + 1] == ';')
 		value = value.substr(0, last + 1);
 
-	std::cerr << "server_value:" << value << "\n";
 	if (key == "server_name") {
 		server.serverName = getServerName(value, key);
 	} else if (key == "listen") {
@@ -375,11 +370,12 @@ static void	splitServerBlocks(t_config& config, std::string res) {
 		}
 	}
 }
+void	printConfigStruct(t_config& config);
 
-t_config*	parseConFile(const char* file) {
+t_config	parseConFile(const char* file) {
 	t_location	currentLocation;
 	t_server	currentServer;
-	t_config	*config = new t_config;
+	t_config	config;
 	std::string	line;
 	std::string res;
 
@@ -407,26 +403,72 @@ t_config*	parseConFile(const char* file) {
 		std::cerr << PRINT_LINE_AND_FILE;
 		exit(1);
 	}
-	splitServerBlocks(*config, res);
-
-	for (size_t i = 0; i < config->servers.size(); i++) {
-		std::cout << "host: ---" << config->servers[i].host  << "---\n";
-		std::cout << "index: ---" << config->servers[i].index  << "---\n";
-		std::cout << "port: ---" << config->servers[i].port  << "---\n";
-		std::cout << "root: ---" << config->servers[i].root  << "---\n";
-		std::cout << "servername: ---" << config->servers[i].serverName << "---\n\n";
-		for (size_t j = 0; j < config->servers[i].locations.size(); j++) {
-			for (size_t k = 0; k < config->servers[i].locations[j].allowedMethods.size(); k++) {
-				std::cout << k << "		location_allowedMethods ---" << config->servers[i].locations[j].allowedMethods[k]  << "---\n";
-			}
-			std::cout << j << "	location_autoindex ---" << config->servers[i].locations[j].autoindex  << "---\n";
-			std::cout << j << "	location_index ---" << config->servers[i].locations[j].index  << "---\n";
-			std::cout << j << "	location_path ---" << config->servers[i].locations[j].path << "---\n";
-			std::cout << j << "	location_redirectFrom ---" << config->servers[i].locations[j].redirectFrom << "---\n";
-			std::cout << j << "	location_redirectTo ---" << config->servers[i].locations[j].redirectTo << "---\n";
-		}
-	}
-	
+	splitServerBlocks(config, res);
+	// printConfigStruct(config);
 	configFile.close();    
 	return (config);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+void	printConfigStruct(t_config& config) {
+	for (size_t i = 0; i < config.servers.size(); i++) {
+		for (std::map<int, std::string>::iterator it = config.servers[i].errorPages.begin(); it != config.servers[i].errorPages.end(); it++)
+			std::cout << "errorPage: ---" << it->first << ", " << it->second << "---\n";
+		std::cout << "index: ---" << config.servers[i].index  << "---\n";
+		std::cout << "port: ---" << config.servers[i].port  << "---\n";
+		std::cout << "root: ---" << config.servers[i].root  << "---\n";
+		std::cout << "servername: ---" << config.servers[i].serverName << "---\n\n";
+		for (size_t j = 0; j < config.servers[i].locations.size(); j++) {
+			for (size_t k = 0; k < config.servers[i].locations[j].allowedMethods.size(); k++) {
+				std::cout <<"	location_allowedMethods ---" << config.servers[i].locations[j].allowedMethods[k]  << "---\n";
+			}
+			std::cout << "\n";
+			std::cout << "	location_autoindex ---" << config.servers[i].locations[j].autoindex  << "---\n";
+			std::cout << "	location_index ---" << config.servers[i].locations[j].index  << "---\n";
+			std::cout << "	location_path ---" << config.servers[i].locations[j].path << "---\n";
+			std::cout << "	location_redirectFrom ---" << config.servers[i].locations[j].redirectFrom << "---\n";
+			std::cout << "	location_redirectTo ---" << config.servers[i].locations[j].redirectTo << "---\n";
+		}
+		std::cout << "\n";
+	}
 }
