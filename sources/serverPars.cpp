@@ -61,14 +61,14 @@ static bool bracketsBalance(const std::string& str) {
 
 
 /* ************************** Parse Directives ****************************** */
-std::vector<std::string>		getAllowedMethods(std::string& value) {
+std::vector<std::string>		getAllowedMethods(std::string& value, std::string& key) {
 	std::string					token;
 	std::vector<std::string>	allowedMethods;
 		
-	if (value.empty() || value == "") {
-		std::cerr << RED "Error: " GREEN "Directive has no value." << RESET_COLOR << "\n";
+	if (value.empty() || value == ";") {
+		std::cerr << RED "Error: " GREEN << key << " Directive has no value." << RESET_COLOR << "\n";
 		std::cerr << YELLOW "[file: " << __FILE__ << "]\n[line: " << __LINE__ << "]\n" RESET_COLOR;
-		// exit(1);
+		exit(1);
 	}
 	std::istringstream			toSplit(value);
 	while (std::getline(toSplit, token, ' ')) {
@@ -83,14 +83,46 @@ std::vector<std::string>		getAllowedMethods(std::string& value) {
 	return (allowedMethods);
 }
 
-std::string	getIndex(std::string& value) {
-	if (value.empty() || value == "") {
-		std::cerr << RED "Error: " GREEN "Directive has no value." << RESET_COLOR << "\n";
+std::string	getIndex(std::string& value, std::string& key) {
+	if (value.empty() || value == ";") {
+		std::cerr << RED "Error: " GREEN << key << " Directive has no value." << RESET_COLOR << "\n";
 		std::cerr << YELLOW "[file: " << __FILE__ << "]\n[line: " << __LINE__ << "]\n" RESET_COLOR;
-		// exit(1);
+		exit(1);
 	}
-
 	return (value);
+}
+
+bool	getAutoIndex(std::string& value, std::string& key) {
+	if (value.empty() || value == ";") {
+		std::cerr << RED "Error: " GREEN << key << " Directive has no value." << RESET_COLOR << "\n";
+		std::cerr << YELLOW "[file: " << __FILE__ << "]\n[line: " << __LINE__ << "]\n" RESET_COLOR;
+		exit(1);
+	}
+	value = trim(value);
+	if (value == "0" || value == "false" || value == "FALSE") {
+		return (false);
+	} else if (value == "1" || value == "true" || value == "TRUE") {
+		return (true);
+	} else {
+		std::cerr << RED "Error: " GREEN << key << " Invalid argument." << RESET_COLOR << "\n";
+		std::cerr << YELLOW "[file: " << __FILE__ << "]\n[line: " << __LINE__ << "]\n" RESET_COLOR;
+		exit(1);
+	}
+}
+
+void	getRedirect(std::string& value, std::string& key, std::string& redirectFrom, std::string& redirectTo) {
+	if (value.empty() || value == ";") {
+		std::cerr << RED "Error: " GREEN << key << " Directive has no value." << RESET_COLOR << "\n";
+		std::cerr << YELLOW "[file: " << __FILE__ << "]\n[line: " << __LINE__ << "]\n" RESET_COLOR;
+		exit(1);
+	}
+	// size_t first = value.find_first_not_of(" \t\n\r");
+	// if (first != std::string::npos)
+		// std::cout << "-" << value.substr(0, first) << "-\n";
+		std::cout << "-" << value << "-\n";
+		
+
+
 }
 
 /* ************************** Parse Location ****************************** */
@@ -100,23 +132,18 @@ static void	parseLocationDirectives(std::string& key, std::string value, t_locat
 		std::cerr << YELLOW "[file: " << __FILE__ << "]\n[line: " << __LINE__ << "]\n" RESET_COLOR;
 		exit(1);
 	}
-	// these is not working !!!!!!!!!!!!!!!!!!!!!!
-	// size_t last = value.find_last_not_of(';');
-	// if (last != value.npos && value[last + 1] == ';') {
-
-	// 	value = value.substr(0, last + 1);
-	// }
-		std::cout << "-" << value << "-\n";
-	// std::cout << "====> -" << value << "-\n";
+	size_t last = value.find_last_not_of(';');
+	if (last != value.npos && value[last + 1] == ';')
+		value = value.substr(0, last + 1);
 	std::cerr << "location_value:" << value << "\n";
 	if (key == "allowed_methods") {
-		location.allowedMethods = getAllowedMethods(value);
+		location.allowedMethods = getAllowedMethods(value, key);
 	} else if (key == "index") {
-		location.index = getIndex(value);
+		location.index = getIndex(value, key);
 	} else if (key == "autoindex") {
-		location.autoindex = atoi(value.c_str());
+		location.autoindex = getAutoIndex(value, key);
 	} else if (key == "redirect") {
-		// location.redirect = atoi(value.c_str());
+		getRedirect(value, key, location.redirectFrom, location.redirectTo);
 	} else if (key == "root") {
 		// location.root = value;;
 	} else {
