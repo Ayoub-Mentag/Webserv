@@ -379,11 +379,12 @@ static void	splitServerBlocks(t_config& config, std::string res) {
 		}
 	}
 }
+void	printConfigStruct(t_config& config);
 
-t_config*	parseConFile(const char* file) {
+t_config	parseConFile(const char* file) {
 	t_location	currentLocation;
 	t_server	currentServer;
-	t_config	*config = new t_config;
+	t_config	config;
 	std::string	line;
 	std::string res;
 
@@ -411,25 +412,72 @@ t_config*	parseConFile(const char* file) {
 		std::cerr << PRINT_LINE_AND_FILE;
 		exit(1);
 	}
-	splitServerBlocks(*config, res);
-
-	for (size_t i = 0; i < config->servers.size(); i++) {
-		std::cout << "index: ---" << config->servers[i].index  << "---\n";
-		std::cout << "port: ---" << config->servers[i].port  << "---\n";
-		std::cout << "root: ---" << config->servers[i].root  << "---\n";
-		std::cout << "servername: ---" << config->servers[i].serverName << "---\n\n";
-		for (size_t j = 0; j < config->servers[i].locations.size(); j++) {
-			for (size_t k = 0; k < config->servers[i].locations[j].allowedMethods.size(); k++) {
-				std::cout << k << "		location_allowedMethods ---" << config->servers[i].locations[j].allowedMethods[k]  << "---\n";
-			}
-			std::cout << j << "	location_autoindex ---" << config->servers[i].locations[j].autoindex  << "---\n";
-			std::cout << j << "	location_index ---" << config->servers[i].locations[j].index  << "---\n";
-			std::cout << j << "	location_path ---" << config->servers[i].locations[j].path << "---\n";
-			std::cout << j << "	location_redirectFrom ---" << config->servers[i].locations[j].redirectFrom << "---\n";
-			std::cout << j << "	location_redirectTo ---" << config->servers[i].locations[j].redirectTo << "---\n";
-		}
-	}
-	
+	splitServerBlocks(config, res);
+	printConfigStruct(config);
 	configFile.close();    
 	return (config);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+void	printConfigStruct(t_config& config) {
+	for (size_t i = 0; i < config.servers.size(); i++) {
+		for (std::map<int, std::string>::iterator it = config.servers[i].errorPages.begin(); it != config.servers[i].errorPages.end(); it++)
+			std::cout << "errorPage: ---" << it->first << ", " << it->second << "---\n";
+		std::cout << "index: ---" << config.servers[i].index  << "---\n";
+		std::cout << "port: ---" << config.servers[i].port  << "---\n";
+		std::cout << "root: ---" << config.servers[i].root  << "---\n";
+		std::cout << "servername: ---" << config.servers[i].serverName << "---\n\n";
+		for (size_t j = 0; j < config.servers[i].locations.size(); j++) {
+			for (size_t k = 0; k < config.servers[i].locations[j].allowedMethods.size(); k++) {
+				std::cout <<"	location_allowedMethods ---" << config.servers[i].locations[j].allowedMethods[k]  << "---\n";
+			}
+			std::cout << "\n";
+			std::cout << "	location_autoindex ---" << config.servers[i].locations[j].autoindex  << "---\n";
+			std::cout << "	location_index ---" << config.servers[i].locations[j].index  << "---\n";
+			std::cout << "	location_path ---" << config.servers[i].locations[j].path << "---\n";
+			std::cout << "	location_redirectFrom ---" << config.servers[i].locations[j].redirectFrom << "---\n";
+			std::cout << "	location_redirectTo ---" << config.servers[i].locations[j].redirectTo << "---\n";
+		}
+		std::cout << "\n";
+	}
 }

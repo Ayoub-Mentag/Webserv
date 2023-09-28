@@ -44,5 +44,5 @@ typedef struct ConfigSettings {
 	std::vector<t_server>	servers;
 }							t_config;
 
-t_config*	parseConFile(const char* file);
+t_config	parseConFile(const char* file);
 void    	usage(const char* programName);

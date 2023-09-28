@@ -9,8 +9,7 @@ int	main(int argc, char* argv[]) {
 	argv[1] = (argc == 2) ? argv[1] : (char*)DEFAULT_CONFIG_FILE;
 
 	if (argc <= 2) {
-		t_config* config = parseConFile(argv[1]);
-		delete config;
+		t_config config = parseConFile(argv[1]);
 	} else {
 		usage(argv[0]);
 	}
