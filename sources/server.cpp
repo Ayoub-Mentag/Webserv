@@ -153,7 +153,7 @@ class Socket {
 						bzero(buffer, MAX_LEN);
 						read(i, buffer, MAX_LEN);
 						request = buffer;
-						// setRequest(client, request);
+						setRequest(client, request);
 						std::cout << buffer << std::endl;
 						sayHello(i);
 						close(i);
