@@ -15,6 +15,7 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <sstream>
 #include <vector>
 #include <map>
 
@@ -46,3 +47,15 @@ typedef struct ConfigSettings {
 
 t_config	parseConFile(const char* file);
 void    	usage(const char* programName);
+
+
+
+typedef struct Request {
+    std::string	method;
+    std::string	path;
+    std::string	httpVersion;
+    std::string	serverName;
+    int			port;
+}				t_request;
+
+void 	requestParse(t_request& request, std::string buffer);
