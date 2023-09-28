@@ -1,23 +1,19 @@
 #include "serverPars.hpp"
 
+# define INVALID_ARGUMENT		RED "Error: " GREEN << key << " Invalid argument." << RESET_COLOR << "\n"
+# define NO_VALUE				RED "Error: " GREEN << key << " Directive has no value." << RESET_COLOR << "\n"
+# define PRINT_LINE_AND_FILE	YELLOW "[file: " << __FILE__ << "]\n[line: " << __LINE__ << "]\n" RESET_COLOR
+# define INVALID_METHOD			RED "Error: " GREEN "Invalid method." << RESET_COLOR << "\n"
+# define INVALID_LOC_DIRECTIVE	RED "Error: " GREEN "Invalid location Directive." << RESET_COLOR << "\n"
+# define EXPECTED_SEM			RED "Error: " GREEN "expected ';' at end of declaration." << RESET_COLOR << "\n"
+# define INVALID_DIRECTIVE		RED "Error: " GREEN "Invalid Directive." << RESET_COLOR << "\n"
+
 void	usage(const char* programName) {
 	std::cerr << GREEN "Usage: " RED << programName << " [config_file_path]" << RESET_COLOR << std::endl;
-	std::cerr << YELLOW "[file: " << __FILE__ << "]\n[line: " << __LINE__ << "]\n" RESET_COLOR;
-	// exit(1);
+	std::cerr << PRINT_LINE_AND_FILE;
+	exit(1);
 }
 
-// std::vector<std::string> split(const std::string& str) {
-// 	std::vector<std::string> tokens;
-// 	std::istringstream tokenStream(str);
-// 	std::string token;
-
-// 	std::cerr << str << "\n";
-// 	while (tokenStream >> token) {
-// 		tokens.push_back(token);
-// 	}
-// 	std::cout << token << " <=====\n";
-// 	return tokens;
-// }
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -60,8 +56,7 @@ static bool bracketsBalance(const std::string& str) {
             if (stack.empty()) {
                 return false; // Closing bracket with no matching opening bracket
             }
-            char top = stack.top();
-            if ((c == '}' && top == '{') || (c == ']' && top == '[')) {
+            if ((c == '}' &&  stack.top() == '{') || (c == ']' &&  stack.top() == '[')) {
                 stack.pop();
             } else {
                 return false; // Mismatched brackets
@@ -73,28 +68,163 @@ static bool bracketsBalance(const std::string& str) {
 
 
 
+/* ************************** Parse Directives ****************************** */
+std::vector<std::string>		getAllowedMethods(std::string& value, std::string& key) {
+	std::string					token;
+	std::vector<std::string>	allowedMethods;
+		
+	if (value.empty() || value == ";") {
+		std::cerr << NO_VALUE;
+		std::cerr << PRINT_LINE_AND_FILE;
+		exit(1);
+	}
+	std::istringstream			toSplit(value);
+	while (std::getline(toSplit, token, ' ')) {
+		if (token == "") continue;
+		if (token != "GET" && token != "POST" && token != "DELETE") {
+			std::cerr << INVALID_METHOD;
+			std::cerr << PRINT_LINE_AND_FILE;
+			exit(1);
+		}
+		allowedMethods.push_back(token);
+	}
+	return (allowedMethods);
+}
+
+std::string	getIndex(std::string& value, std::string& key) {
+	if (value.empty() || value == ";") {
+		std::cerr << NO_VALUE;
+		std::cerr << PRINT_LINE_AND_FILE;
+		exit(1);
+	}
+	return (value);
+}
+
+bool	getAutoIndex(std::string& value, std::string& key) {
+	if (value.empty() || value == ";") {
+		std::cerr << NO_VALUE;
+		std::cerr << PRINT_LINE_AND_FILE;
+		exit(1);
+	}
+	value = trim(value);
+	if (value == "0" || value == "false" || value == "FALSE") {
+		return (false);
+	} else if (value == "1" || value == "true" || value == "TRUE") {
+		return (true);
+	} else {
+		std::cerr << INVALID_ARGUMENT;
+		std::cerr << PRINT_LINE_AND_FILE;
+		exit(1);
+	}
+}
+
+void	getRedirect(std::string& value, std::string& key, std::string& redirectFrom, std::string& redirectTo) {
+	if (value.empty() || value == ";") {
+		std::cerr << NO_VALUE;
+		std::cerr << PRINT_LINE_AND_FILE;
+		exit(1);
+	}
+	size_t first = value.find_first_of(",");
+	if (first != std::string::npos) {
+		redirectFrom = trim(value.substr(0, first));
+		redirectTo = trim(value.substr(first + 1, -1));
+	}
+	if (redirectFrom == "" || redirectTo == "") {
+		std::cerr << INVALID_ARGUMENT;
+		std::cerr << PRINT_LINE_AND_FILE;
+		exit(1);
+	}
+}
+
+std::string	getRoot(std::string& value, std::string& key) {
+	if (value.empty() || value == ";") {
+		std::cerr << NO_VALUE;
+		std::cerr << PRINT_LINE_AND_FILE;
+		exit(1);
+	}
+	return (value);
+}
+
+std::string getServerName(std::string& value, std::string& key) {
+	if (value.empty() || value == ";") {
+		std::cerr << NO_VALUE;
+		std::cerr << PRINT_LINE_AND_FILE;
+		exit(1);
+	}
+	return (value);
+}
+
+int	getPort(std::string& value, std::string& key) {
+	if (value.empty() || value == ";") {
+		std::cerr << NO_VALUE;
+		std::cerr << PRINT_LINE_AND_FILE;
+		exit(1);
+	}
+	if (value.find_first_not_of("0123456789") != value.npos) {
+		std::cerr << INVALID_ARGUMENT;
+		std::cerr << PRINT_LINE_AND_FILE;
+		exit(1);
+	}
+	return (atoi(value.c_str()));
+}
+std::map<int, std::string>	getErrorPages(std::string& value, std::string& key) {
+	std::map<int, std::string> errorPages;
+	if (value.empty() || value == ";") {
+		std::cerr << NO_VALUE;
+		std::cerr << PRINT_LINE_AND_FILE;
+		exit(1);
+	}
+	std::string			token;
+	std::istringstream	em(value);
+	while (std::getline(em, token, '&')) {
+		token = trim(token);
+		size_t first = token.find_first_of(",");
+		if (first == std::string::npos) {
+			std::cerr << INVALID_ARGUMENT;
+			std::cerr << PRINT_LINE_AND_FILE;
+			exit(1);
+		}
+		std::string	errorIndex = trim(token.substr(0, first));
+		std::string errorValue = trim(token.substr(first + 1, -1));
+		if (errorIndex == "" || errorValue == ""
+			|| errorIndex.find_first_not_of("0123456789") != value.npos) {
+			std::cerr << INVALID_ARGUMENT;
+			std::cerr << PRINT_LINE_AND_FILE;
+			exit(1);
+		}
+		errorPages[std::atoi(errorIndex.c_str())] = errorValue;
+	}
+	
+	return (errorPages);
+}
+
+
+
 
 /* ************************** Parse Location ****************************** */
-static void	parseLocationDirectives(std::string& key, std::string& value, t_location& location) {
+static void	parseLocationDirectives(std::string& key, std::string value, t_location& location) {
 	if (value[value.length() - 1] != ';') {
-		std::cerr << RED "Error: " GREEN "expected ';' at end of declaration." << RESET_COLOR << "\n";
-		std::cerr << YELLOW "[file: " << __FILE__ << "]\n[line: " << __LINE__ << "]\n" RESET_COLOR;
-		// exit(1);
+		std::cerr << EXPECTED_SEM;
+		std::cerr << PRINT_LINE_AND_FILE;
+		exit(1);
 	}
-	// std::cerr << "location_value:" << value << "\n";
+	size_t last = value.find_last_not_of(';');
+	if (last != value.npos && value[last + 1] == ';')
+		value = value.substr(0, last + 1);
+	std::cerr << "location_value:" << value << "\n";
 	if (key == "allowed_methods") {
-		// location.allowedMethods = value;
+		location.allowedMethods = getAllowedMethods(value, key);
 	} else if (key == "index") {
-		location.index = value;
+		location.index = getIndex(value, key);
 	} else if (key == "autoindex") {
-		location.autoindex = atoi(value.c_str());
+		location.autoindex = getAutoIndex(value, key);
 	} else if (key == "redirect") {
-		// location.redirect = atoi(value.c_str());
+		getRedirect(value, key, location.redirectFrom, location.redirectTo);
 	} else if (key == "root") {
-		location.root = value;;
+		location.root = getRoot(value, key);
 	} else {
-		std::cerr << RED "Error: " GREEN "Invalid location Directive." << RESET_COLOR << "\n";
-		std::cerr << YELLOW "[file: " << __FILE__ << "]\n[line: " << __LINE__ << "]\n" RESET_COLOR;
+		std::cerr << INVALID_LOC_DIRECTIVE;
+		std::cerr << PRINT_LINE_AND_FILE;
 		exit(1);
 	}
 }
@@ -116,34 +246,26 @@ static void	fillLocationStruct(t_location& location, std::vector<std::string>& t
 	}
 }
 
-static t_location*	parseLocationBlock(std::string res) {
+static t_location	parseLocationBlock(std::string res) {
 	std::vector<std::string>	locationTokens;
-	t_location					*location = new t_location;
+	t_location					location;
 	std::string					token;
 
 	size_t findBrack = res.find("{");
 	if (findBrack != res.npos) {
-		location->path = res.substr(0, findBrack);
+		location.path = res.substr(0, findBrack);
 		res = res.substr(findBrack + 1, -1); 
 	}
-	// size_t last = res.find_last_not_of("}");
-	// if (last != res.npos && res[last] != ';') {
-	// 	// std::cout << "res: " << res[last] << "\n";
-	// 	std::cerr << RED "Error: " GREEN "expected ';' at end of declaration." << RESET_COLOR << "\n";
-	// 	std::cerr << YELLOW "[file: " << __FILE__ << "]\n[line: " << __LINE__ << "]\n" RESET_COLOR;
-		// exit(1);
-	// }
 	if (res[0] == UNKNOWN_CHAR)
 		res[0] = ' ';
 	std::istringstream			tokenStream(res);
-	// std::cout << "istringstream:" << res << "\n";
 	while (std::getline(tokenStream, token, UNKNOWN_CHAR)) {
 		if (token[0] == '}' && token[token.length() - 1] == '}') {
 			continue ;
 		}
 		locationTokens.push_back(token);
 	}
-	fillLocationStruct(*location, locationTokens);
+	fillLocationStruct(location, locationTokens);
 	return (location);
 }
 
@@ -155,15 +277,11 @@ static void	splitLocationBlocks(t_server& server, std::string res) {
 			res = res.substr(9, std::string::npos);
 			fserv = res.find("location");
 			if (fserv != std::string::npos) {
-				t_location *tmp = parseLocationBlock(res.substr(0, fserv));
-				server.locations.push_back(*tmp);
-				delete tmp;
+				server.locations.push_back(parseLocationBlock(res.substr(0, fserv)));
 				res = res.substr(fserv, std::string::npos);
 			}
 		} else if (fserv == std::string::npos && res.size()) {
-			t_location *tmp = parseLocationBlock(res);
-			server.locations.push_back(*tmp);
-			delete tmp;
+			server.locations.push_back(parseLocationBlock(res));
 			break ;
 		}
 	}
@@ -172,24 +290,27 @@ static void	splitLocationBlocks(t_server& server, std::string res) {
 // /* **************************** Parse Server ****************************** */
 static void	parseServerDirectives(std::string& key, std::string& value, t_server& server) {
 	if (value[value.length() - 1] != ';') {
-		std::cerr << RED "Error: " GREEN "expected ';' at end of declaration." << RESET_COLOR << "\n";
-		std::cerr << YELLOW "[file: " << __FILE__ << "]\n[line: " << __LINE__ << "]\n" RESET_COLOR;
+		std::cerr << EXPECTED_SEM;
+		std::cerr << PRINT_LINE_AND_FILE;
 		exit(1);
 	}
-	// std::cerr << "server_value:" << value << "\n";
+	size_t last = value.find_last_not_of(';');
+	if (last != value.npos && value[last + 1] == ';')
+		value = value.substr(0, last + 1);
+
+	std::cerr << "server_value:" << value << "\n";
 	if (key == "server_name") {
-		server.serverName = value;
+		server.serverName = getServerName(value, key);
 	} else if (key == "listen") {
-		server.port = atoi(value.c_str());
+		server.port = getPort(value, key);
 	} else if (key == "root") {
-		server.root = value;
+		server.root = getRoot(value, key);
 	} else if (key == "index") {
-		server.index = value;
+		server.index = getIndex(value, key);
 	} else if (key == "error_page") {
-	
+		server.errorPages = getErrorPages(value, key);
 	} else {
-		std::cerr << RED "Error: " GREEN "Invalid Directive." << RESET_COLOR << "\n";
-		std::cerr << YELLOW "[file: " << __FILE__ << "]\n[line: " << __LINE__ << "]\n" RESET_COLOR;
+		std::cerr << INVALID_DIRECTIVE << PRINT_LINE_AND_FILE;
 		exit(1);
 	}
 }
@@ -209,20 +330,14 @@ static void	fillServerStruct(t_server& server, std::vector<std::string>& tokens)
 	}
 }
 
-static t_server*	parseServerBlock(std::string res) {
+static t_server	parseServerBlock(std::string res) {
 	std::vector<std::string>	serverTokens;
-	t_server					*server = new t_server;
+	t_server					server;
 
 	size_t findBrack = res.find("{");
 	if (findBrack != res.npos) {
 		res = res.substr(findBrack + 1, -1);
 	}
-	// size_t last = res.find_last_not_of("}");
-	// if (last != res.npos && res[last] != ';') {
-	// 	std::cerr << RED "Error: " GREEN "expected ';' at end of declaration." << RESET_COLOR << "\n";
-	// 	std::cerr << YELLOW "[file: " << __FILE__ << "]\n[line: " << __LINE__ << "]\n" RESET_COLOR;
-		// exit(1);
-	// }
 	if (res[0] == UNKNOWN_CHAR)
 		res[0] = ' ';
 	std::istringstream			tokenStream(res);
@@ -236,10 +351,10 @@ static t_server*	parseServerBlock(std::string res) {
 		}
 		serverTokens.push_back(token);  
 	}
-	fillServerStruct(*server, serverTokens);
+	fillServerStruct(server, serverTokens);
 	size_t	floc = res.find("location");
 	if (floc != res.npos)
-		splitLocationBlocks(*server, res.substr(floc, -1));
+		splitLocationBlocks(server, res.substr(floc, -1));
 	return (server);
 }
 
@@ -251,15 +366,11 @@ static void	splitServerBlocks(t_config& config, std::string res) {
 			res = res.substr(6, std::string::npos);
 			fserv = res.find("Server");
 			if (fserv != std::string::npos) {
-				t_server *tmp = parseServerBlock(res.substr(0, fserv));
-				config.servers.push_back(*tmp);
-				delete tmp;
+				config.servers.push_back(parseServerBlock(res.substr(0, fserv)));
 				res = res.substr(fserv, std::string::npos);
 			}
 		} else if (fserv == std::string::npos && res.size()) {
-			t_server *tmp = parseServerBlock(res);
-			config.servers.push_back(*tmp);
-			delete tmp;
+			config.servers.push_back(parseServerBlock(res));
 			break ;
 		}
 	}
@@ -275,7 +386,7 @@ t_config*	parseConFile(const char* file) {
 	std::ifstream configFile(file);
 	if (!configFile.is_open()) {
 		std::cerr << RED "Error:" GREEN "Failed to open the configuration file." RESET_COLOR << std::endl;
-		std::cerr << YELLOW "[file: " << __FILE__ << "]\n[line: " << __LINE__ << "]\n" RESET_COLOR;
+		std::cerr << PRINT_LINE_AND_FILE;
 		exit(1);
 	}
 
@@ -293,27 +404,28 @@ t_config*	parseConFile(const char* file) {
 	}
 	if (!bracketsBalance(res)) {
 		std::cerr << RED "Error: " GREEN "Unclosed bracket in configuration file." RESET_COLOR<< std::endl;
-		std::cerr << YELLOW "[file: " << __FILE__ << "]\n[line: " << __LINE__ << "]\n" RESET_COLOR;
+		std::cerr << PRINT_LINE_AND_FILE;
 		exit(1);
 	}
-	// std::cout << "res:" << res;
 	splitServerBlocks(*config, res);
 
-	// for (size_t i = 0; i < config->servers.size(); i++) {
-	// 	std::cerr << "host:" << config->servers[i].host  << "\n";
-	// 	std::cerr << "index:" << config->servers[i].index  << "\n";
-	// 	std::cerr << "port:" << config->servers[i].port  << "\n";
-	// 	std::cerr << "root:" << config->servers[i].root  << "\n";
-	// 	std::cerr << "servername:" << config->servers[i].serverName << "\n";
-	// 	for (size_t j = 0; j < config->servers[i].locations.size(); j++) {
-	// 		// std::cerr << j << "	location_allowedMethods			" << config->servers[i].locations[j].allowedMethods  << "\n";
-	// 		std::cerr << j << "	location_autoindex			" << config->servers[i].locations[j].autoindex  << "\n";
-	// 		std::cerr << j << "	location_index			" << config->servers[i].locations[j].index  << "\n";
-	// 		std::cerr << j << "	location_path			" << config->servers[i].locations[j].path << "\n";
-	// 		std::cerr << j << "	location_redirectFrom			" << config->servers[i].locations[j].redirectFrom << "\n";
-	// 		std::cerr << j << "	location_redirectTo			" << config->servers[i].locations[j].redirectTo << "\n";
-	// 	}
-	// }
+	for (size_t i = 0; i < config->servers.size(); i++) {
+		std::cout << "host: ---" << config->servers[i].host  << "---\n";
+		std::cout << "index: ---" << config->servers[i].index  << "---\n";
+		std::cout << "port: ---" << config->servers[i].port  << "---\n";
+		std::cout << "root: ---" << config->servers[i].root  << "---\n";
+		std::cout << "servername: ---" << config->servers[i].serverName << "---\n\n";
+		for (size_t j = 0; j < config->servers[i].locations.size(); j++) {
+			for (size_t k = 0; k < config->servers[i].locations[j].allowedMethods.size(); k++) {
+				std::cout << k << "		location_allowedMethods ---" << config->servers[i].locations[j].allowedMethods[k]  << "---\n";
+			}
+			std::cout << j << "	location_autoindex ---" << config->servers[i].locations[j].autoindex  << "---\n";
+			std::cout << j << "	location_index ---" << config->servers[i].locations[j].index  << "---\n";
+			std::cout << j << "	location_path ---" << config->servers[i].locations[j].path << "---\n";
+			std::cout << j << "	location_redirectFrom ---" << config->servers[i].locations[j].redirectFrom << "---\n";
+			std::cout << j << "	location_redirectTo ---" << config->servers[i].locations[j].redirectTo << "---\n";
+		}
+	}
 	
 	configFile.close();    
 	return (config);
