@@ -31,6 +31,7 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <sstream>
 
 #define UNKNOWN_CHAR (char)200
 
@@ -39,7 +40,7 @@ typedef struct Request {
     std::string path;
     std::string httpVersion;
     std::string serverName;
-    
+    int         port;
 } t_request;
 
 typedef struct LocationDirectives {
@@ -56,7 +57,6 @@ typedef struct ServerDirectives {
     int								port;
     // int					    		clientMaxBodySize;
     std::map<int, std::string> 		errorPages;
-    std::string						host;
     std::string						serverName;
     std::string						root;
     std::string						index;

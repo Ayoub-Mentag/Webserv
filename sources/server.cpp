@@ -11,7 +11,10 @@ void sendFile(int fd, std::string fileName)
 
 	inFile.open(fileName);
 	if (inFile.fail())
-		throw std::runtime_error(fileName + " does not exist");
+	{
+		// throw std::runtime_error(fileName + " does not exist");
+		sendFile(fd, "error.html");
+	}	
 
 	while (std::getline(inFile, send))
 	{
@@ -40,14 +43,6 @@ std::string readFromFd(int fd)
 	str.append(buffer);
 	return str;
 }
-
-class Request 
-{
-	public: 
-		std::string method;
-		int port;
-		std::string path;
-};
 
 class Socket {
 	private:
@@ -148,14 +143,20 @@ class Socket {
 
 					else
 					{
+						std::string tmp;
+						Request r;
 						char buffer[MAX_LEN];
-						std::string request;
 						bzero(buffer, MAX_LEN);
 						read(i, buffer, MAX_LEN);
-						request = buffer;
-						setRequest(client, request);
-						std::cout << buffer << std::endl;
-						sayHello(i);
+						tmp = buffer;
+						std::istringstream iss(tmp);
+						std::getline(iss, tmp, ' ');
+						r.method = tmp;
+						std::getline(iss, tmp, ' ');
+						r.path = tmp;
+						std::getline(iss, tmp, ' ');
+						r.httpVersion = tmp;
+						response(i, r);
 						close(i);
 						FD_CLR(i, &current_sockets);
 					}
@@ -164,35 +165,16 @@ class Socket {
 			}
 		}
 
-		void setRequest(Client &client, std::string request)
+		void response(int fd, Request &r)
 		{
-			int j = 0;
-			std::string path = "";
-			int index = request.find("GET");
-			client.request->method = "GET";
-			for (int i = index; i < (int)request.length(); i++)
-			{
-				path[i] += request[i];
-			}
-			client.request->path = path;
-			client.request->port = PORT;
-
-			std::cout << "Method " << client.request->method << " ; path " << client.request->path << " ; port " << client.request->method << std::endl;
-		}
-
-
-		void sayHello(int fd)
-		{
-			write(fd, "HTTP/1.1 200 OK\r\n" , 17);
-			write(fd, "Content-Type: text/html\r\n" , 25);
-			write(fd, "Content-Length: 1024\r\n", 22);
-			write(fd, "\r\n" , 2);
-			
-			sendFile(fd, "index.html");
+			std::string resp = "HTTPVERSION STATUS OK\r\nContent-type: text/html\r\nContent-length: 1024\r\n\r\n";
+			resp.replace(0, r.httpVersion.length(), r.httpVersion);
+			resp.replace(12, 3, "200");
+			std::cout << resp << std::endl;
+			write(fd, resp.c_str(), resp.length());
+			sendFile(fd, "./" + r.path);
 			// write(fd, "Hello txt\r\n", 11);
 		}
-
-
 };
 
 
