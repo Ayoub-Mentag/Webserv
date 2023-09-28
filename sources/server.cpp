@@ -41,6 +41,14 @@ std::string readFromFd(int fd)
 	return str;
 }
 
+class Request 
+{
+	public: 
+		std::string method;
+		int port;
+		std::string path;
+};
+
 class Socket {
 	private:
 		void bindServerWithAddress()
@@ -61,6 +69,18 @@ class Socket {
 		}
 
 	public : 
+		class Client 
+		{
+			public :
+				Request *request;
+				struct sockaddr_in clientAddr;
+				socklen_t clientAddrLen;
+				int clientFd;
+				Client() {
+					clientFd = -1; 
+				}
+		};
+
 		int serverSocketfd;
 		struct sockaddr_in serverAddr;
 		fd_set current_sockets;
@@ -72,7 +92,11 @@ class Socket {
 				perror("socket() : ");
 				throw std::runtime_error("socket()");
 			}
-			std::cout << serverSocketfd << std::endl;
+			int opt = 1;
+			if (setsockopt(this->serverSocketfd, SOL_SOCKET,  SO_REUSEPORT , &opt, sizeof(opt))) {
+    		    perror("setsockopt");
+    		    exit(EXIT_FAILURE);
+    		}
 			serverAddr.sin_family = AF_INET;
 			serverAddr.sin_addr.s_addr = INADDR_ANY;
 			serverAddr.sin_port = htons(PORT);
@@ -124,8 +148,13 @@ class Socket {
 
 					else
 					{
-						read(i, client.buffer, MAX_LEN);
-						std::cout << client.buffer << std::endl;
+						char buffer[MAX_LEN];
+						std::string request;
+						bzero(buffer, MAX_LEN);
+						read(i, buffer, MAX_LEN);
+						request = buffer;
+						// setRequest(client, request);
+						std::cout << buffer << std::endl;
 						sayHello(i);
 						close(i);
 						FD_CLR(i, &current_sockets);
@@ -135,28 +164,35 @@ class Socket {
 			}
 		}
 
-		
+		void setRequest(Client &client, std::string request)
+		{
+			int j = 0;
+			std::string path = "";
+			int index = request.find("GET");
+			client.request->method = "GET";
+			for (int i = index; i < (int)request.length(); i++)
+			{
+				path[i] += request[i];
+			}
+			client.request->path = path;
+			client.request->port = PORT;
+
+			std::cout << "Method " << client.request->method << " ; path " << client.request->path << " ; port " << client.request->method << std::endl;
+		}
+
 
 		void sayHello(int fd)
 		{
-			write(fd, "HTTP/1.1 201 OK\r\nContent-length: 1024\r\n\r\n", 39);
+			write(fd, "HTTP/1.1 200 OK\r\n" , 17);
+			write(fd, "Content-Type: text/html\r\n" , 25);
+			write(fd, "Content-Length: 1024\r\n", 22);
+			write(fd, "\r\n" , 2);
+			
 			sendFile(fd, "index.html");
 			// write(fd, "Hello txt\r\n", 11);
 		}
 
 
-		class Client 
-		{
-			public :
-				char buffer[MAX_LEN];
-				struct sockaddr_in clientAddr;
-				socklen_t clientAddrLen;
-				int clientFd;
-				Client() {
-					clientFd = -1;
-					bzero(buffer, MAX_LEN);
-				}
-		};
 };
 
 
