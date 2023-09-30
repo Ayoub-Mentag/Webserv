@@ -370,7 +370,6 @@ static void	splitServerBlocks(t_config& config, std::string res) {
 		}
 	}
 }
-void	printConfigStruct(t_config& config);
 
 t_config	parseConFile(const char* file) {
 	t_location	currentLocation;
@@ -404,7 +403,6 @@ t_config	parseConFile(const char* file) {
 		exit(1);
 	}
 	splitServerBlocks(config, res);
-	// printConfigStruct(config);
 	configFile.close();    
 	return (config);
 }
