@@ -1,7 +1,7 @@
 CXX										= c++
 CXXFLAGS								= -std=c++98 -Wall -Wextra -Werror 
 NAME									= server
-SOURCES									= $(addprefix $(SRC_DIR)/, main.cpp server.cpp)
+SOURCES									= $(addprefix $(SRC_DIR)/, server.cpp)
 OBJECTS									= $(SOURCES:$(SRC_DIR)/%.cpp=$(OBJ_DIR)/%.o)
 INCLUDES                                = $(addprefix $(INC_DIR)/, server.hpp)
 OBJ_DIR									= ./objects
