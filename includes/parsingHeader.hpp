@@ -22,23 +22,32 @@
 #define UNKNOWN_CHAR (char)200
 
 typedef struct LocationDirectives {
-    bool						autoindex;
-    std::string					path;
-    std::string					root;
-    std::string					index;
-    std::string					redirectFrom;
-    std::string 				redirectTo;
-    std::vector<std::string>	allowedMethods;
+	bool						autoindex;
+	std::string					path;
+	std::string					root;
+	std::string					index;
+	std::string					redirectFrom;
+	std::string 				redirectTo;
+	std::vector<std::string>	allowedMethods;
+
+	// NEW
+	bool						enableUpload;
+	std::string					cgi;
+	std::string					cgiPass;
+	std::string					uploadPath;
 }								t_location;
 
 typedef struct ServerDirectives {
-    int								port;
-    // int					    		clientMaxBodySize;
-    std::map<int, std::string> 		errorPages;
-    std::string						serverName;
-    std::string						root;
-    std::string						index;
-    std::vector<t_location>     	locations;
+	int								port;
+	std::map<int, std::string> 		errorPages;
+	std::string						serverName;
+	std::string						root;
+	std::string						index;
+	std::vector<t_location>     	locations;
+
+	// NEW
+	int								clientMaxBodySize;
+	std::string						defaultServer;
 }									t_server;
 
 typedef struct ConfigSettings {
@@ -51,11 +60,11 @@ void    	usage(const char* programName);
 
 
 typedef struct Request {
-    std::string	method;
-    std::string	path;
-    std::string	httpVersion;
-    std::string	serverName;
-    int			port;
+	std::string	method;
+	std::string	path;
+	std::string	httpVersion;
+	std::string	serverName;
+	int			port;
 }				t_request;
 
 void 	requestParse(t_request& request, std::string buffer);

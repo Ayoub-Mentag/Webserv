@@ -4,93 +4,52 @@
 // 	system("leaks webservParsing");
 // }
 
-// int	main(int argc, char* argv[]) {
+
+void	printConfigStruct(t_config& config) {
+	for (size_t i = 0; i < config.servers.size(); i++) {
+		for (std::map<int, std::string>::iterator it = config.servers[i].errorPages.begin(); it != config.servers[i].errorPages.end(); it++)
+			std::cout << "errorPage: ---" << it->first << ", " << it->second << "---\n";
+		std::cout << "index: ---" << config.servers[i].index  << "---\n";
+		std::cout << "port: ---" << config.servers[i].port  << "---\n";
+		std::cout << "root: ---" << config.servers[i].root  << "---\n";
+		std::cout << "servername: ---" << config.servers[i].serverName << "---\n";
+		std::cout << "clientMaxBodySize: ---" << config.servers[i].clientMaxBodySize << "---\n\n";
+		for (size_t j = 0; j < config.servers[i].locations.size(); j++) {
+			for (size_t k = 0; k < config.servers[i].locations[j].allowedMethods.size(); k++) {
+				std::cout <<"	location_allowedMethods ---" << config.servers[i].locations[j].allowedMethods[k]  << "---\n";
+			}
+			std::cout << "\n";
+			std::cout << "	location_autoindex ---" << config.servers[i].locations[j].autoindex  << "---\n";
+			std::cout << "	location_index ---" << config.servers[i].locations[j].index  << "---\n";
+			std::cout << "	location_path ---" << config.servers[i].locations[j].path << "---\n";
+			std::cout << "	location_redirectFrom ---" << config.servers[i].locations[j].redirectFrom << "---\n";
+			std::cout << "	location_redirectTo ---" << config.servers[i].locations[j].redirectTo << "---\n";
+		}
+		std::cout << "\n";
+	}
+}
+
+int	main(int argc, char* argv[]) {
 	// atexit(func);
-	// argv[1] = (argc == 2) ? argv[1] : (char*)DEFAULT_CONFIG_FILE;
+	argv[1] = (argc == 2) ? argv[1] : (char*)DEFAULT_CONFIG_FILE;
 
-	// if (argc <= 2) {
-	// 	t_config config = parseConFile(argv[1]);
-	// 	t_request request;
-	// 	std::ifstream reqOutfile("reqOut");
-	// 	if (!reqOutfile.is_open()) {
-	// 		std::cerr << "Error opening HTML file" << std::endl;
-	// 		return 1;
-	// 	}
+	if (argc <= 2) {
+		t_config config = parseConFile(argv[1]);
+		printConfigStruct(config);
+		// t_request request;
+		// std::ifstream reqOutfile("reqOut");
+		// if (!reqOutfile.is_open()) {
+		// 	std::cerr << "Error opening HTML file" << std::endl;
+		// 	return 1;
+		// }
 
-	// 	std::ostringstream buffer;
-	// 	buffer << reqOutfile.rdbuf();
-	// 	reqOutfile.close();
-	// 	std::string	buf = buffer.str();
-	// 	requestParse(request, buf);
-	// } else {
-	// 	usage(argv[0]);
-	// }
-	// return (0);
-// }
-
-
-#include <sys/socket.h> // for socket()
-#include <netinet/in.h> // for sockaddr_in
-#include <unistd.h>
-#include <poll.h>
-#include <fcntl.h>
-#include <sys/event.h>
-
-# define PORT 8080
-// sockets
-int	main() {
-	int	serverFd = socket(PF_INET, SOCK_STREAM, 0);
-	if (serverFd < 0) {
-		perror("serverFd");
-		exit(1);
+		// std::ostringstream buffer;
+		// buffer << reqOutfile.rdbuf();
+		// reqOutfile.close();
+		// std::string	buf = buffer.str();
+		// requestParse(request, buf);
+	} else {
+		usage(argv[0]);
 	}
-	sockaddr_in serverAddr;
-	serverAddr.sin_port = htons(PORT);
-	serverAddr.sin_addr.s_addr = INADDR_ANY;
-	serverAddr.sin_family = AF_INET;
-
-	int reuse = 1;
-	if (setsockopt(serverFd, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(int)) == -1) {
-		perror("setsockopt");
-		close(serverFd);
-		return 1;
-	}
-	if (bind(serverFd, (struct sockaddr* )&serverAddr, sizeof(serverAddr)) < 0) {
-		perror("bind");
-		close(serverFd);
-		exit(2);
-	}	
-
-	if (listen(serverFd, 3) < 0) {
-		perror("listen");
-		close(serverFd);
-		exit(2);
-	}
-	std::cerr << "Server is listening on port [" << PORT << "]..." << std::endl;
-	
-	while (true) {
-		sockaddr_in	clientAddr;
-		socklen_t	clientAddrLength = sizeof(clientAddr);
-		int clientFd = accept(serverFd, (struct sockaddr*)&clientAddr, &clientAddrLength);
-		if (clientFd < 0) {
-			perror("ClientFd");
-			close(serverFd);
-			exit(3);
-		} else {
-
-			std::cerr << "New connection accepted!" << std::endl;
-		}
-		char buffer[1024];
-		bzero(buffer, 1024);
-		int readed = read(clientFd, buffer, 1024);
-		if (readed == -1) {
-			perror("read");
-			close(clientFd);
-			continue;
-		}
-		buffer[readed] = 0;
-		printf("%s", buffer);fflush(stdout);
-		close(clientFd);
-	}
-	close(serverFd);
+	return (0);
 }
