@@ -103,7 +103,7 @@ static int getLenOfMatching(std::string requestPath, std::string locationPath) {
 	return (-1);
 }
 
-std::string	matching(t_request &request)
+std::string	Server::matching(t_request &request)
 {
 	int i = 0;
 	int j = 0;
