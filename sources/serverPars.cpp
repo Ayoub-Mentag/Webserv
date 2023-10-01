@@ -195,7 +195,31 @@ std::map<int, std::string>	getErrorPages(std::string& value, std::string& key) {
 	return (errorPages);
 }
 
-
+int	getLimitClientBody(std::string& value, std::string& key) {
+	std::map<int, std::string> errorPages;
+	if (value.empty() || value == ";") {
+		std::cerr << NO_VALUE;
+		std::cerr << PRINT_LINE_AND_FILE;
+		exit(1);
+	}
+	value = trim(value);
+	char	suffix = value[value.size() - 1];
+	int		numericValue = std::atoi(value.c_str());
+    switch (suffix) {
+        case 'M':
+        case 'm':
+            return numericValue * 1024 * 1024; // Megabytes to bytes
+        case 'K':
+        case 'k':
+            return numericValue * 1024; // Kilobytes to bytes
+        case 'G':
+        case 'g':
+            return numericValue * 1024 * 1024 * 1024; // Gigabytes to bytes
+        default:
+            return numericValue; // No suffix, treat as bytes
+    }
+	return (0);
+}
 
 
 /* ************************** Parse Location ****************************** */
@@ -304,6 +328,8 @@ static void	parseServerDirectives(std::string& key, std::string& value, t_server
 		server.index = getIndex(value, key);
 	} else if (key == "error_page") {
 		server.errorPages = getErrorPages(value, key);
+	} else if (key == "limit_client_body") {
+		server.clientMaxBodySize = getLimitClientBody(value, key);
 	} else {
 		std::cerr << INVALID_DIRECTIVE << PRINT_LINE_AND_FILE;
 		exit(1);
@@ -370,7 +396,6 @@ static void	splitServerBlocks(t_config& config, std::string res) {
 		}
 	}
 }
-void	printConfigStruct(t_config& config);
 
 t_config	parseConFile(const char* file) {
 	t_location	currentLocation;
@@ -404,71 +429,6 @@ t_config	parseConFile(const char* file) {
 		exit(1);
 	}
 	splitServerBlocks(config, res);
-	// printConfigStruct(config);
 	configFile.close();    
 	return (config);
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-void	printConfigStruct(t_config& config) {
-	for (size_t i = 0; i < config.servers.size(); i++) {
-		for (std::map<int, std::string>::iterator it = config.servers[i].errorPages.begin(); it != config.servers[i].errorPages.end(); it++)
-			std::cout << "errorPage: ---" << it->first << ", " << it->second << "---\n";
-		std::cout << "index: ---" << config.servers[i].index  << "---\n";
-		std::cout << "port: ---" << config.servers[i].port  << "---\n";
-		std::cout << "root: ---" << config.servers[i].root  << "---\n";
-		std::cout << "servername: ---" << config.servers[i].serverName << "---\n\n";
-		for (size_t j = 0; j < config.servers[i].locations.size(); j++) {
-			for (size_t k = 0; k < config.servers[i].locations[j].allowedMethods.size(); k++) {
-				std::cout <<"	location_allowedMethods ---" << config.servers[i].locations[j].allowedMethods[k]  << "---\n";
-			}
-			std::cout << "\n";
-			std::cout << "	location_autoindex ---" << config.servers[i].locations[j].autoindex  << "---\n";
-			std::cout << "	location_index ---" << config.servers[i].locations[j].index  << "---\n";
-			std::cout << "	location_path ---" << config.servers[i].locations[j].path << "---\n";
-			std::cout << "	location_redirectFrom ---" << config.servers[i].locations[j].redirectFrom << "---\n";
-			std::cout << "	location_redirectTo ---" << config.servers[i].locations[j].redirectTo << "---\n";
-		}
-		std::cout << "\n";
-	}
 }
