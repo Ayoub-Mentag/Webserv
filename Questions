@@ -1,0 +1,9 @@
+Question
+The server name could be multiple values ?
+do we need to handle the default_server ?
+How to handle the requests that does not contains the host field;
+
+--------------------
+Notes
+if its value does not match any server name, or the request does not contain this header field at all, 
+==> nginx will route the request to the default server for this port.
