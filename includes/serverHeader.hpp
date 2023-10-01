@@ -26,12 +26,12 @@ class Server {
 
 	private :
 		std::string	matching(t_request &request);
-		void	bindServerWithAddress();
-		void	setPortOfListening();
-		fd_set	getReadyFds();
-		void	acceptNewConnection();
-		void	response(int clientFd);
-		void	sendFile(int fd, std::string fileName);
+		void		bindServerWithAddress();
+		void		setPortOfListening();
+		fd_set		getReadyFds();
+		void		acceptNewConnection();
+		void		response(int clientFd);
+		void		sendFile(int fd, std::string fileName);
 	public : 
 		Server(t_config& config);
 		~Server();
