@@ -1,9 +1,9 @@
 CXX										= c++
-CXXFLAGS								= -std=c++98 -Wall -Wextra -Werror 
+CXXFLAGS								= -std=c++98 -Wall -Wextra -Werror
 NAME									= server
 SOURCES									= $(addprefix $(SRC_DIR)/, main.cpp server.cpp requestParse.cpp serverPars.cpp)
 OBJECTS									= $(SOURCES:$(SRC_DIR)/%.cpp=$(OBJ_DIR)/%.o)
-INCLUDES                                = $(addprefix $(INC_DIR)/, server.hpp)
+INCLUDES                                = $(addprefix $(INC_DIR)/, parsingHeader.hpp)
 OBJ_DIR									= ./objects
 SRC_DIR									= ./sources
 INC_DIR									= ./includes

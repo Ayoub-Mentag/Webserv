@@ -1,9 +1,4 @@
-#include "parsingHeader.hpp"
-
-// void	func() {
-// 	system("leaks webservParsing");
-// }
-
+#include <parsingHeader.hpp>
 
 void	printConfigStruct(t_config& config) {
 	for (size_t i = 0; i < config.servers.size(); i++) {
@@ -28,38 +23,18 @@ void	printConfigStruct(t_config& config) {
 		std::cout << "\n";
 	}
 }
-void	printConfigStruct(t_config& config);
 
-int getLenOfMatching(std::string requestPath, std::string locationPath) {
-	if (locationPath.size() > requestPath.size())
-		return -1;
-	int i = 0;
-	while (i < (int)requestPath.size() & requestPath[i] == locationPath[i])
-		i++;
-	if (i == (int)locationPath.size() && (requestPath[i] == '/' || i == (int)requestPath.size()))
-		return (i);
-	return (-1);
-}
-
-int	main(int argc, char* argv[]) {
-	// atexit(func);
+int	main(int argc, char** argv) {
 	argv[1] = (argc == 2) ? argv[1] : (char*)DEFAULT_CONFIG_FILE;
-
 	if (argc <= 2) {
 		t_config config = parseConFile(argv[1]);
-		printConfigStruct(config);
-		// t_request request;
-		// std::ifstream reqOutfile("reqOut");
-		// if (!reqOutfile.is_open()) {
-		// 	std::cerr << "Error opening HTML file" << std::endl;
-		// 	return 1;
-		// }
+		Server s(config);
 
-		// std::ostringstream buffer;
-		// buffer << reqOutfile.rdbuf();
-		// reqOutfile.close();
-		// std::string	buf = buffer.str();
-		// requestParse(request, buf);
+		s.launchServer();
+		while (1)
+		{
+			s.serve();
+		}
 	} else {
 		usage(argv[0]);
 	}

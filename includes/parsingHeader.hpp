@@ -1,6 +1,20 @@
 #pragma once
 
-#define DEFAULT_CONFIG_FILE "./configFiles/def.conf"
+#include <stdio.h>
+#include <sys/socket.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <netinet/in.h>
+#include <string.h>
+#include <arpa/inet.h>
+#include <fcntl.h>
+#include <signal.h>
+
+#include <fstream>
+#include <iostream>
+#include <string>
+#include <map>
+#include <vector>
 
 /* ****** COLORS ****** */
 #define RESET_COLOR "\033[0m"
@@ -15,39 +29,39 @@
 #include <iostream>
 #include <fstream>
 #include <string>
-#include <sstream>
 #include <vector>
 #include <map>
+#include <sstream>
 
 #define UNKNOWN_CHAR (char)200
+#define DEFAULT_CONFIG_FILE "./configFiles/def.conf"
+
+typedef struct Request {
+    std::string method;
+    std::string path;
+    std::string httpVersion;
+    std::string serverName;
+    int         port;
+} t_request;
 
 typedef struct LocationDirectives {
-	bool						autoindex;
-	std::string					path;
-	std::string					root;
-	std::string					index;
-	std::string					redirectFrom;
-	std::string 				redirectTo;
-	std::vector<std::string>	allowedMethods;
-
-	// NEW
-	// bool						enableUpload;
-	// std::string					cgi;
-	// std::string					cgiPass;
-	// std::string					uploadPath;
+    bool						autoindex;
+    std::string					path;
+    std::string					root;
+    std::string					index;
+    std::string					redirectFrom;
+    std::string 				redirectTo;
+    std::vector<std::string>	allowedMethods;
 }								t_location;
 
 typedef struct ServerDirectives {
-	int								port;
-	std::map<int, std::string> 		errorPages;
-	std::string						serverName;
-	std::string						root;
-	std::string						index;
-	std::vector<t_location>     	locations;
-
-	// NEW
-	int								clientMaxBodySize;
-	// std::string						defaultServer;
+    int								port;
+    int					    		clientMaxBodySize;
+    std::map<int, std::string> 		errorPages;
+    std::string						serverName;
+    std::string						root;
+    std::string						index;
+    std::vector<t_location>     	locations;
 }									t_server;
 
 typedef struct ConfigSettings {
@@ -57,14 +71,28 @@ typedef struct ConfigSettings {
 t_config	parseConFile(const char* file);
 void    	usage(const char* programName);
 
+class Server {
+	private :
+		int serverSocketfd;
+		struct sockaddr_in serverAddr;
+		fd_set current_sockets;
+		t_config	config;
 
+	private :
+		void bindServerWithAddress();
+		void setPortOfListening();
 
-typedef struct Request {
-	std::string	method;
-	std::string	path;
-	std::string	httpVersion;
-	std::string	serverName;
-	int			port;
-}				t_request;
+	public : 
+		Server(t_config& config);
+		~Server();
+		void launchServer();
+		fd_set getReadyFds();
+		void acceptNewConnection();
+		void 	requestParse(t_request& request, std::string buffer);
+		int getLenOfMatching(std::string requestPath, std::string locationPath);
+		std::string	checkRequest(t_request &request);
+		void response(int clientFd);
+		//accept , response
+		void serve();
 
-void 	requestParse(t_request& request, std::string buffer);
+};

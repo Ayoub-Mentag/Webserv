@@ -1,4 +1,4 @@
-#include "parsingHeader.hpp"
+#include <parsingHeader.hpp>
 
 # define INVALID_ARGUMENT		RED "Error: " GREEN << key << " Invalid argument." << RESET_COLOR << "\n"
 # define NO_VALUE				RED "Error: " GREEN << key << " Directive has no value." << RESET_COLOR << "\n"
