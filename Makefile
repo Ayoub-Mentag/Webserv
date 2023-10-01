@@ -1,5 +1,5 @@
 CXX                                     = c++
-CXXFLAGS                                = -Wall -Wextra -Werror -std=c++98
+CXXFLAGS                                = -Wall -Wextra -Werror -std=c++98 -fsanitize=address
 NAME                                    = parsing
 SOURCES                                 = $(addprefix $(SRC_DIR)/, main.cpp serverPars.cpp requestParse.cpp)
 OBJECTS                                 = $(SOURCES:$(SRC_DIR)/%.cpp=$(OBJ_DIR)/%.o)
