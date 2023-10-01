@@ -15,8 +15,6 @@
 #define PORT 8080
 #define BACKLOG 5
 
-
-
 class Server {
 	private :
 		int			serverSocketfd;
@@ -32,8 +30,9 @@ class Server {
 		void		acceptNewConnection();
 		void		response(int clientFd);
 		void		sendFile(int fd, std::string fileName);
+
 	public : 
 		Server(t_config& config);
 		~Server();
-		void	serve();
+		void		serve();
 };

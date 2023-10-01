@@ -99,3 +99,5 @@ void						splitServerBlocks(t_config& config, std::string res);
 
 /* Parse Config File */
 t_config					parseConFile(const char* file);
+/* Parse Request */
+void                        requestParse(t_request& request, std::string buffer);
