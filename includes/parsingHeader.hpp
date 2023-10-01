@@ -31,10 +31,10 @@ typedef struct LocationDirectives {
 	std::vector<std::string>	allowedMethods;
 
 	// NEW
-	bool						enableUpload;
-	std::string					cgi;
-	std::string					cgiPass;
-	std::string					uploadPath;
+	// bool						enableUpload;
+	// std::string					cgi;
+	// std::string					cgiPass;
+	// std::string					uploadPath;
 }								t_location;
 
 typedef struct ServerDirectives {
@@ -47,7 +47,7 @@ typedef struct ServerDirectives {
 
 	// NEW
 	int								clientMaxBodySize;
-	std::string						defaultServer;
+	// std::string						defaultServer;
 }									t_server;
 
 typedef struct ConfigSettings {
