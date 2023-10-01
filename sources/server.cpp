@@ -1,10 +1,9 @@
 #include <parsingHeader.hpp>
 
-#define MAX_LEN 1024
+#define MAX_LEN 3000
 // add this macros to server.hpp later please
 #define PORT 8080
 #define BACKLOG 5
-#define MAX_LEN 1024
 
 // void	func() {
 // 	system("leaks webservParsing");
@@ -160,20 +159,20 @@ void Server::launchServer()
 			for (; j < (int)locations.size(); j++)
 			{
 				tmp = getLenOfMatching(request.path, locations[j].path);
-				// std::cout << tmp << std::endl;
 				if (tmp > len)
 				{
 					len = tmp;
 					i = j;
 				}
 			}
+			std::cout << i << std::endl;
 			if (i == -1)
 				throw std::runtime_error("should I show 404 page or the root page");
 
 			std::string pathToBeLookFor = request.path;
 			pathToBeLookFor.erase(0, locations[i].path.size());
 			pathToBeLookFor.insert(0, locations[i].root);
-			std::cout << "look = " << locations[i].root << std::endl;
+			std::cout << "look = " << pathToBeLookFor << std::endl;
 			return (pathToBeLookFor);
 		}
 
@@ -185,11 +184,12 @@ void Server::launchServer()
 
 			bzero(buffer, MAX_LEN);
 			recv(clientFd, buffer, MAX_LEN, 0);
+			std::cout << buffer;
 
 			requestParse(request, buffer);
 			pathToBeLookFor = checkRequest(request);
 
-			std::string responce = request.httpVersion + " 200 OK\r\nContent-type: text/html\r\nContent-length: 1024\r\n\r\n";
+			std::string responce = request.httpVersion + " 200 OK\r\nContent-type: text/html\r\nContent-length: 3000" + "\r\n\r\n";
 			write(clientFd, responce.c_str(), responce.length());
 			sendFile(clientFd, "." + pathToBeLookFor);
 
