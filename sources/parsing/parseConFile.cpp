@@ -15,7 +15,6 @@ t_config	parseConFile(const char* file) {
 	}
 
 	while (std::getline(configFile, line)) {
-		// ignore empty lines and comments
 		size_t commentPos = line.find("#");
 		if (commentPos != std::string::npos) {
 			line.erase(commentPos, line.length());
