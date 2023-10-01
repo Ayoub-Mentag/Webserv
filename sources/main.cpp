@@ -1,11 +1,12 @@
-#include "parsingHeader.hpp"
+#include <parsingHeader.hpp>
 
-// void	func() {
-// 	system("leaks webservParsing");
-// }
+static void	usage(const char* programName) {
+	std::cerr << GREEN "Usage: " RED << programName << " [config_file_path]" << RESET_COLOR << std::endl;
+	std::cerr << PRINT_LINE_AND_FILE;
+	exit(1);
+}
 
-
-void	printConfigStruct(t_config& config) {
+static void	printConfigStruct(t_config& config) {
 	for (size_t i = 0; i < config.servers.size(); i++) {
 		for (std::map<int, std::string>::iterator it = config.servers[i].errorPages.begin(); it != config.servers[i].errorPages.end(); it++)
 			std::cout << "errorPage: ---" << it->first << ", " << it->second << "---\n";
@@ -29,27 +30,7 @@ void	printConfigStruct(t_config& config) {
 	}
 }
 
-int	main(int argc, char* argv[]) {
-	// atexit(func);
-	argv[1] = (argc == 2) ? argv[1] : (char*)DEFAULT_CONFIG_FILE;
-
-	if (argc <= 2) {
-		t_config config = parseConFile(argv[1]);
-		printConfigStruct(config);
-		// t_request request;
-		// std::ifstream reqOutfile("reqOut");
-		// if (!reqOutfile.is_open()) {
-		// 	std::cerr << "Error opening HTML file" << std::endl;
-		// 	return 1;
-		// }
-
-		// std::ostringstream buffer;
-		// buffer << reqOutfile.rdbuf();
-		// reqOutfile.close();
-		// std::string	buf = buffer.str();
-		// requestParse(request, buf);
-	} else {
-		usage(argv[0]);
-	}
+int main(int argc, char** argv) {
+	
 	return (0);
 }

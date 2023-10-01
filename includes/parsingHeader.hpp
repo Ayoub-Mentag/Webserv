@@ -1,6 +1,20 @@
 #pragma once
 
-#define DEFAULT_CONFIG_FILE "./configFiles/def.conf"
+#include <stdio.h>
+#include <sys/socket.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <netinet/in.h>
+#include <string.h>
+#include <arpa/inet.h>
+#include <fcntl.h>
+#include <signal.h>
+
+#include <fstream>
+#include <iostream>
+#include <string>
+#include <map>
+#include <vector>
 
 /* ****** COLORS ****** */
 #define RESET_COLOR "\033[0m"
@@ -15,56 +29,73 @@
 #include <iostream>
 #include <fstream>
 #include <string>
-#include <sstream>
 #include <vector>
 #include <map>
+#include <sstream>
 
 #define UNKNOWN_CHAR (char)200
+#define DEFAULT_CONFIG_FILE "./configFiles/def.conf"
+
+# define INVALID_ARGUMENT		RED "Error: " GREEN << key << " Invalid argument." << RESET_COLOR << "\n"
+# define NO_VALUE				RED "Error: " GREEN << key << " Directive has no value." << RESET_COLOR << "\n"
+# define PRINT_LINE_AND_FILE	YELLOW "[file: " << __FILE__ << "]\n[line: " << __LINE__ << "]\n" RESET_COLOR
+# define INVALID_METHOD			RED "Error: " GREEN "Invalid method." << RESET_COLOR << "\n"
+# define INVALID_LOC_DIRECTIVE	RED "Error: " GREEN "Invalid location Directive." << RESET_COLOR << "\n"
+# define EXPECTED_SEM			RED "Error: " GREEN "expected ';' at end of declaration." << RESET_COLOR << "\n"
+# define INVALID_DIRECTIVE		RED "Error: " GREEN "Invalid Directive." << RESET_COLOR << "\n"
+
+typedef struct Request {
+    std::string method;
+    std::string path;
+    std::string httpVersion;
+    std::string serverName;
+    int         port;
+} t_request;
 
 typedef struct LocationDirectives {
-	bool						autoindex;
-	std::string					path;
-	std::string					root;
-	std::string					index;
-	std::string					redirectFrom;
-	std::string 				redirectTo;
-	std::vector<std::string>	allowedMethods;
-
-	// NEW
-	// bool						enableUpload;
-	// std::string					cgi;
-	// std::string					cgiPass;
-	// std::string					uploadPath;
+    bool						autoindex;
+    std::string					path;
+    std::string					root;
+    std::string					index;
+    std::string					redirectFrom;
+    std::string 				redirectTo;
+    std::vector<std::string>	allowedMethods;
 }								t_location;
 
 typedef struct ServerDirectives {
-	int								port;
-	std::map<int, std::string> 		errorPages;
-	std::string						serverName;
-	std::string						root;
-	std::string						index;
-	std::vector<t_location>     	locations;
-
-	// NEW
-	int								clientMaxBodySize;
-	// std::string						defaultServer;
+    int								port;
+    int					    		clientMaxBodySize;
+    std::map<int, std::string> 		errorPages;
+    std::string						serverName;
+    std::string						root;
+    std::string						index;
+    std::vector<t_location>     	locations;
 }									t_server;
 
 typedef struct ConfigSettings {
 	std::vector<t_server>	servers;
 }							t_config;
 
-t_config	parseConFile(const char* file);
-void    	usage(const char* programName);
+/* extra functions */
+std::string					trim(const std::string& str);
+bool						bracketsBalance(const std::string& str);
 
+/* Parsing Directives */
+std::vector<std::string>	getAllowedMethods(std::string& value, std::string& key);
+std::string					getIndex(std::string& value, std::string& key);
+bool						getAutoIndex(std::string& value, std::string& key);
+void						getRedirect(std::string& value, std::string& key, std::string& redirectFrom, std::string& redirectTo);
+std::string					getRoot(std::string& value, std::string& key);
+std::string					getServerName(std::string& value, std::string& key);
+int							getPort(std::string& value, std::string& key);
+std::map<int, std::string>	getErrorPages(std::string& value, std::string& key);
+int							getLimitClientBody(std::string& value, std::string& key);
 
+/* Parse Locations */
+void						splitLocationBlocks(t_server& server, std::string res);
 
-typedef struct Request {
-	std::string	method;
-	std::string	path;
-	std::string	httpVersion;
-	std::string	serverName;
-	int			port;
-}				t_request;
+/* Parse Servers */
+void						splitServerBlocks(t_config& config, std::string res);
 
-void 	requestParse(t_request& request, std::string buffer);
+/* Parse Config File */
+t_config					parseConFile(const char* file);

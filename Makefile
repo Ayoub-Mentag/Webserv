@@ -1,12 +1,12 @@
 CXX                                     = c++
-CXXFLAGS                                = -Wall -Wextra -Werror -std=c++98 -fsanitize=address
+CXXFLAGS                                = -Wall -Wextra -Werror -std=c++98
 NAME                                    = parsing
 SOURCES                                 = $(addprefix $(SRC_DIR)/, main.cpp serverPars.cpp requestParse.cpp)
 OBJECTS                                 = $(SOURCES:$(SRC_DIR)/%.cpp=$(OBJ_DIR)/%.o)
 INCLUDES                                = $(addprefix $(INC_DIR)/, parsingHeader.hpp)
-OBJ_DIR                                 = ./objects
-SRC_DIR                                 = ./sources
-INC_DIR                                 = ./includes
+OBJ_DIR									= ./objects
+SRC_DIR									= ./sources
+INC_DIR									= ./includes
 
 #====== Colors =======#
 RESET                                   = "\033[0m"
@@ -49,6 +49,7 @@ fclean:                                 clean
 										@echo $(GREEN)---DONE!---$(RESET)
 
 re:                                     fclean all
+										rm -rf .vscode
 
 .PHONY:                                 all clean fclean re
 
