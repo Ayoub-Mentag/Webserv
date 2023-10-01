@@ -36,6 +36,14 @@
 #define UNKNOWN_CHAR (char)200
 #define DEFAULT_CONFIG_FILE "./configFiles/def.conf"
 
+# define INVALID_ARGUMENT		RED "Error: " GREEN << key << " Invalid argument." << RESET_COLOR << "\n"
+# define NO_VALUE				RED "Error: " GREEN << key << " Directive has no value." << RESET_COLOR << "\n"
+# define PRINT_LINE_AND_FILE	YELLOW "[file: " << __FILE__ << "]\n[line: " << __LINE__ << "]\n" RESET_COLOR
+# define INVALID_METHOD			RED "Error: " GREEN "Invalid method." << RESET_COLOR << "\n"
+# define INVALID_LOC_DIRECTIVE	RED "Error: " GREEN "Invalid location Directive." << RESET_COLOR << "\n"
+# define EXPECTED_SEM			RED "Error: " GREEN "expected ';' at end of declaration." << RESET_COLOR << "\n"
+# define INVALID_DIRECTIVE		RED "Error: " GREEN "Invalid Directive." << RESET_COLOR << "\n"
+
 typedef struct Request {
     std::string method;
     std::string path;
@@ -68,31 +76,26 @@ typedef struct ConfigSettings {
 	std::vector<t_server>	servers;
 }							t_config;
 
-t_config	parseConFile(const char* file);
-void    	usage(const char* programName);
+/* extra functions */
+std::string					trim(const std::string& str);
+bool						bracketsBalance(const std::string& str);
 
-class Server {
-	private :
-		int serverSocketfd;
-		struct sockaddr_in serverAddr;
-		fd_set current_sockets;
-		t_config	config;
+/* Parsing Directives */
+std::vector<std::string>	getAllowedMethods(std::string& value, std::string& key);
+std::string					getIndex(std::string& value, std::string& key);
+bool						getAutoIndex(std::string& value, std::string& key);
+void						getRedirect(std::string& value, std::string& key, std::string& redirectFrom, std::string& redirectTo);
+std::string					getRoot(std::string& value, std::string& key);
+std::string					getServerName(std::string& value, std::string& key);
+int							getPort(std::string& value, std::string& key);
+std::map<int, std::string>	getErrorPages(std::string& value, std::string& key);
+int							getLimitClientBody(std::string& value, std::string& key);
 
-	private :
-		void bindServerWithAddress();
-		void setPortOfListening();
+/* Parse Locations */
+void						splitLocationBlocks(t_server& server, std::string res);
 
-	public : 
-		Server(t_config& config);
-		~Server();
-		void launchServer();
-		fd_set getReadyFds();
-		void acceptNewConnection();
-		void 	requestParse(t_request& request, std::string buffer);
-		int getLenOfMatching(std::string requestPath, std::string locationPath);
-		std::string	checkRequest(t_request &request);
-		void response(int clientFd);
-		//accept , response
-		void serve();
+/* Parse Servers */
+void						splitServerBlocks(t_config& config, std::string res);
 
-};
+/* Parse Config File */
+t_config					parseConFile(const char* file);

@@ -1,6 +1,12 @@
 #include <parsingHeader.hpp>
 
-void	printConfigStruct(t_config& config) {
+static void	usage(const char* programName) {
+	std::cerr << GREEN "Usage: " RED << programName << " [config_file_path]" << RESET_COLOR << std::endl;
+	std::cerr << PRINT_LINE_AND_FILE;
+	exit(1);
+}
+
+static void	printConfigStruct(t_config& config) {
 	for (size_t i = 0; i < config.servers.size(); i++) {
 		for (std::map<int, std::string>::iterator it = config.servers[i].errorPages.begin(); it != config.servers[i].errorPages.end(); it++)
 			std::cout << "errorPage: ---" << it->first << ", " << it->second << "---\n";
@@ -24,19 +30,7 @@ void	printConfigStruct(t_config& config) {
 	}
 }
 
-int	main(int argc, char** argv) {
-	argv[1] = (argc == 2) ? argv[1] : (char*)DEFAULT_CONFIG_FILE;
-	if (argc <= 2) {
-		t_config config = parseConFile(argv[1]);
-		Server s(config);
-
-		s.launchServer();
-		while (1)
-		{
-			s.serve();
-		}
-	} else {
-		usage(argv[0]);
-	}
+int main(int argc, char** argv) {
+	
 	return (0);
 }
