@@ -192,9 +192,6 @@ void Server::response(int clientFd)
 		ss << response.length();
 		len = ss.str();
 		header =  " 404 Not Found\r\nContent-type: text/html\r\nContent-length: ";
-		// write(clientFd, response.c_str(), response.length());
-		// close(clientFd);
-		// FD_CLR(clientFd, &current_sockets);
 	}
 	response.insert(0, request.httpVersion + header + len + "\r\n\r\n");
 	write(clientFd, response.c_str(), response.length());
