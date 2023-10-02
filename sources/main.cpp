@@ -1,4 +1,3 @@
-// #include <serverHeader.hpp>
 #include <headerFile.hpp>
 
 static void	usage(const char* programName) {

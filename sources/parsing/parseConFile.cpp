@@ -9,7 +9,7 @@ t_config	parseConFile(const char* file) {
 
 	std::ifstream configFile(file);
 	if (!configFile.is_open()) {
-		std::cerr << RED "Error:" GREEN "Failed to open the configuration file." RESET_COLOR << std::endl;
+		std::cerr << RED "Error: " GREEN "Failed to open the configuration file." RESET_COLOR << std::endl;
 		std::cerr << PRINT_LINE_AND_FILE;
 		exit(1);
 	}
