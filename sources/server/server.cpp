@@ -1,5 +1,5 @@
 #include <serverHeader.hpp>
-
+ 
 void Server::sendFile(int fd, std::string fileName)
 {
     std::ifstream	inFile;

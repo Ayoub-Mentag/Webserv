@@ -1,5 +1,5 @@
 #include <parsingHeader.hpp>
-
+ 
 static void	parseServerDirectives(std::string& key, std::string& value, t_server& server) {
 	if (value[value.length() - 1] != ';') {
 		std::cerr << EXPECTED_SEM;

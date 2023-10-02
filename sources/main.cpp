@@ -1,5 +1,5 @@
 #include <headerFile.hpp>
-
+ 
 static void	usage(const char* programName) {
 	std::cerr << GREEN "Usage: " RED << programName << " [config_file_path]" << RESET_COLOR << std::endl;
 	std::cerr << PRINT_LINE_AND_FILE;

@@ -1,5 +1,5 @@
 #include <parsingHeader.hpp>
-
+ 
 bool	bracketsBalance(const std::string& str) {
     std::stack<char> stack;
     for (size_t i = 0; i < str.length(); i++) {

@@ -1,5 +1,5 @@
 #include <parsingHeader.hpp>
-
+ 
 std::vector<std::string>		getAllowedMethods(std::string& value, std::string& key) {
 	std::string					token;
 	std::vector<std::string>	allowedMethods;
