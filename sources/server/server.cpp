@@ -9,11 +9,11 @@ void Server::sendFile(std::string fileName, std::string &response, t_request &re
 	if (inFile.fail())
 	{
 		// throw std::runtime_error(fileName + " does not exist");
-		std::string errorPage = config.servers[serverIndex].locations[locationIndex].errorPages[400];
+		std::string errorPage = config.servers[request.serverIndex].locations[request.locationIndex].errorPages[400];
 		inFile.open(errorPage);
 		if (inFile.fail())
 		{
-			errorPage = config.servers[serverIndex].errorPages[400];
+			errorPage = config.servers[request.serverIndex].errorPages[400];
 			inFile.open(errorPage);
 			if (inFile.fail())
 				inFile.open(DEFAULT_ERROR_PAGE);
@@ -119,7 +119,8 @@ std::string	Server::matching(t_request &request)
 	int tmp;
 	std::vector<t_location> locations;
 	for (; i < (int)config.servers.size(); i++) {
-		if (config.servers[i].serverName == request.serverName)k ;
+		if (config.servers[i].serverName == request.serverName)
+			break ;
 	}
 	if (i >= (int)config.servers.size())
 		throw std::runtime_error("Server name not found");
@@ -160,14 +161,14 @@ void Server::response(int clientFd)
 		std::stringstream ss;
 		pathToBeLookFor = matching(request);
 		//check the redirection
-		if (pathToBeLookFor == config.servers[serverIndex].locations[locationIndex].redirectFrom) {
+		if (pathToBeLookFor == config.servers[request.serverIndex].locations[request.locationIndex].redirectFrom) {
 			std::cerr << "REDIRECTION" <<std::endl;
-			sendFile("." + config.servers[serverIndex].locations[locationIndex].redirectTo, response);
+			sendFile("." + config.servers[request.serverIndex].locations[request.locationIndex].redirectTo, response, request);
 			ss << response.length();
 		}
 		else
 		{
-			if (config.servers[serverIndex].locations[locationIndex].autoindex) {
+			if (config.servers[request.serverIndex].locations[request.locationIndex].autoindex) {
 				pathToBeLookFor.insert(0, ".");
 				DIR *dir = opendir(pathToBeLookFor.c_str());
 				if (dir)
@@ -176,15 +177,15 @@ void Server::response(int clientFd)
 					//listing dir
 					dirent *d = readdir(dir);
 					(void)d;
-					sendFile("./dir.html" , response);
+					sendFile("./dir.html" , response, request);
 					ss << response.length();
 				}
 			}
 			//index --> default page for that location
-			else if (!config.servers[serverIndex].locations[locationIndex].index.empty())
+			else if (!config.servers[request.serverIndex].locations[request.locationIndex].index.empty())
 			{
 				std::cerr << "INDEX" << std::endl;
-				sendFile("." + config.servers[serverIndex].locations[locationIndex].index, response);
+				sendFile("." + config.servers[request.serverIndex].locations[request.locationIndex].index, response, request);
 				std::stringstream ss;
 				ss << response.length();
 				std::string len = ss.str();

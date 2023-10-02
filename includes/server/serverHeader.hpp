@@ -25,14 +25,13 @@ class Server {
 		t_config	config;
 
 	private:
-		std::string	matching(t_request &request, int& serverIndex, int& locationIndex);
+		std::string	matching(t_request &request);
 		void		bindServerWithAddress();
 		void		setPortOfListening();
 		fd_set		getReadyFds();
 		void		acceptNewConnection();
 		void		response(int clientFd);
-		void		sendFile(std::string fileName, std::string &response);
-
+		void		sendFile(std::string fileName, std::string &response, t_request &request);
 	public: 
 		Server(t_config& config);
 		~Server();
