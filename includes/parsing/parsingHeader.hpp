@@ -27,6 +27,7 @@
 # define UNKNOWN_CHAR (char)200
 # define DEFAULT_CONFIG_FILE "./configFiles/def.conf"
 
+# define NO_LOC_PATH    		RED "Error: " GREEN << "location has no path." << RESET_COLOR << "\n"
 # define INVALID_ARGUMENT		RED "Error: " GREEN << key << " Invalid argument." << RESET_COLOR << "\n"
 # define NO_VALUE				RED "Error: " GREEN << key << " Directive has no value." << RESET_COLOR << "\n"
 # define PRINT_LINE_AND_FILE	YELLOW "[file: " << __FILE__ << "]\n[line: " << __LINE__ << "]\n" RESET_COLOR
@@ -51,6 +52,8 @@ typedef struct LocationDirectives {
     std::string					redirectFrom;
     std::string 				redirectTo;
     std::vector<std::string>	allowedMethods;
+    std::map<int, std::string> 	errorPages;
+    int					    	clientMaxBodySize;
 }								t_location;
 
 typedef struct ServerDirectives {
@@ -60,6 +63,7 @@ typedef struct ServerDirectives {
     std::string						serverName;
     std::string						root;
     std::string						index;
+    std::vector<std::string>        allowedMethods;
     std::vector<t_location>     	locations;
 }									t_server;
 

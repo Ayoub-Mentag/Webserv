@@ -1,5 +1,30 @@
 #include <parsingHeader.hpp>
 
+#define DEFAULT_PORT				8080
+#define DEFAULT_ROOT				"."
+
+void	initWIthDefault(t_config& config) {
+	for (size_t i = 0; i < config.servers.size(); i++) {
+		if (config.servers[i].root.empty()) {
+			config.servers[i].root = DEFAULT_ROOT;
+		}
+		if (config.servers[i].port < -1) {
+			config.servers[i].port = DEFAULT_PORT;
+		}
+		if (config.servers[i].allowedMethods.size() == 0) {
+			config.servers[i].allowedMethods.push_back("GET");
+			config.servers[i].allowedMethods.push_back("POST");
+			config.servers[i].allowedMethods.push_back("DELETE");
+		}
+		for (size_t j = 0; j < config.servers[i].locations.size(); j++) {
+			if (config.servers[i].locations[j].root.empty()) {
+				config.servers[i].locations[j].root = DEFAULT_ROOT;
+			}
+		}
+	}
+}
+
+
 t_config	parseConFile(const char* file) {
 	t_location	currentLocation;
 	t_server	currentServer;
@@ -31,6 +56,7 @@ t_config	parseConFile(const char* file) {
 		exit(1);
 	}
 	splitServerBlocks(config, res);
-	configFile.close();    
+	configFile.close();
+	initWIthDefault(config);
 	return (config);
 }

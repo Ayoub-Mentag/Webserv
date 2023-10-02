@@ -22,6 +22,8 @@ static void	parseServerDirectives(std::string& key, std::string& value, t_server
 		server.errorPages = getErrorPages(value, key);
 	} else if (key == "limit_client_body") {
 		server.clientMaxBodySize = getLimitClientBody(value, key);
+	} else if (key == "allowed_methods") {
+		server.allowedMethods = getAllowedMethods(value, key);
 	} else {
 		std::cerr << INVALID_DIRECTIVE << PRINT_LINE_AND_FILE;
 		exit(1);
@@ -47,6 +49,8 @@ static t_server	parseServerBlock(std::string res) {
 	std::vector<std::string>	serverTokens;
 	t_server					server;
 
+	server.clientMaxBodySize = -1;
+	server.port = -1;
 	size_t findBrack = res.find("{");
 	if (findBrack != res.npos) {
 		res = res.substr(findBrack + 1, -1);

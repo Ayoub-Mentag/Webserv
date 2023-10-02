@@ -17,6 +17,10 @@ static void	parseLocationDirectives(std::string& key, std::string value, t_locat
 		location.autoindex = getAutoIndex(value, key);
 	} else if (key == "redirect") {
 		getRedirect(value, key, location.redirectFrom, location.redirectTo);
+	} else if (key == "errorPages") {
+		location.errorPages = getErrorPages(value, key);
+	} else if (key == "limit_client_body") {
+		location.clientMaxBodySize = getLimitClientBody(value, key);
 	} else if (key == "root") {
 		location.root = getRoot(value, key);
 	} else {
@@ -48,9 +52,16 @@ static t_location	parseLocationBlock(std::string res) {
 	t_location					location;
 	std::string					token;
 
+	location.autoindex = 0;
+	location.clientMaxBodySize = -1;
 	size_t findBrack = res.find("{");
 	if (findBrack != res.npos) {
 		location.path = trim(res.substr(0, findBrack));
+		if (location.path.empty()) {
+			std::cerr << NO_LOC_PATH;
+			std::cerr << PRINT_LINE_AND_FILE;
+			exit(1);
+		}
 		res = res.substr(findBrack + 1, -1); 
 	}
 	if (res[0] == UNKNOWN_CHAR)
