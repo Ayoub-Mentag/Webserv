@@ -14,14 +14,14 @@ INCLUDES			= -I$(INC_DIR) -I$(INC_DIR)/parsing -I$(INC_DIR)/server
 
 
 #====== Colors =======#
-RESET								= "\033[0m"
-RED									= "\033[1;31m"
-GREEN								= "\033[1;32m"
-YELLOW								= "\033[1;33m"
-ORANGE								= "\033[1;34m"
-MAGENTA								= "\033[1;35m"
-CYAN								= "\033[1;36m"
-WHITE								= "\033[1;37m"
+RESET				= "\033[0m"
+RED					= "\033[1;31m"
+GREEN				= "\033[1;32m"
+YELLOW				= "\033[1;33m"
+ORANGE				= "\033[1;34m"
+MAGENTA				= "\033[1;35m"
+CYAN				= "\033[1;36m"
+WHITE				= "\033[1;37m"
 
 all:				$(NAME)
 
@@ -45,15 +45,15 @@ clean:
 					@echo $(GREEN)---DONE!---$(RESET)
 
 fclean:				clean
-										@echo $(MAGENTA)Cleaning $(NAME) executable...$(RESET)
-										@sleep 0.2
-										@rm -f $(NAME)
-										@echo $(GREEN)---DONE!---$(RESET)
-										@rm -rf .vscode
+					@echo $(MAGENTA)Cleaning $(NAME) executable...$(RESET)
+					@sleep 0.2
+					@rm -f $(NAME)
+					@echo $(GREEN)---DONE!---$(RESET)
+					@rm -rf .vscode
 
 re:					fclean all
 
 .PHONY:				all clean fclean re
 
 push:
-	git add . && git commit -m "main branch" && (git push || git push --set-upstream origin main)
+					git add . && git commit -m "main branch" && (git push || git push --set-upstream origin main)
