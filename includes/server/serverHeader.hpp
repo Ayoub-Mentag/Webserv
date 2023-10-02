@@ -11,11 +11,11 @@
 #include <signal.h>
 #include <stdlib.h>
 #include <dirent.h>
-#define MAX_LEN 3000
+#define MAX_LEN 650
 #define PORT 8080
 #define BACKLOG 5
 
-#define DEFAULT_ERROR_PAGE "404.html"
+#define DEFAULT_ERROR_PAGE "<!DOCTYPE><html><body><h1>404 Not Found</h1></body></html>"
 
 class Server {
 	private:
