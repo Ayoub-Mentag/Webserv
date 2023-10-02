@@ -140,25 +140,33 @@ std::string	Server::matching(t_request &request)
 
 void Server::response(int clientFd)
 {
-	char		buffer[MAX_LEN];
-	std::string	response;
-	t_request	request;
-	std::string	pathToBeLookFor;
-	std::stringstream ss;
-	std::string header, len;
+	char				buffer[MAX_LEN];
+	std::string			response;
+	t_request			request;
+	std::string			pathToBeLookFor;
+	std::stringstream	ss;
+	std::string			header, len;
+	int					fd = -5;
 
-	int fd = -5;
 	bzero(buffer, MAX_LEN);
 	recv(clientFd, buffer, MAX_LEN, 0);
-	std::cerr << buffer << std::endl;
+	// std::cerr << buffer << std::endl;
 	try {
 		requestParse(request, buffer);
 		pathToBeLookFor = matching(request);
 		t_location location = config.servers[request.serverIndex].locations[request.locationIndex];
-		//check the redirection
-		if (pathToBeLookFor == location.redirectFrom) {
+
+		// 405 Method Not Allowed
+		if (std::find(location.allowedMethods.begin(), location.allowedMethods.end(), request.method) == location.allowedMethods.end()) {
+			sendFile("./405.html", response, request);
+			ss << response.length();
+			header =  " 405 Method Not Allowed\r\nContent-type: text/html\r\nContent-length: ";
+		}
+		else if (pathToBeLookFor == location.redirectFrom) {
+		// check the redirection
 			sendFile("." + location.redirectTo, response, request);
 			ss << response.length();
+			// header =  " 301 Moved Permanently\r\nContent-type: text/html\r\nContent-length: ";
 		}
 		else {
 			DIR *dir = opendir(("." + pathToBeLookFor).c_str());

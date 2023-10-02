@@ -17,7 +17,7 @@ static void	parseLocationDirectives(std::string& key, std::string value, t_locat
 		location.autoindex = getAutoIndex(value, key);
 	} else if (key == "redirect") {
 		getRedirect(value, key, location.redirectFrom, location.redirectTo);
-	} else if (key == "errorPages") {
+	} else if (key == "error_page") {
 		location.errorPages = getErrorPages(value, key);
 	} else if (key == "limit_client_body") {
 		location.clientMaxBodySize = getLimitClientBody(value, key);
