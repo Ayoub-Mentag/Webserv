@@ -42,7 +42,7 @@ int	main(int argc, char* argv[]) {
 			while (1)
 				server.serve();
 		} catch (std::exception &ex) {
-			std::cout << ex.what() << std::endl;
+			std::cout << "--" << ex.what() << std::endl;
 		}
 	} else {
 		usage(argv[0]);

@@ -9,10 +9,13 @@
 #include <arpa/inet.h>
 #include <fcntl.h>
 #include <signal.h>
-
-#define MAX_LEN 3000
+#include <stdlib.h>
+#include <dirent.h>
+#define MAX_LEN 650
 #define PORT 8080
 #define BACKLOG 5
+
+#define DEFAULT_ERROR_PAGE "<!DOCTYPE><html><body><h1>404 Not Found</h1></body></html>"
 
 class Server {
 	private:
@@ -28,8 +31,7 @@ class Server {
 		fd_set		getReadyFds();
 		void		acceptNewConnection();
 		void		response(int clientFd);
-		void		sendFile(int fd, std::string fileName);
-
+		void		sendFile(std::string fileName, std::string &response, t_request &request);
 	public: 
 		Server(t_config& config);
 		~Server();
