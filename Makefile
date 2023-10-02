@@ -32,7 +32,6 @@ $(OBJ_DIR)/%.o:		$(SRC_DIR)/%.cpp $(INCS)
 
 $(NAME):			$(OBJS)
 					@echo $(ORANGE)Linking $(OBJECTS) to $(NAME)...$(RESET)
-					@sleep 0.1
 					@$(CXX) $(CXXFLAGS) $(INCLUDES) $^ -o $@
 					@echo $(CYAN)$(NAME) is ready!$(RESET)
 
