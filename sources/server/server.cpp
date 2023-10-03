@@ -8,7 +8,6 @@ std::string	directory_listing(DIR* dir, std::string path) {
 	while ((entry = readdir(dir))) {
 		response += "<li><a href=\"" + path + std::string(entry->d_name) + "/\">" + std::string(entry->d_name) + "</a></li>";
 	}
-	closedir(dir);
 	response += "</ul></body></html>";
 	return (response);
 }
@@ -157,7 +156,7 @@ t_request	Server::getRequest(int clientFd) {
 
 	bzero(buffer, MAX_LEN);
 	recv(clientFd, buffer, MAX_LEN, 0);
-	std::cerr << buffer << std::endl;
+	// std::cerr << buffer << std::endl;
 	requestParse(request, buffer);
 	return request;
 }
@@ -193,7 +192,7 @@ std::string	fileToString(std::string fileName, int status) {
 			case NOT_FOUND_STATUS:
 				throw std::runtime_error(DEFAULT_404_ERROR_PAGE);
 			case FORBIDDEN_STATUS:
-				throw std::runtime_error(DEFAULT_404_ERROR_PAGE);
+				throw std::runtime_error(DEFAULT_403_ERROR_PAGE);
 			default:
 				throw std::runtime_error(to_string(status) + " status code not handled");
 		}
@@ -212,10 +211,13 @@ void	correctPath(std::string& path) {
 
 	DIR* dir = NULL;
 	opendir(path.c_str());
-	if (!dir && (path[path.length() - 1] == '/'))
+	if (!dir)
 	{
-		path.erase(path.length() - 1);
+		if (path[path.length() - 1] == '/')
+			path.erase(path.length() - 1);
+		return ;
 	}
+	// std::cout << "************** HERE ****************\n";
 	closedir(dir);
 }
 
@@ -264,6 +266,8 @@ void	Server::locationRedirection(std::string& path, t_request& request) {
 	std::string header;
 	t_location	location = getLocation(request.serverIndex, request.locationIndex);
 
+	correctPath(location.redirectFrom);
+	correctPath(location.redirectTo);
 	if (path == location.redirectFrom) {
 		try {
 			body = fileToString(location.redirectTo, NOT_FOUND_STATUS);
@@ -282,16 +286,14 @@ void	Server::listDirectory(std::string& path, t_request& request) {
 	std::string	header;
 	std::string	body;
 
-	
-
 	if (dir) {
 		if (location.autoindex) {
 			body = directory_listing(dir, path);
+			std::cerr << body << std::endl;
 			header = request.httpVersion + "200 OK\r\nContent-type: text/html\r\nContent-length: " + to_string(body.length()) + " \r\n\r\n";
-		}
-
-		else if (!location.index.empty()) {
+		} else if (!location.index.empty()) {
 			try {
+				correctPath(location.index);
 				body = fileToString(location.index, 404);
 				header = request.httpVersion + "200 OK\r\nContent-type: text/html\r\nContent-length: " + to_string(body.length()) + " \r\n\r\n";
 			} catch (const std::exception& ex) {
@@ -299,15 +301,17 @@ void	Server::listDirectory(std::string& path, t_request& request) {
 				header = request.httpVersion + "404 Not Found\r\nContent-type: text/html\r\nContent-length: " + to_string(body.length()) + " \r\n\r\n";
 			}
 		} else {
+				std::cout << location.index << std::endl;
 			try {
+				correctPath(location.errorPages[FORBIDDEN_STATUS]);
 				body = fileToString(location.errorPages[FORBIDDEN_STATUS], FORBIDDEN_STATUS);
 			} catch (const std::exception& ex) {
 				body = ex.what();
 			}
 			header = request.httpVersion + " 403 Forbidden\r\nContent-type: text/html\r\nContent-length: " + to_string(body.length()) + " \r\n\r\n";
 		}
+		closedir(dir);
 	}
-	closedir(dir);
 	throw std::runtime_error(header + body);
 }
 
@@ -320,7 +324,7 @@ void Server::response(int clientFd, std::string src, t_request& request)
 	try {
 
 		t_location location = getLocation(request.serverIndex, request.locationIndex);
-		// correctPath(src);
+		correctPath(src);
 		// 405 Method Not Allowed
 		methodNotAllowed(request); // should i check location errpage first when no method in the location?
 		locationRedirection(src, request);
