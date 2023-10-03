@@ -16,7 +16,7 @@
 #define BACKLOG 5
 
 #define DEFAULT_404_ERROR_PAGE 		"<!DOCTYPE><html><body><h1>404 Not Found</h1></body></html>"
-#define DEFAULT_405_ERROR_PAGE 		"<!DOCTYPE><html><body><h1>404 Not Found</h1></body></html>"
+#define DEFAULT_405_ERROR_PAGE 		"<!DOCTYPE><html><body><h1>405 Method Not Allowed</h1></body></html>"
 
 #define NOT_FOUND_STATUS 			404
 #define METHOD_NOT_ALLOWED_STATUS 	405
@@ -37,6 +37,8 @@ class Server {
 		void		sendFile(std::string fileName, std::string &response, t_request &request);
 		t_request	getRequest(int clientFd);
 		void		methodNotAllowed(t_request& request);
+		void		locationRedirection(std::string& path, t_request request);
+		void		listDirectory(std::string& path, t_request& request);
 	public: 
 		Server(t_config& config);
 		~Server();
