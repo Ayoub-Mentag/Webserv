@@ -1,13 +1,18 @@
 #include <serverHeader.hpp>
 
-std::string	directory_listing(DIR* dir, std::string path) {
+std::string	directory_listing(DIR* dir, std::string root) {
 	std::string response;
 	response += "<html><body><ul>";
 
 	struct dirent* entry;
 	while ((entry = readdir(dir))) {
-		response += "<li><a href=\"" + path + std::string(entry->d_name) + "/\">" + std::string(entry->d_name) + "</a></li>";
+		if (root[root.length() - 1] != '/') {
+			root.insert(root.length() - 1, "/");
+		}
+		// std::cerr << root + std::string(entry->d_name) << std::endl;
+		response += "<li><a href=\"" + root + std::string(entry->d_name) + "/\">" + std::string(entry->d_name) + "</a></li>";
 	}
+	// std::cerr << path << std::endl;
 	response += "</ul></body></html>";
 	return (response);
 }
@@ -217,7 +222,6 @@ void	correctPath(std::string& path) {
 			path.erase(path.length() - 1);
 		return ;
 	}
-	// std::cout << "************** HERE ****************\n";
 	closedir(dir);
 }
 
@@ -288,8 +292,7 @@ void	Server::listDirectory(std::string& path, t_request& request) {
 
 	if (dir) {
 		if (location.autoindex) {
-			body = directory_listing(dir, path);
-			std::cerr << body << std::endl;
+			body = directory_listing(dir, request.path);
 			header = request.httpVersion + "200 OK\r\nContent-type: text/html\r\nContent-length: " + to_string(body.length()) + " \r\n\r\n";
 		} else if (!location.index.empty()) {
 			try {
@@ -315,73 +318,43 @@ void	Server::listDirectory(std::string& path, t_request& request) {
 	}
 }
 
+void	Server::servFile(std::string& src, t_request& request) {
+	std::string	header;
+	std::string	body;
+
+	if (access(src.c_str(), O_RDONLY) >= 0) {
+		try {
+			body = fileToString(src, 404);
+			header = request.httpVersion + "200 OK\r\nContent-type: text/html\r\nContent-length: " + to_string(body.length()) + " \r\n\r\n";
+		} catch(std::exception& ex) {
+			body = ex.what();
+			header = request.httpVersion + "404 Not Found\r\nContent-type: text/html\r\nContent-length: " + to_string(body.length()) + " \r\n\r\n";
+		}
+	}
+	else {
+		body = DEFAULT_404_ERROR_PAGE;
+		header = request.httpVersion + "404 Not Found\r\nContent-type: text/html\r\nContent-length: " + to_string(body.length()) + " \r\n\r\n";
+	}
+	throw std::runtime_error(header + body);
+}
+
 void Server::response(int clientFd, std::string src, t_request& request)
 {
 	std::string	response;
-	std::string	header;
-	std::string	body;
-	int 		fd = -1;
-
 
 	try {
 
 		t_location location = getLocation(request.serverIndex, request.locationIndex);
 		correctPath(src);
-		// 405 Method Not Allowed
 		methodNotAllowed(request); // should i check location errpage first when no method in the location?
 		locationRedirection(src, request);
 		listDirectory(src, request);
-		if ((fd = access(src.c_str(), O_RDONLY)) >= 0) {
-			try {
-				body = fileToString(src, 404);
-				header = request.httpVersion + "200 OK\r\nContent-type: text/html\r\nContent-length: " + to_string(body.length()) + " \r\n\r\n";
-			} catch(std::exception& ex) {
-				body = ex.what();
-				header = request.httpVersion + "404 Not Found\r\nContent-type: text/html\r\nContent-length: " + to_string(body.length()) + " \r\n\r\n";
-			}
-			throw std::runtime_error(header + body);
-		}
-		// else if ((fd = access(("." + src).c_str(), O_RDONLY)) >= 0) {
-		// 	sendFile("." + src, response, request);
-		// }
-
-
-
-	// 	else {
-	// 		DIR *dir = opendir(("." + src).c_str());
-
-	// 		if (dir) {
-	// 			if (location.autoindex) {
-	// 				if (src[src.length() -1] != '/')
-	// 					src += '/';
-	// 				response = directory_listing(dir, "." + src);
-	// 			}
-	// 			else if (!location.index.empty()) {
-	// 				sendFile("." + location.index, response, request);		
-	// 			} else if (location.index.empty()) {
-	// 				sendFile("403.html", response, request);
-	// 				ss << response.length();
-	// 				// header = " 403 Forbidden\r\nContent-type: text/html\r\nContent-length: ";
-	// 			}
-	// 		}
-	// 		else if ((fd = access(("." + src).c_str(), O_RDONLY)) >= 0) {
-	// 			sendFile("." + src, response, request);
-	// 		}
-	// 		else
-	// 		{
-	// 			std::cerr << "." + src << " fd " << fd << std::endl;
-	// 			std::cout << access(("." + src).c_str(), O_RDONLY) << std::endl;
-	// 			throw std::runtime_error(DEFAULT_ERROR_PAGE);
-	// 		}
-	// 	}
-	// 	ss << response.length();
-	// 	std::string len = ss.str();
-	// 	header = " 200 OK\r\nContent-type: text/html\r\nContent-length: ";		
+		std::cout << src << std::endl;
+		servFile(src, request);
 	} catch (std::out_of_range &ofg) {
 		(void)ofg;
 	} catch (std::exception &ex) {
 		response = ex.what();
-		// std::cerr << response;
 	}
 	write(clientFd, response.c_str(), response.length());
 	close(clientFd);

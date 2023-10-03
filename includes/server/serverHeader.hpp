@@ -41,6 +41,8 @@ class Server {
 		void		methodNotAllowed(t_request& request);
 		void		locationRedirection(std::string& path, t_request& request);
 		void		listDirectory(std::string& path, t_request& request);
+		void		servFile(std::string& src, t_request& request);
+
 	public: 
 		Server(t_config& config);
 		~Server();
