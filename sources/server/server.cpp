@@ -311,15 +311,17 @@ void	Server::listDirectory(std::string& path, t_request& request) {
 			header = request.httpVersion + " 403 Forbidden\r\nContent-type: text/html\r\nContent-length: " + to_string(body.length()) + " \r\n\r\n";
 		}
 		closedir(dir);
+		throw std::runtime_error(header + body);
 	}
-	throw std::runtime_error(header + body);
 }
 
 void Server::response(int clientFd, std::string src, t_request& request)
 {
-	std::string			response;
-	// int fd ;
-	(void)src;
+	std::string	response;
+	std::string	header;
+	std::string	body;
+	int 		fd = -1;
+
 
 	try {
 
@@ -329,6 +331,16 @@ void Server::response(int clientFd, std::string src, t_request& request)
 		methodNotAllowed(request); // should i check location errpage first when no method in the location?
 		locationRedirection(src, request);
 		listDirectory(src, request);
+		if ((fd = access(src.c_str(), O_RDONLY)) >= 0) {
+			try {
+				body = fileToString(src, 404);
+				header = request.httpVersion + "200 OK\r\nContent-type: text/html\r\nContent-length: " + to_string(body.length()) + " \r\n\r\n";
+			} catch(std::exception& ex) {
+				body = ex.what();
+				header = request.httpVersion + "404 Not Found\r\nContent-type: text/html\r\nContent-length: " + to_string(body.length()) + " \r\n\r\n";
+			}
+			throw std::runtime_error(header + body);
+		}
 		// else if ((fd = access(("." + src).c_str(), O_RDONLY)) >= 0) {
 		// 	sendFile("." + src, response, request);
 		// }
