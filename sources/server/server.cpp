@@ -160,13 +160,13 @@ void Server::response(int clientFd)
 		if (std::find(location.allowedMethods.begin(), location.allowedMethods.end(), request.method) == location.allowedMethods.end()) {
 			sendFile("./405.html", response, request);
 			ss << response.length();
-			header =  " 405 Method Not Allowed\r\nContent-type: text/html\r\nContent-length: ";
+			header =  "405 Method Not Allowed\r\nContent-type: text/html\r\nContent-length: ";
 		}
 		else if (pathToBeLookFor == location.redirectFrom) {
 		// check the redirection
 			sendFile("." + location.redirectTo, response, request);
 			ss << response.length();
-			// header =  " 301 Moved Permanently\r\nContent-type: text/html\r\nContent-length: ";
+			header = " 301 Moved Permanently\r\nContent-type: text/html\r\nContent-length: ";
 		}
 		else {
 			DIR *dir = opendir(("." + pathToBeLookFor).c_str());
@@ -194,7 +194,7 @@ void Server::response(int clientFd)
 		}
 		ss << response.length();
 		std::string len = ss.str();
-		header = " 200 OK\r\nContent-type: text/html\r\nContent-length: ";		
+		// header = " 200 OK\r\nContent-type: text/html\r\nContent-length: ";		
 	} catch (std::exception &ex) {
 		response = ex.what();
 		ss << response.length();
