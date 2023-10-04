@@ -194,12 +194,11 @@ std::string	Server::matching(t_request &request)
 			std::string body;
 			std::string	header;
 			try {
-				body = fileToString(config.servers[z].errorPages[BAD_REQUEST_STATUS], BAD_REQUEST_STATUS);
-				header = request.httpVersion + "400 Bad Request\r\nContent-type: text/html\r\nContent-length: " + to_string(body.length()) + " \r\n\r\n";
+				body = fileToString(config.servers[z].errorPages[NOT_FOUND_STATUS], NOT_FOUND_STATUS);
 			} catch(const std::exception& e) {
 				body = e.what();
-				header = request.httpVersion + "400 Bad Request\r\nContent-type: text/html\r\nContent-length: " + to_string(body.length()) + " \r\n\r\n";
 			}
+			header = request.httpVersion + "404 Not Found\r\nContent-type: text/html\r\nContent-length: " + to_string(body.length()) + " \r\n\r\n";
 			throw std::runtime_error(header + body);
 		}
 	}
