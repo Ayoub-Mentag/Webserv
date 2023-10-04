@@ -12,7 +12,6 @@ std::string	fileToString(std::string fileName, int status) {
 	std::string line;
 	std::ifstream os;
 
-	std::cout << "------------> filename: " << fileName << std::endl;
 	os.open(fileName);
 	if (os.fail()) {
 		switch (status) {
@@ -141,69 +140,182 @@ void Server::acceptNewConnection()
 	}
 }
 
+// static int getLenOfMatching(std::string requestPath, std::string locationPath) {
+// 	if (locationPath.size() > requestPath.size())
+// 		return -1;
+// 	int i = 0;
+// 	while (i < (int)requestPath.size() && requestPath[i] == locationPath[i])
+// 		i++;
+// 	if (i == (int)locationPath.size() && (requestPath[i] == '/' || i == (int)requestPath.size()))
+// 		return (i);
+// 	return (-1);
+// }
+
 static int getLenOfMatching(std::string requestPath, std::string locationPath) {
-	if (locationPath.size() > requestPath.size())
-		return -1;
-	int i = 0;
-	while (i < (int)requestPath.size() & requestPath[i] == locationPath[i])
-		i++;
-	if (i == (int)locationPath.size() && (requestPath[i] == '/' || i == (int)requestPath.size()))
-		return (i);
-	return (-1);
+    if (locationPath == "/") {
+        // If locationPath is "/", it matches any requestPath.
+        return requestPath.size();
+    }
+
+    int i = 0;
+    while (i < (int)requestPath.size() && i < (int)locationPath.size() && requestPath[i] == locationPath[i]) {
+        // Increment 'i' while the characters match and we are within the bounds of both strings.
+        i++;
+    }
+
+    if (i == (int)locationPath.size()) {
+        // If we reached the end of locationPath, it means locationPath matched fully.
+        return i;
+    }
+
+    return -1; // No match or partial match.
 }
 
 
+void	Server::serverExists(t_request& request) {
+	std::vector<t_server> servers = config.servers;	
+
+	for (int serverIndex = 0; serverIndex < (int)config.servers.size(); serverIndex++) {
+		if (servers[serverIndex].serverName == request.serverName
+			&& request.port == servers[serverIndex].port) {
+			request.serverIndex = serverIndex;
+			return ;
+		}
+	}
+	request.serverIndex = -1;
+	//error page : SERVER_NOT_FOUND
+}
+
+// void	Server::locationExists(t_request& request) {
+// 	int serverIndex = request.serverIndex;
+// 	std::vector<t_location> locations = config.servers[serverIndex].locations;
+// 	// int i = -1;
+
+// 	// int len = 0;
+// 	// int tmp;
+
+// 	// for (int j = 0; j < (int)locations.size(); j++)
+// 	// {
+// 	// 	tmp = getLenOfMatching(request.path, locations[j].path);
+// 	// 	if (tmp > len)
+// 	// 	{
+// 	// 		len = tmp;
+// 	// 		i = j;
+// 	// 	}
+// 	// }
+// 	// if (i == -1)
+// 	// 	throw std::runtime_error(DEFAULT_400_ERROR_PAGE);
+// 	// request.locationIndex = i;
+	// /*
+	// 	/file.txt
+
+	// 	/				1 √
+	// 	/a				1
+	// 	/a/b			1
+	// 	/a/b/c			1 
+	// */
+// }
+
+void	Server::locationExists(t_request& request) {
+    int serverIndex = request.serverIndex;
+    std::vector<t_location>& locations = config.servers[serverIndex].locations; // Use a reference
+
+    int len = -1; // Initialize len to -1
+    int matchingIndex = -1; // Initialize matchingIndex to -1
+
+    for (int i = 0; i < (int)locations.size(); i++) {
+        int tmp = getLenOfMatching(request.path, locations[i].path);
+        if (tmp > len) {
+            len = tmp;
+            matchingIndex = i; // Store the index of the best match
+        }
+    }
+
+    if (matchingIndex != -1) {
+        request.locationIndex = matchingIndex; // Set the locationIndex to the best match index
+    } else {
+        // Handle the case where no matching location is found, you can throw an error or handle it as needed.
+        throw std::runtime_error("No matching location found");
+    }
+}
+
+// std::string	Server::matching(t_request &request)
+// {
+// 	std::vector<t_location> locations;
+// 	std::string pathToBeLookFor;
+
+// 	serverExists(request);
+// 	if (request.serverIndex != -1)
+// 	{
+// 		locationExists(request);
+// 	}
+	
+
+// 	// pathToBeLookFor = request.path;
+
+// 	// //if the path of the location is a directory
+// 	// pathToBeLookFor.erase(0, locations[i].path.size());
+// 	// std::string root = locations[i].root;
+// 	// if (root.empty()) {
+// 	// 	root = config.servers[z].root;
+// 	// 	if (root.empty()) {
+// 	// 		std::string body;
+// 	// 		std::string	header;
+// 	// 		try {
+// 	// 			body = fileToString(config.servers[z].errorPages[NOT_FOUND_STATUS], NOT_FOUND_STATUS);
+// 	// 		} catch(const std::exception& e) {
+// 	// 			body = e.what();
+// 	// 		}
+// 	// 		header = request.httpVersion + "404 Not Found\r\nContent-type: text/html\r\nContent-length: " + to_string(body.length()) + " \r\n\r\n";
+// 	// 		throw std::runtime_error(header + body);
+// 	// 	}
+// 	// }
+// 	// pathToBeLookFor.insert(0, root);
+// 	// return (pathToBeLookFor);
+// }
+
 std::string	Server::matching(t_request &request)
 {
-	int i = 0;
-	int j = 0;
-	int len = 0;
-	int tmp;
-	std::vector<t_location> locations;
-	std::string pathToBeLookFor;
-	int z = 0;
+    // Check if the server exists in the configuration
+    serverExists(request);
 
-	for (; z < (int)config.servers.size(); z++) {
-		if (config.servers[z].serverName == request.serverName)
-			break ;
-	}
-	if (i >= (int)config.servers.size())
-		throw std::runtime_error("Server name not found");
-	request.serverIndex = i;
-	locations = config.servers[i].locations;
-	i = -1;
-	for (; j < (int)locations.size(); j++)
-	{
-		tmp = getLenOfMatching(request.path, locations[j].path);
-		if (tmp > len)
-		{
-			len = tmp;
-			i = j;
-		}
-	}
+    if (request.serverIndex != -1)
+    {
+        // Check if a matching location exists in the server's locations
+        locationExists(request);
 
-	if (i == -1)
-		throw std::runtime_error(DEFAULT_400_ERROR_PAGE);
-	request.locationIndex = i;
-	pathToBeLookFor = request.path;
-	pathToBeLookFor.erase(0, locations[i].path.size());
-	std::string root = locations[i].root;
-	if (root.empty()) {
-		root = config.servers[z].root;
-		if (root.empty()) {
-			std::string body;
-			std::string	header;
-			try {
-				body = fileToString(config.servers[z].errorPages[NOT_FOUND_STATUS], NOT_FOUND_STATUS);
-			} catch(const std::exception& e) {
-				body = e.what();
-			}
-			header = request.httpVersion + "404 Not Found\r\nContent-type: text/html\r\nContent-length: " + to_string(body.length()) + " \r\n\r\n";
-			throw std::runtime_error(header + body);
-		}
-	}
-	pathToBeLookFor.insert(0, root);
-	return (pathToBeLookFor);
+        // Retrieve the matching location from the configuration
+        const t_location &matchingLocation = config.servers[request.serverIndex].locations[request.locationIndex];
+
+        // Construct and return the full path to be looked for
+        std::string pathToBeLookedFor = matchingLocation.root + request.path.substr(matchingLocation.path.size());
+		std::cout << "------> " << request.path.substr(matchingLocation.path.size()) << "----> " << matchingLocation.root << std::endl;
+
+        // Handle the case where the path is '/', which should match the root location
+        if (request.path == "/" && matchingLocation.path == "/")
+        {
+            return (pathToBeLookedFor);
+        }
+
+        // Handle the case where the location's path is '/', which should match any path
+        if (matchingLocation.path == "/")
+        {
+            return (pathToBeLookedFor);
+        }
+
+        // Handle the case where the path is '/', but the location's path is not '/'
+        if (request.path == "/")
+        {
+            throw std::runtime_error("Invalid path for the given location");
+        }
+
+        return (pathToBeLookedFor);
+    }
+    else
+    {
+        // Handle the case where the server doesn't exist
+        throw std::runtime_error("Server not found");
+    }
 }
 
 t_request	Server::getRequest(int clientFd) {
@@ -230,21 +342,21 @@ t_server&	Server::getServer(int serverIndex) {
 	return (config.servers[serverIndex]);
 }
 
-void	correctPath(std::string& path) {
-	if (!path.empty() && path[0] != '.') {
-		path.insert(0, ".");
-	}
+// void	correctPath(std::string& path) {
+// 	if (!path.empty() && path[0] != '.') {
+// 		path.insert(0, ".");
+// 	}
 
-	DIR* dir = NULL;
-	opendir(path.c_str());
-	if (!dir)
-	{
-		if (path[path.length() - 1] == '/')
-			path.erase(path.length() - 1);
-		return ;
-	}
-	closedir(dir);
-}
+// 	DIR* dir = NULL;
+// 	opendir(path.c_str());
+// 	if (!dir)
+// 	{
+// 		if (path[path.length() - 1] == '/')
+// 			path.erase(path.length() - 1);
+// 		return ;
+// 	}
+// 	closedir(dir);
+// }
 
 void	findAllowedMethod(std::string& method, t_server& server, t_location& location) {
 	bool existInLocation = false;
@@ -291,8 +403,8 @@ void	Server::locationRedirection(std::string& path, t_request& request) {
 	std::string header;
 	t_location	location = getLocation(request.serverIndex, request.locationIndex);
 
-	correctPath(location.redirectFrom);
-	correctPath(location.redirectTo);
+	// correctPath(location.redirectFrom);
+	// correctPath(location.redirectTo);
 	if (path == location.redirectFrom) {
 		try {
 			body = fileToString(location.redirectTo, NOT_FOUND_STATUS);
@@ -310,14 +422,14 @@ void	Server::listDirectory(std::string& path, t_request& request) {
 	DIR *dir = opendir(path.c_str());
 	std::string	header;
 	std::string	body;
-
+	// std::cout << "path: " << path << std::endl;
 	if (dir) {
 		if (location.autoindex) {
 			body = directory_listing(dir, request.path);
 			header = request.httpVersion + "200 OK\r\nContent-type: text/html\r\nContent-length: " + to_string(body.length()) + " \r\n\r\n";
 		} else if (!location.index.empty()) {
 			try {
-				correctPath(location.index);
+				// correctPath(location.index);
 				body = fileToString(location.index, 404);
 				header = request.httpVersion + "200 OK\r\nContent-type: text/html\r\nContent-length: " + to_string(body.length()) + " \r\n\r\n";
 			} catch (const std::exception& ex) {
@@ -325,9 +437,8 @@ void	Server::listDirectory(std::string& path, t_request& request) {
 				header = request.httpVersion + "404 Not Found\r\nContent-type: text/html\r\nContent-length: " + to_string(body.length()) + " \r\n\r\n";
 			}
 		} else {
-				std::cout << location.index << std::endl;
 			try {
-				correctPath(location.errorPages[FORBIDDEN_STATUS]);
+				// correctPath(location.errorPages[FORBIDDEN_STATUS]);
 				body = fileToString(location.errorPages[FORBIDDEN_STATUS], FORBIDDEN_STATUS);
 			} catch (const std::exception& ex) {
 				body = ex.what();
@@ -366,11 +477,10 @@ void Server::response(int clientFd, std::string src, t_request& request)
 	try {
 		src = matching(request);
 		t_location location = getLocation(request.serverIndex, request.locationIndex);
-		correctPath(src);
+		// correctPath(src);
 		methodNotAllowed(request); // should i check location errpage first when no method in the location?
 		locationRedirection(src, request);
 		listDirectory(src, request);
-		std::cout << src << std::endl;
 		servFile(src, request);
 	} catch (std::out_of_range &ofg) {
 		(void)ofg;
@@ -382,9 +492,6 @@ void Server::response(int clientFd, std::string src, t_request& request)
 	FD_CLR(clientFd, &current_sockets);
 }
 
-
-
-//accept , response
 void Server::serve()
 {
 	fd_set readySocket = getReadyFds();
