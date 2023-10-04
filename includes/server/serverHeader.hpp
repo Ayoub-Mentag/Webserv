@@ -1,27 +1,32 @@
 #pragma once 
-#include <exception>
-#include <parsingHeader.hpp>
-#include <sys/socket.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <netinet/in.h>
-#include <string.h>
-#include <arpa/inet.h>
-#include <fcntl.h>
-#include <signal.h>
-#include <stdlib.h>
-#include <dirent.h>
-#define MAX_LEN 650
-#define PORT 8080
-#define BACKLOG 5
 
-#define DEFAULT_403_ERROR_PAGE 		"<!DOCTYPE><html><body><h1>403 Forbidden</h1></body></html>"
-#define DEFAULT_404_ERROR_PAGE 		"<!DOCTYPE><html><body><h1>404 Not Found</h1></body></html>"
-#define DEFAULT_405_ERROR_PAGE 		"<!DOCTYPE><html><body><h1>405 Method Not Allowed</h1></body></html>"
+# include <exception>
+# include <parsingHeader.hpp>
+# include <sys/socket.h>
+# include <stdlib.h>
+# include <unistd.h>
+# include <netinet/in.h>
+# include <string.h>
+# include <arpa/inet.h>
+# include <fcntl.h>
+# include <signal.h>
+# include <stdlib.h>
+# include <dirent.h>
 
-#define NOT_FOUND_STATUS 			404
-#define METHOD_NOT_ALLOWED_STATUS 	405
-#define FORBIDDEN_STATUS			403
+# define MAX_LEN 650
+# define PORT 8080
+# define BACKLOG 5
+
+# define DEFAULT_400_ERROR_PAGE 		"<!DOCTYPE><html><body><h1>400 Bad Request</h1></body></html>"
+# define DEFAULT_403_ERROR_PAGE 		"<!DOCTYPE><html><body><h1>403 Forbidden</h1></body></html>"
+# define DEFAULT_404_ERROR_PAGE 		"<!DOCTYPE><html><body><h1>404 Not Found</h1></body></html>"
+# define DEFAULT_405_ERROR_PAGE 		"<!DOCTYPE><html><body><h1>405 Method Not Allowed</h1></body></html>"
+
+# define BAD_REQUEST_STATUS			400
+# define NOT_FOUND_STATUS 			404
+# define METHOD_NOT_ALLOWED_STATUS 	405
+# define FORBIDDEN_STATUS			403
+
 class Server {
 	private:
 		int			serverSocketfd;

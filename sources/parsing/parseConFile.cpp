@@ -6,7 +6,7 @@
 void	initWIthDefault(t_config& config) {
 	for (size_t i = 0; i < config.servers.size(); i++) {
 		if (config.servers[i].root.empty()) {
-			config.servers[i].root = DEFAULT_ROOT;
+			// config.servers[i].root = DEFAULT_ROOT;
 		}
 		if (config.servers[i].port < -1) {
 			config.servers[i].port = DEFAULT_PORT;
@@ -18,7 +18,7 @@ void	initWIthDefault(t_config& config) {
 		}
 		for (size_t j = 0; j < config.servers[i].locations.size(); j++) {
 			if (config.servers[i].locations[j].root.empty()) {
-				config.servers[i].locations[j].root = DEFAULT_ROOT;
+				// config.servers[i].locations[j].root = DEFAULT_ROOT;
 			}
 		}
 	}

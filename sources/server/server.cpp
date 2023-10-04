@@ -1,5 +1,38 @@
 #include <serverHeader.hpp>
 
+static std::string to_string(int num) {
+	std::stringstream	ss;
+
+    ss << num;
+	return (ss.str());
+}
+
+std::string	fileToString(std::string fileName, int status) {
+	std::string result;
+	std::string line;
+	std::ifstream os;
+
+	std::cout << "------------> filename: " << fileName << std::endl;
+	os.open(fileName);
+	if (os.fail()) {
+		switch (status) {
+			case METHOD_NOT_ALLOWED_STATUS:
+				throw std::runtime_error(DEFAULT_405_ERROR_PAGE);
+			case NOT_FOUND_STATUS:
+				throw std::runtime_error(DEFAULT_404_ERROR_PAGE);
+			case FORBIDDEN_STATUS:
+				throw std::runtime_error(DEFAULT_403_ERROR_PAGE);
+			case BAD_REQUEST_STATUS:
+				throw std::runtime_error(DEFAULT_400_ERROR_PAGE);
+			default:
+				throw std::runtime_error(to_string(status) + " status code not handled");
+		}
+	}
+	while (std::getline(os, line))
+		result += line;
+	return result;
+}
+
 std::string	directory_listing(DIR* dir, std::string root) {
 	std::string response;
 	response += "<html><body><ul>";
@@ -127,9 +160,11 @@ std::string	Server::matching(t_request &request)
 	int len = 0;
 	int tmp;
 	std::vector<t_location> locations;
+	std::string pathToBeLookFor;
+	int z = 0;
 
-	for (; i < (int)config.servers.size(); i++) {
-		if (config.servers[i].serverName == request.serverName)
+	for (; z < (int)config.servers.size(); z++) {
+		if (config.servers[z].serverName == request.serverName)
 			break ;
 	}
 	if (i >= (int)config.servers.size())
@@ -146,12 +181,29 @@ std::string	Server::matching(t_request &request)
 			i = j;
 		}
 	}
+
 	if (i == -1)
-		throw std::runtime_error("should I show 404 page or the root page");
+		throw std::runtime_error(DEFAULT_400_ERROR_PAGE);
 	request.locationIndex = i;
-	std::string pathToBeLookFor = request.path;
+	pathToBeLookFor = request.path;
 	pathToBeLookFor.erase(0, locations[i].path.size());
-	pathToBeLookFor.insert(0, locations[i].root);
+	std::string root = locations[i].root;
+	if (root.empty()) {
+		root = config.servers[z].root;
+		if (root.empty()) {
+			std::string body;
+			std::string	header;
+			try {
+				body = fileToString(config.servers[z].errorPages[BAD_REQUEST_STATUS], BAD_REQUEST_STATUS);
+				header = request.httpVersion + "400 Bad Request\r\nContent-type: text/html\r\nContent-length: " + to_string(body.length()) + " \r\n\r\n";
+			} catch(const std::exception& e) {
+				body = e.what();
+				header = request.httpVersion + "400 Bad Request\r\nContent-type: text/html\r\nContent-length: " + to_string(body.length()) + " \r\n\r\n";
+			}
+			throw std::runtime_error(header + body);
+		}
+	}
+	pathToBeLookFor.insert(0, root);
 	return (pathToBeLookFor);
 }
 
@@ -166,12 +218,7 @@ t_request	Server::getRequest(int clientFd) {
 	return request;
 }
 
-static std::string to_string(int num) {
-	std::stringstream	ss;
 
-    ss << num;
-	return (ss.str());
-}
 t_location&	Server::getLocation(int serverIndex, int locationIndex) {
 	if (serverIndex < 0 || locationIndex < 0)
 		throw std::out_of_range("getLocation()");
@@ -183,31 +230,6 @@ t_server&	Server::getServer(int serverIndex) {
 		throw std::out_of_range("getServer()");
 	return (config.servers[serverIndex]);
 }
-
-std::string	fileToString(std::string fileName, int status) {
-	std::string result;
-	std::string line;
-	std::ifstream os;
-
-	os.open(fileName);
-	if (os.fail()) {
-		switch (status) {
-			case METHOD_NOT_ALLOWED_STATUS:
-				throw std::runtime_error(DEFAULT_405_ERROR_PAGE);
-			case NOT_FOUND_STATUS:
-				throw std::runtime_error(DEFAULT_404_ERROR_PAGE);
-			case FORBIDDEN_STATUS:
-				throw std::runtime_error(DEFAULT_403_ERROR_PAGE);
-			default:
-				throw std::runtime_error(to_string(status) + " status code not handled");
-		}
-	}
-	while (std::getline(os, line))
-		result += line;
-	return result;
-}
-#include <sys/stat.h>
-
 
 void	correctPath(std::string& path) {
 	if (!path.empty() && path[0] != '.') {
@@ -343,7 +365,7 @@ void Server::response(int clientFd, std::string src, t_request& request)
 	std::string	response;
 
 	try {
-
+		src = matching(request);
 		t_location location = getLocation(request.serverIndex, request.locationIndex);
 		correctPath(src);
 		methodNotAllowed(request); // should i check location errpage first when no method in the location?
@@ -378,7 +400,7 @@ void Server::serve()
 			else {
 				t_request request = getRequest(clientFd);
 				try {
-					path = matching(request); // throwing an exception ???
+					// path = matching(request); // throwing an exception ???
 					response(clientFd, path, request);
 
 				} catch(const std::exception& e) { // not handled !!!!!!!!
