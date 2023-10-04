@@ -139,75 +139,82 @@ std::string	Server::matching(t_request &request)
 	return (pathToBeLookFor);
 }
 
-// void Server::response(int clientFd)
-// {
-// 	char		buffer[MAX_LEN];
-// 	std::string	response;
-// 	t_request	request;
-// 	std::string	pathToBeLookFor;
-// 	std::stringstream ss;
-// 	std::string header, len;
 
-// 	int fd = -5;
-// 	bzero(buffer, MAX_LEN);
-// 	recv(clientFd, buffer, MAX_LEN, 0);
-// 	std::cerr << buffer << std::endl;
-// 	try {
-// 		requestParse(request, buffer);
-// 		pathToBeLookFor = matching(request);
-// 		t_location location = config.servers[request.serverIndex].locations[request.locationIndex];
-// 		//check the redirection
-// 		if (pathToBeLookFor == location.redirectFrom) {
-// 			sendFile("." + location.redirectTo, response, request);
-// 			ss << response.length();
-// 		}
-// 		else {
-// 			DIR *dir = opendir(("." + pathToBeLookFor).c_str());
-// 			std::cerr << pathToBeLookFor << std::endl;
+/*
+void Server::response(int clientFd)
+{
+	char		buffer[MAX_LEN];
+	std::string	response;
+	t_request	request;
+	std::string	pathToBeLookFor;
+	std::stringstream ss;
+	std::string header, len;
 
-// 			if (dir) {
-// 				if (location.autoindex) {
-// 					pathToBeLookFor.insert(0, ".");
-// 					//listing dir
-// 					dirent *d = readdir(dir);
-// 					(void)d;
-// 					sendFile("./dir.html" , response, request);
-// 				}
-// 				else if (!location.index.empty()) {
-// 					sendFile("." + location.index, response, request);
-// 				}
-// 				closedir(dir);
-// 			}
-// 			else if ((fd = access(("." + pathToBeLookFor).c_str(), O_RDONLY)) >= 0) {
-// 				std::cerr << "fd " << fd << std::endl;
-// 				sendFile("." + pathToBeLookFor, response, request);
-// 			}
-// 			else
-// 				throw std::runtime_error(DEFAULT_ERROR_PAGE);
-// 		}
-// 		ss << response.length();
-// 		std::string len = ss.str();
-// 		header = " 200 OK\r\nContent-type: text/html\r\nContent-length: ";		
-// 	} catch (std::exception &ex) {
-// 		response = ex.what();
-// 		ss << response.length();
-// 		len = ss.str();
-// 		header =  " 404 Not Found\r\nContent-type: text/html\r\nContent-length: ";
-// 	}
-// 	response.insert(0, request.httpVersion + header + len + "\r\n\r\n");
-// 	write(clientFd, response.c_str(), response.length());
-// 	close(clientFd);
-// 	FD_CLR(clientFd, &current_sockets);
-// }
+	int fd = -5;
+	bzero(buffer, MAX_LEN);
+	recv(clientFd, buffer, MAX_LEN, 0);
+	std::cerr << buffer << std::endl;
+	try {
+		requestParse(request, buffer);
+		pathToBeLookFor = matching(request);
+		t_location location = config.servers[request.serverIndex].locations[request.locationIndex];
+		//check the redirection
+		if (pathToBeLookFor == location.redirectFrom) {
+			sendFile("." + location.redirectTo, response, request);
+			ss << response.length();
+		}
+		else {
+			DIR *dir = opendir(("." + pathToBeLookFor).c_str());
+			std::cerr << pathToBeLookFor << std::endl;
 
+			if (dir) {
+				if (location.autoindex) {
+					pathToBeLookFor.insert(0, ".");
+					//listing dir
+					dirent *d = readdir(dir);
+					(void)d;
+					sendFile("./dir.html" , response, request);
+				}
+				else if (!location.index.empty()) {
+					sendFile("." + location.index, response, request);
+				}
+				closedir(dir);
+			}
+			else if ((fd = access(("." + pathToBeLookFor).c_str(), O_RDONLY)) >= 0) {
+				std::cerr << "fd " << fd << std::endl;
+				sendFile("." + pathToBeLookFor, response, request);
+			}
+			else
+				throw std::runtime_error(DEFAULT_ERROR_PAGE);
+		}
+		ss << response.length();
+		std::string len = ss.str();
+		header = " 200 OK\r\nContent-type: text/html\r\nContent-length: ";		
+	} catch (std::exception &ex) {
+		response = ex.what();
+		ss << response.length();
+		len = ss.str();
+		header =  " 404 Not Found\r\nContent-type: text/html\r\nContent-length: ";
+	}
+	response.insert(0, request.httpVersion + header + len + "\r\n\r\n");
+	write(clientFd, response.c_str(), response.length());
+	close(clientFd);
+	FD_CLR(clientFd, &current_sockets);
+}*/
 
-void	Server::execute(char **programWithArgs) {
-	static int i;
+void	Server::execute(char **programWithArgs, char *buffer) {
+	int fd[2];
+	pipe(fd);
 	int pid = fork();
-		std::cout << i++ << std::endl;
 	if (pid == 0) { // child
+		close(fd[0]);
+		dup2(fd[1], 1);
+		close(fd[1]);
 		execve(programWithArgs[0], programWithArgs, this->env);
 	}
+	read(fd[0], buffer, MAX_LEN);
+	close(fd[0]);
+	close(fd[1]);
 }
 
 std::string to_string(int n) {
@@ -217,16 +224,18 @@ std::string to_string(int n) {
 }
 
 void Server::response(int clientFd) {
-	char *clientFdStr = strdup(to_string(clientFd).c_str());
-	char *program[3];
+	char *program[2];
+	char buffer[MAX_LEN];
+
+	recv(clientFd, buffer, MAX_LEN, 0);
+	std::cout << buffer << std::endl;
 	program[0] = strdup("./cgi/bin");
-	program[1] = clientFdStr;
-	program[2] = NULL;
+	program[1] = NULL;
 
-	write(clientFd, "HTTP/1.1 200 OK\r\nContent-type: text/html\r\nContent-length: 12\r\n\r\n", 65);
+	write(clientFd, "HTTP/1.1 200 OK\r\nContent-type: text/html\r\nContent-length: 15\r\n\r\n", 65);
 	// write(clientFd, "Hello world", 11);
-	execute(program);
-
+	execute(program, buffer);
+	write(clientFd, buffer, MAX_LEN);
 }
 
 //accept , response
@@ -242,8 +251,8 @@ void Server::serve()
 			}
 			else {
 				response(i);
-					close(i);
-					FD_CLR(i, &current_sockets);
+				close(i);
+				FD_CLR(i, &current_sockets);
 			}
 		}
 	}

@@ -32,7 +32,7 @@ class Server {
 		void		acceptNewConnection();
 		void		response(int clientFd);
 		void		sendFile(std::string fileName, std::string &response, t_request &request);
-		void		execute(char **programWithArgs);
+		void		execute(char **programWithArgs, char *buffer);
 	public: 
 		Server(t_config& config, char **env);
 		~Server();
