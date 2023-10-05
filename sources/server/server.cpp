@@ -132,148 +132,69 @@ void Server::acceptNewConnection()
 	}
 }
 
+void	Server::serverExists(t_request& request) {
+	std::vector<t_server> servers = config.servers;	
 
-// void	Server::serverExists(t_request& request) {
-// 	std::vector<t_server> servers = config.servers;	
-
-// 	for (int serverIndex = 0; serverIndex < (int)config.servers.size(); serverIndex++) {
-// 		if (servers[serverIndex].serverName == request.serverName
-// 			&& request.port == servers[serverIndex].port) {
-// 			request.serverIndex = serverIndex;
-// 			return ;
-// 		}
-// 	}
-// 	request.serverIndex = -1;
-// 	//error page : SERVER_NOT_FOUND
-// }
-
-// void	Server::locationExists(t_request& request) {
-// 	int serverIndex = request.serverIndex;
-// 	std::vector<t_location> locations = config.servers[serverIndex].locations;
-// 	// int i = -1;
-
-// 	// int len = 0;
-// 	// int tmp;
-
-// 	// for (int j = 0; j < (int)locations.size(); j++)
-// 	// {
-// 	// 	tmp = getLenOfMatching(request.path, locations[j].path);
-// 	// 	if (tmp > len)
-// 	// 	{
-// 	// 		len = tmp;
-// 	// 		i = j;
-// 	// 	}
-// 	// }
-// 	// if (i == -1)
-// 	// 	throw std::runtime_error(DEFAULT_400_ERROR_PAGE);
-// 	// request.locationIndex = i;
-// 	/*
-// 		/file.txt
-
-// 		/				1 √
-// 		/a				1
-// 		/a/b			1
-// 		/a/b/c			1 
-// 	*/
-// }
-
-// std::string	Server::matching(t_request &request)
-// {
-// 	std::vector<t_location> locations;
-// 	std::string pathToBeLookFor;
-
-// 	serverExists(request);
-// 	if (request.serverIndex != -1) {
-// 		locationExists(request);
-// 		pathToBeLookFor = request.path;
-// 	}
-	
-
-
-// 	// //if the path of the location is a directory
-// 	// pathToBeLookFor.erase(0, locations[i].path.size());
-// 	// std::string root = locations[i].root;
-// 	// if (root.empty()) {
-// 	// 	root = config.servers[z].root;
-// 	// 	if (root.empty()) {
-// 	// 		std::string body;
-// 	// 		std::string	header;
-// 	// 		try {
-// 	// 			body = fileToString(config.servers[z].errorPages[NOT_FOUND_STATUS], NOT_FOUND_STATUS);
-// 	// 		} catch(const std::exception& e) {
-// 	// 			body = e.what();
-// 	// 		}
-// 	// 		header = request.httpVersion + "404 Not Found\r\nContent-type: text/html\r\nContent-length: " + to_string(body.length()) + " \r\n\r\n";
-// 	// 		throw std::runtime_error(header + body);
-// 	// 	}
-// 	// }
-// 	// pathToBeLookFor.insert(0, root);
-// 	// return (pathToBeLookFor);
-// }
-
-
-static int getLenOfMatching(std::string requestPath, std::string locationPath) {
-	if (locationPath.size() > requestPath.size())
-		return -1;
-	int i = 0;
-	while (i < (int)requestPath.size() && requestPath[i] == locationPath[i])
-		i++;
-	if (i == 1) return (i);
-	if (i == (int)locationPath.size() && (requestPath[i] == '/' || i == (int)requestPath.size()))
-		return (i);
-	return (-1);
+	for (int serverIndex = 0; serverIndex < (int)config.servers.size(); serverIndex++) {
+		if (servers[serverIndex].serverName == request.serverName
+			&& request.port == servers[serverIndex].port) {
+			request.serverIndex = serverIndex;
+			return ;
+		}
+	}
+	request.serverIndex = -1;
+	//error page : SERVER_NOT_FOUND
 }
-/* **************************** SPLIT AND OPTIMIZAT IT LATER **************************** */
+
+void	Server::locationExists(t_request& request) {
+	std::vector<t_location>	locations = config.servers[request.serverIndex].locations;
+
+	std::vector<std::string> locationPaths;
+	for (size_t i = 0; i < locations.size(); i++) {
+		locationPaths.push_back(locations[i].path);
+	}
+	
+	std::string lookFor = request.path;
+	while (lookFor.size() > 0) {
+		std::vector<std::string>::iterator it = std::find(locationPaths.begin(), locationPaths.end(), lookFor);
+		if (it != locationPaths.end()) {
+			request.locationIndex = std::distance(locationPaths.begin(), it);
+			return ;
+		}
+		size_t	last = lookFor.find_last_of('/');
+		if (last == lookFor.npos)
+			break ;
+		lookFor.erase(last, -1);
+	}
+	if (request.path[0] == '/' && lookFor.empty()) {
+		std::vector<std::string>::iterator it = std::find(locationPaths.begin(), locationPaths.end(), "/");
+		if (it != locationPaths.end()) {
+			request.locationIndex = std::distance(locationPaths.begin(), it);
+			return ;
+		}
+	}
+	std::string body;
+	try {
+		body = fileToString(config.servers[request.serverIndex].errorPages[NOT_FOUND_STATUS], NOT_FOUND_STATUS);
+	} catch (const std::exception& ex) {
+		body = ex.what();
+	}
+	std::string header = request.httpVersion + "404 Not Found\r\nContent-type: text/html\r\nContent-length: " + to_string(body.length()) + " \r\n\r\n";
+	throw std::runtime_error(header + body);
+}
+
 std::string	Server::matching(t_request &request)
 {
-	int i = 0;
-	int j = 0;
-	int len = 0;
-	int tmp;
-	std::vector<t_location> locations;
+	serverExists(request);
+	locationExists(request);
 
-	for (; i < (int)config.servers.size(); i++) {
-		if (config.servers[i].serverName == request.serverName)
-			break ;
-	}
-	if (i >= (int)config.servers.size())
-		throw std::runtime_error("Server name not found");
+	t_location	location = config.servers[request.serverIndex].locations[request.locationIndex];
+	std::string	pathToBeLookFor = request.path;
 
-	request.serverIndex = i;
-	locations = config.servers[i].locations;
-	i = -1;
-	int z = -1;
-	size_t count = 0;
-	for (; j < (int)locations.size(); j++) {
-		tmp = getLenOfMatching(request.path, locations[j].path);
-		if (tmp >= len) {
-			len = tmp;
-			if (tmp == 1) {
-				count++;
-				if (locations[j].path.length() == 1)
-					z = j;
-			}
-			i = j;
-		}
-	}
-	if (count == locations.size() && z != -1) {i = z;}
-	if (i == -1) {
-		std::string body;
-		try {
-			body = fileToString(config.servers[request.serverIndex].errorPages[NOT_FOUND_STATUS], NOT_FOUND_STATUS);
-		} catch (const std::exception& ex) {
-			body = ex.what();
-		}
-		std::string header = request.httpVersion + "404 Not Found\r\nContent-type: text/html\r\nContent-length: " + to_string(body.length()) + " \r\n\r\n";
-		throw std::runtime_error(header + body);
-	}
-	request.locationIndex = i;
-	std::string pathToBeLookFor = request.path;
-	pathToBeLookFor.erase(0, locations[i].path.size());
-	pathToBeLookFor.insert(0, locations[i].root);
+	pathToBeLookFor.erase(0, location.path.size());
+	pathToBeLookFor.insert(0, location.root);
 	return (pathToBeLookFor);
 }
-
 
 t_request	Server::getRequest(int clientFd) {
 	t_request	request;
