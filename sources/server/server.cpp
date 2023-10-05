@@ -7,8 +7,7 @@ void	correctPath(std::string& path) {
 
 	DIR* dir = NULL;
 	opendir(path.c_str());
-	if (!dir)
-	{
+	if (!dir) {
 		if (path[path.length() - 1] == '/')
 			path.erase(path.length() - 1);
 		return ;
@@ -16,7 +15,7 @@ void	correctPath(std::string& path) {
 	closedir(dir);
 }
 
-static std::string to_string(int num) {
+static std::string	to_string(int num) {
 	std::stringstream	ss;
 
     ss << num;
@@ -55,36 +54,13 @@ std::string	directory_listing(DIR* dir, std::string root) {
 	struct dirent* entry;
 	while ((entry = readdir(dir))) {
 		if (root[root.length() - 1] != '/') {
-			root.insert(root.length() - 1, "/");
+			root.insert(root.length(), "/");
 		}
-		// std::cerr << root + std::string(entry->d_name) << std::endl;
 		response += "<li><a href=\"" + root + std::string(entry->d_name) + "/\">" + std::string(entry->d_name) + "</a></li>";
 	}
-	// std::cerr << path << std::endl;
 	response += "</ul></body></html>";
 	return (response);
 }
-
-// void Server::sendFile(std::string fileName, std::string &response, t_request &request)
-// {
-// 	std::ifstream	inFile;
-// 	std::string		send;
-
-// 	inFile.open(fileName);
-// 	if (inFile.fail()) {
-// 		std::string errorPage = config.servers[request.serverIndex].locations[request.locationIndex].errorPages[400];
-// 		inFile.open(errorPage);
-// 		if (inFile.fail()) {
-// 			errorPage = config.servers[request.serverIndex].errorPages[400];
-// 			inFile.open(errorPage);
-// 			if (inFile.fail())
-// 				throw std::runtime_error(DEFAULT_ERROR_PAGE);
-// 		}
-// 	}
-// 	while (std::getline(inFile, send))
-// 		response += send;
-// 	inFile.close();
-// }
 
 void Server::bindServerWithAddress()
 {
@@ -156,94 +132,148 @@ void Server::acceptNewConnection()
 	}
 }
 
+
+// void	Server::serverExists(t_request& request) {
+// 	std::vector<t_server> servers = config.servers;	
+
+// 	for (int serverIndex = 0; serverIndex < (int)config.servers.size(); serverIndex++) {
+// 		if (servers[serverIndex].serverName == request.serverName
+// 			&& request.port == servers[serverIndex].port) {
+// 			request.serverIndex = serverIndex;
+// 			return ;
+// 		}
+// 	}
+// 	request.serverIndex = -1;
+// 	//error page : SERVER_NOT_FOUND
+// }
+
+// void	Server::locationExists(t_request& request) {
+// 	int serverIndex = request.serverIndex;
+// 	std::vector<t_location> locations = config.servers[serverIndex].locations;
+// 	// int i = -1;
+
+// 	// int len = 0;
+// 	// int tmp;
+
+// 	// for (int j = 0; j < (int)locations.size(); j++)
+// 	// {
+// 	// 	tmp = getLenOfMatching(request.path, locations[j].path);
+// 	// 	if (tmp > len)
+// 	// 	{
+// 	// 		len = tmp;
+// 	// 		i = j;
+// 	// 	}
+// 	// }
+// 	// if (i == -1)
+// 	// 	throw std::runtime_error(DEFAULT_400_ERROR_PAGE);
+// 	// request.locationIndex = i;
+// 	/*
+// 		/file.txt
+
+// 		/				1 √
+// 		/a				1
+// 		/a/b			1
+// 		/a/b/c			1 
+// 	*/
+// }
+
+// std::string	Server::matching(t_request &request)
+// {
+// 	std::vector<t_location> locations;
+// 	std::string pathToBeLookFor;
+
+// 	serverExists(request);
+// 	if (request.serverIndex != -1) {
+// 		locationExists(request);
+// 		pathToBeLookFor = request.path;
+// 	}
+	
+
+
+// 	// //if the path of the location is a directory
+// 	// pathToBeLookFor.erase(0, locations[i].path.size());
+// 	// std::string root = locations[i].root;
+// 	// if (root.empty()) {
+// 	// 	root = config.servers[z].root;
+// 	// 	if (root.empty()) {
+// 	// 		std::string body;
+// 	// 		std::string	header;
+// 	// 		try {
+// 	// 			body = fileToString(config.servers[z].errorPages[NOT_FOUND_STATUS], NOT_FOUND_STATUS);
+// 	// 		} catch(const std::exception& e) {
+// 	// 			body = e.what();
+// 	// 		}
+// 	// 		header = request.httpVersion + "404 Not Found\r\nContent-type: text/html\r\nContent-length: " + to_string(body.length()) + " \r\n\r\n";
+// 	// 		throw std::runtime_error(header + body);
+// 	// 	}
+// 	// }
+// 	// pathToBeLookFor.insert(0, root);
+// 	// return (pathToBeLookFor);
+// }
+
+
 static int getLenOfMatching(std::string requestPath, std::string locationPath) {
 	if (locationPath.size() > requestPath.size())
 		return -1;
 	int i = 0;
 	while (i < (int)requestPath.size() && requestPath[i] == locationPath[i])
 		i++;
+	if (i == 1) return (i);
 	if (i == (int)locationPath.size() && (requestPath[i] == '/' || i == (int)requestPath.size()))
 		return (i);
 	return (-1);
 }
-
-void	Server::serverExists(t_request& request) {
-	std::vector<t_server> servers = config.servers;	
-
-	for (int serverIndex = 0; serverIndex < (int)config.servers.size(); serverIndex++) {
-		if (servers[serverIndex].serverName == request.serverName
-			&& request.port == servers[serverIndex].port) {
-			request.serverIndex = serverIndex;
-			return ;
-		}
-	}
-	request.serverIndex = -1;
-	//error page : SERVER_NOT_FOUND
-}
-
-void	Server::locationExists(t_request& request) {
-	int serverIndex = request.serverIndex;
-	std::vector<t_location> locations = config.servers[serverIndex].locations;
-	// int i = -1;
-
-	// int len = 0;
-	// int tmp;
-
-	// for (int j = 0; j < (int)locations.size(); j++)
-	// {
-	// 	tmp = getLenOfMatching(request.path, locations[j].path);
-	// 	if (tmp > len)
-	// 	{
-	// 		len = tmp;
-	// 		i = j;
-	// 	}
-	// }
-	// if (i == -1)
-	// 	throw std::runtime_error(DEFAULT_400_ERROR_PAGE);
-	// request.locationIndex = i;
-	/*
-		/file.txt
-
-		/				1 √
-		/a				1
-		/a/b			1
-		/a/b/c			1 
-	*/
-}
-
+/* **************************** SPLIT AND OPTIMIZAT IT LATER **************************** */
 std::string	Server::matching(t_request &request)
 {
+	int i = 0;
+	int j = 0;
+	int len = 0;
+	int tmp;
 	std::vector<t_location> locations;
-	std::string pathToBeLookFor;
 
-	serverExists(request);
-	if (request.serverIndex != -1) {
-		locationExists(request);
-		pathToBeLookFor = request.path;
+	for (; i < (int)config.servers.size(); i++) {
+		if (config.servers[i].serverName == request.serverName)
+			break ;
 	}
-	
+	if (i >= (int)config.servers.size())
+		throw std::runtime_error("Server name not found");
 
-
-	// //if the path of the location is a directory
-	// pathToBeLookFor.erase(0, locations[i].path.size());
-	// std::string root = locations[i].root;
-	// if (root.empty()) {
-	// 	root = config.servers[z].root;
-	// 	if (root.empty()) {
-	// 		std::string body;
-	// 		std::string	header;
-	// 		try {
-	// 			body = fileToString(config.servers[z].errorPages[NOT_FOUND_STATUS], NOT_FOUND_STATUS);
-	// 		} catch(const std::exception& e) {
-	// 			body = e.what();
-	// 		}
-	// 		header = request.httpVersion + "404 Not Found\r\nContent-type: text/html\r\nContent-length: " + to_string(body.length()) + " \r\n\r\n";
-	// 		throw std::runtime_error(header + body);
-	// 	}
-	// }
-	// pathToBeLookFor.insert(0, root);
-	// return (pathToBeLookFor);
+	request.serverIndex = i;
+	locations = config.servers[i].locations;
+	i = -1;
+	int z = -1;
+	size_t count = 0;
+	for (; j < (int)locations.size(); j++) {
+		tmp = getLenOfMatching(request.path, locations[j].path);
+		if (tmp >= len) {
+			len = tmp;
+			if (tmp == 1) {
+				count++;
+				if (locations[j].path.length() == 1)
+					z = j;
+			}
+			i = j;
+		}
+	}
+	if (count == locations.size() && z != -1) {i = z;}
+	if (i == -1) {
+		std::string body;
+		try {
+			body = fileToString(config.servers[request.serverIndex].errorPages[NOT_FOUND_STATUS], NOT_FOUND_STATUS);
+		} catch (const std::exception& ex) {
+			body = ex.what();
+		}
+		std::string header = request.httpVersion + "404 Not Found\r\nContent-type: text/html\r\nContent-length: " + to_string(body.length()) + " \r\n\r\n";
+		throw std::runtime_error(header + body);
+	}
+	request.locationIndex = i;
+	std::string pathToBeLookFor = request.path;
+	pathToBeLookFor.erase(0, locations[i].path.size());
+	pathToBeLookFor.insert(0, locations[i].root);
+	return (pathToBeLookFor);
 }
+
 
 t_request	Server::getRequest(int clientFd) {
 	t_request	request;
@@ -255,7 +285,6 @@ t_request	Server::getRequest(int clientFd) {
 	requestParse(request, buffer);
 	return request;
 }
-
 
 t_location&	Server::getLocation(int serverIndex, int locationIndex) {
 	if (serverIndex < 0 || locationIndex < 0)
@@ -314,11 +343,6 @@ void	Server::locationRedirection(std::string& path, t_request& request) {
 	std::string header;
 	t_location	location = getLocation(request.serverIndex, request.locationIndex);
 
-	// correctPath(location.redirectFrom);
-	// correctPath(location.redirectTo);
-	std::cerr << "path: " << path << std::endl;
-	std::cerr << "redirection From: " << location.redirectFrom << std::endl;
-	std::cerr << "redirection to: " << location.redirectTo << std::endl;
 	if (path == location.redirectFrom) {
 		try {
 			body = fileToString(location.redirectTo, NOT_FOUND_STATUS);
@@ -336,14 +360,12 @@ void	Server::listDirectory(std::string& path, t_request& request) {
 	DIR *dir = opendir(path.c_str());
 	std::string	header;
 	std::string	body;
-	// std::cout << "path: " << path << std::endl;
 	if (dir) {
 		if (location.autoindex) {
 			body = directory_listing(dir, request.path);
 			header = request.httpVersion + "200 OK\r\nContent-type: text/html\r\nContent-length: " + to_string(body.length()) + " \r\n\r\n";
 		} else if (!location.index.empty()) {
 			try {
-				// correctPath(location.index);
 				body = fileToString(location.index, 404);
 				header = request.httpVersion + "200 OK\r\nContent-type: text/html\r\nContent-length: " + to_string(body.length()) + " \r\n\r\n";
 			} catch (const std::exception& ex) {
@@ -352,7 +374,6 @@ void	Server::listDirectory(std::string& path, t_request& request) {
 			}
 		} else {
 			try {
-				// correctPath(location.errorPages[FORBIDDEN_STATUS]);
 				body = fileToString(location.errorPages[FORBIDDEN_STATUS], FORBIDDEN_STATUS);
 			} catch (const std::exception& ex) {
 				body = ex.what();
@@ -390,9 +411,9 @@ void Server::response(int clientFd, std::string src, t_request& request)
 
 	try {
 		src = matching(request);
-		std::cout << request.serverIndex << " " << request.locationIndex << "\n";
+		std::cout << "src: " << src << std::endl;
 		t_location location = getLocation(request.serverIndex, request.locationIndex);
-		// correctPath(src);
+		correctPath(src);
 		methodNotAllowed(request); // should i check location errpage first when no method in the location?
 		locationRedirection(src, request);
 		listDirectory(src, request);
