@@ -1,5 +1,9 @@
 #include <serverHeader.hpp>
 
+// const char* throwErrorPage404() {
+
+// }
+
 void	correctPath(std::string& path) {
 	// if (!path.empty() && path[0] != '.') {
 	// 	path.insert(0, ".");
@@ -192,7 +196,10 @@ std::string	Server::matching(t_request &request)
 	std::string	pathToBeLookFor = request.path;
 
 	pathToBeLookFor.erase(0, location.path.size());
-	pathToBeLookFor.insert(0, location.root);
+	if (!location.root.empty())
+		pathToBeLookFor.insert(0, location.root);
+	else
+		pathToBeLookFor.insert(0, config.servers[request.serverIndex].root);
 	return (pathToBeLookFor);
 }
 
@@ -353,17 +360,14 @@ void Server::serve()
 {
 	fd_set readySocket = getReadyFds();
 	std::string path;
-	for (int clientFd = 0; clientFd < FD_SETSIZE; clientFd++)
-	{
-		if (FD_ISSET(clientFd, &readySocket))
-		{
+	for (int clientFd = 0; clientFd < FD_SETSIZE; clientFd++) {
+		if (FD_ISSET(clientFd, &readySocket)) {
 			if (clientFd == this->serverSocketfd) {
 				acceptNewConnection();
-			}
-			else {
+			} else {
 				t_request request = getRequest(clientFd);
 				try {
-					// path = matching(request); // throwing an exception ???
+					// path = matching(request);
 					response(clientFd, path, request);
 
 				} catch(const std::exception& e) { // not handled !!!!!!!!
