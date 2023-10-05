@@ -338,30 +338,72 @@ void	Server::servFile(std::string& src, t_request& request) {
 	throw std::runtime_error(header + body);
 }
 
-void Server::response(int clientFd, std::string src, t_request& request)
-{
-	std::string	response;
+void	Server::execute(char **programWithArgs, char *buffer) {
+	char	*env[5];
+	int		fd[2];
 
-	try {
-
-		t_location location = getLocation(request.serverIndex, request.locationIndex);
-		correctPath(src);
-		methodNotAllowed(request); // should i check location errpage first when no method in the location?
-		locationRedirection(src, request);
-		listDirectory(src, request);
-		std::cout << src << std::endl;
-		servFile(src, request);
-	} catch (std::out_of_range &ofg) {
-		(void)ofg;
-	} catch (std::exception &ex) {
-		response = ex.what();
+	env[0] = strdup("SERVER_NAME=localhost");
+	env[1] = strdup("SERVER_PORT=8080");
+	env[2] = strdup("REQUEST_METHOD=GET");
+	env[3] = strdup("PATH_INFO=cgi/script/test.php");
+	env[4] = NULL;
+	pipe(fd);
+	int pid = fork();
+	if (pid == 0) { // child
+		close(fd[0]);
+		dup2(fd[1], 1);
+		close(fd[1]);
+		execve(programWithArgs[0], programWithArgs, env);
 	}
-	write(clientFd, response.c_str(), response.length());
-	close(clientFd);
-	FD_CLR(clientFd, &current_sockets);
+	read(fd[0], buffer, MAX_LEN);
+	close(fd[0]);
+	close(fd[1]);
 }
 
 
+void	Server::response(int clientFd, std::string src, t_request& request) {
+	(void)src;
+	(void)request;
+	char *program[2];
+	char buffer[MAX_LEN];
+
+	program[0] = strdup("./cgi/bin");
+	program[1] = NULL;
+
+	// write(clientFd, "Hello world", 11);
+	execute(program, buffer);
+	std::string body = buffer;
+	std::string header = "HTTP/1.1 200 OK\r\nContent-type: text/html\r\nContent-length: " + to_string(body.length()) + "\r\n\r\n";
+	write(clientFd, (header + body).c_str(), (header + body).length());
+}
+
+
+
+// old response
+/*
+	void Server::response(int clientFd, std::string src, t_request& request)
+	{
+		std::string	response;
+
+		try {
+
+			t_location location = getLocation(request.serverIndex, request.locationIndex);
+			correctPath(src);
+			methodNotAllowed(request); // should i check location errpage first when no method in the location?
+			locationRedirection(src, request);
+			listDirectory(src, request);
+			std::cout << src << std::endl;
+			servFile(src, request);
+		} catch (std::out_of_range &ofg) {
+			(void)ofg;
+		} catch (std::exception &ex) {
+			response = ex.what();
+		}
+		write(clientFd, response.c_str(), response.length());
+		close(clientFd);
+		FD_CLR(clientFd, &current_sockets);
+	}
+*/
 
 //accept , response
 void Server::serve()
