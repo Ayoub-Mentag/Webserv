@@ -55,4 +55,4 @@ re:					fclean all
 .PHONY:				all clean fclean re
 
 push:
-					git add . && git commit -m "main branch" && (git push || git push --set-upstream origin main)
+					git add . && git commit -m "cgi branch" && (git push || git push --set-upstream origin cgi)

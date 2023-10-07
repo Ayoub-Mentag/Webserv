@@ -28,6 +28,7 @@ class Server {
 		struct		sockaddr_in serverAddr;
 		fd_set		current_sockets;
 		t_config	config;
+		char		**env;
 	private:
 		std::string	matching(t_request &request);
 		void		bindServerWithAddress();
@@ -45,7 +46,7 @@ class Server {
 
 
 	public: 
-		Server(t_config& config);
+		Server(t_config& config, char **env);
 		~Server();
 		void		serve();
 		t_location&	getLocation(int serverIndex, int locationIndex);
