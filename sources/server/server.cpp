@@ -1,9 +1,5 @@
 #include <serverHeader.hpp>
 
-// const char* throwErrorPage404() {
-
-// }
-
 void	correctPath(std::string& path) {
 	// if (!path.empty() && path[0] != '.') {
 	// 	path.insert(0, ".");
@@ -46,9 +42,10 @@ std::string	fileToString(std::string fileName, int status) {
 				throw std::runtime_error(to_string(status) + " status code not handled");
 		}
 	}
-	while (std::getline(os, line))
+	while (std::getline(os, line)) {
 		result += line;
-	return result;
+	}
+	return (result);
 }
 
 std::string	directory_listing(DIR* dir, std::string root) {
@@ -69,8 +66,7 @@ std::string	directory_listing(DIR* dir, std::string root) {
 void Server::bindServerWithAddress()
 {
 	int result = bind(this->serverSocketfd, (struct sockaddr*)&serverAddr, sizeof(serverAddr));
-	if (result == -1)
-	{
+	if (result == -1) {
 		throw std::runtime_error(strerror(errno));
 	}
 }
@@ -339,7 +335,6 @@ void Server::response(int clientFd, std::string src, t_request& request)
 
 	try {
 		src = matching(request);
-		std::cout << "src: " << src << std::endl;
 		t_location location = getLocation(request.serverIndex, request.locationIndex);
 		correctPath(src);
 		methodNotAllowed(request); // should i check location errpage first when no method in the location?
@@ -351,6 +346,7 @@ void Server::response(int clientFd, std::string src, t_request& request)
 	} catch (std::exception &ex) {
 		response = ex.what();
 	}
+	// std::cout << response << std::endl;
 	write(clientFd, response.c_str(), response.length());
 	close(clientFd);
 	FD_CLR(clientFd, &current_sockets);
