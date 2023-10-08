@@ -41,6 +41,8 @@ typedef struct Request {
     std::string path;
     std::string httpVersion;
     std::string serverName;
+    int         serverIndex;
+    int         locationIndex;
     int         port;
 } t_request;
 

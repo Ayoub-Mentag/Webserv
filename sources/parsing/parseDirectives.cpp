@@ -39,9 +39,9 @@ bool	getAutoIndex(std::string& value, std::string& key) {
 		std::cerr << PRINT_LINE_AND_FILE;
 		exit(1);
 	}
-	if (value == "0" || value == "false" || value == "FALSE") {
+	if (value == "0" || value == "false" || value == "FALSE" || value == "off" || value == "OFF") {
 		return (false);
-	} else if (value == "1" || value == "true" || value == "TRUE") {
+	} else if (value == "1" || value == "true" || value == "TRUE" || value == "on" || value == "ON") {
 		return (true);
 	} else {
 		std::cerr << INVALID_ARGUMENT;

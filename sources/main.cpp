@@ -30,7 +30,7 @@ static void	usage(const char* programName) {
 // 	}
 // }
 
-int	main(int argc, char* argv[]) {
+int	main(int argc, char* argv[], char **env) {
 	// char		buffer[MAX_LEN];
 	t_config	config;
 
@@ -38,11 +38,11 @@ int	main(int argc, char* argv[]) {
 	if (argc <= 2) {
 		config = parseConFile(argv[1]);
 		try {
-			Server server(config);
+			Server server(config, env);
 			while (1)
 				server.serve();
 		} catch (std::exception &ex) {
-			std::cout << ex.what() << std::endl;
+			std::cout << "--" << ex.what() << std::endl;
 		}
 	} else {
 		usage(argv[0]);
