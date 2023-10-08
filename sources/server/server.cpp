@@ -38,6 +38,8 @@ std::string	fileToString(std::string fileName, int status) {
 				throw std::runtime_error(DEFAULT_403_ERROR_PAGE);
 			case BAD_REQUEST_STATUS:
 				throw std::runtime_error(DEFAULT_400_ERROR_PAGE);
+			case NOT_IMPLEMENTED:
+				throw std::runtime_error(DEFAULT_501_ERROR_PAGE);
 			default:
 				throw std::runtime_error(to_string(status) + " status code not handled");
 		}
@@ -247,6 +249,17 @@ void	Server::methodNotAllowed(t_request& request)
 	t_server server = getServer(request.serverIndex);
 	t_location location = getLocation(request.serverIndex, request.serverIndex);
 
+	if (request.method != "GET" && request.method != "POST" && request.method != "DELETE") {
+		std::string body;
+		std::string header;
+		try {
+			body = fileToString(location.errorPages[NOT_IMPLEMENTED], NOT_IMPLEMENTED);
+		} catch(const std::exception& e) {
+			body = e.what();
+		}
+		header = request.httpVersion += "501 Not Implemented\r\nContent-type: text/html\r\nContent-length: " + to_string(body.length()) + " \r\n\r\n";
+		throw std::runtime_error(header + body);
+	}
 	try {
 		findAllowedMethod(request.method, server, location);
 	} catch (std::exception &ex) {

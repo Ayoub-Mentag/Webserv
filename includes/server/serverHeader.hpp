@@ -21,11 +21,13 @@
 # define DEFAULT_403_ERROR_PAGE 		"<!DOCTYPE><html><body><h1>403 Forbidden</h1></body></html>"
 # define DEFAULT_404_ERROR_PAGE 		"<!DOCTYPE><html><body><h1>404 Not Found</h1></body></html>"
 # define DEFAULT_405_ERROR_PAGE 		"<!DOCTYPE><html><body><h1>405 Method Not Allowed</h1></body></html>"
+# define DEFAULT_501_ERROR_PAGE 		"<!DOCTYPE><html><body><h1>501 Not Implemented</h1></body></html>"
 
 # define BAD_REQUEST_STATUS			400
 # define NOT_FOUND_STATUS 			404
 # define METHOD_NOT_ALLOWED_STATUS 	405
 # define FORBIDDEN_STATUS			403
+# define NOT_IMPLEMENTED			501
 
 class Server {
 	private:
