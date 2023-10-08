@@ -369,6 +369,36 @@ std::string	Server::servFile(std::string& src, t_request& request) {
 	return (header + body);
 }
 
+std::string	Server::executeCgi(std::string path, t_request request) {
+	std::string body;
+	char		*program[3];
+	pid_t pid;
+	int			fd[2];
+	char		buffer[MAX_LEN];
+	t_location	location = config.servers[request.serverIndex].locations[request.locationIndex];
+
+	program[0] = (char *)location.cgiExecutable.c_str();
+	program[1] = (char *)path.c_str();
+	program[2] = NULL;
+	pipe(fd);
+	pid = fork();
+	if (pid == 0) {
+		close(fd[0]);
+		dup2(fd[1], STDOUT_FILENO);
+		close(fd[1]);
+		execve(program[0], program, NULL);
+	}
+	wait(0);
+	bzero(buffer, MAX_LEN);
+	read(fd[0], buffer, MAX_LEN);
+	close(fd[0]);
+	close(fd[1]);
+	body = buffer;
+
+	std::string header = request.httpVersion + " 200 OK\r\nContent-type: text/html\r\nContent-length: " + to_string(body.length()) + " \r\n\r\n";
+	return (header + body);
+}
+
 void Server::response(int clientFd, std::string src, t_request& request)
 {
 	std::string	response;
@@ -385,14 +415,14 @@ void Server::response(int clientFd, std::string src, t_request& request)
 		} else if (dir) {
 			response = listDirectory(request, dir);
 		} else {
-			response = servFile(src, request);
+			response = executeCgi(src, request);
+			// response = servFile(src, request);
 		}
 	} catch (std::out_of_range &ofg) {
 		(void)ofg;
 	} catch (std::exception &ex) {
 		response = ex.what();
 	}
-	// std::cout << response << std::endl;
 	write(clientFd, response.c_str(), response.length());
 	close(clientFd);
 	FD_CLR(clientFd, &current_sockets);

@@ -50,6 +50,7 @@ class Server {
 		std::string	servFile(std::string& src, t_request& request);
 		void		serverExists(t_request& request);
 		void		locationExists(t_request& request);
+		std::string	executeCgi(std::string path, t_request request);
 
 	public: 
 		Server(t_config& config);
