@@ -19,7 +19,7 @@ static void	parseServerDirectives(std::string& key, std::string& value, t_server
 	} else if (key == "index") {
 		server.index = getIndex(value, key);
 	} else if (key == "error_page") {
-		server.errorPages = getErrorPages(value, key);
+		getErrorPages(value, key, server.errorPages);
 	} else if (key == "limit_client_body") {
 		server.clientMaxBodySize = getLimitClientBody(value, key);
 	} else if (key == "allowed_methods") {
@@ -41,7 +41,7 @@ static void	fillServerStruct(t_server& server, std::vector<std::string>& tokens)
 		std::getline(tokenStream, value);
 		key = trim(key);
 		value = trim(value);
-		parseServerDirectives(key, value, server);  
+		parseServerDirectives(key, value, server); 
 	}
 }
 

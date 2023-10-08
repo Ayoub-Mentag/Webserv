@@ -43,12 +43,11 @@ class Server {
 		fd_set		getReadyFds();
 		void		acceptNewConnection();
 		void		response(int clientFd, std::string src, t_request& request);
-		void		sendFile(std::string fileName, std::string &response, t_request &request);
 		t_request	getRequest(int clientFd);
 		void		methodNotAllowed(t_request& request);
-		void		locationRedirection(std::string& path, t_request& request);
-		void		listDirectory(std::string& path, t_request& request);
-		void		servFile(std::string& src, t_request& request);
+		std::string	locationRedirection(t_request& request);
+		std::string	listDirectory(t_request& request, DIR *dir);
+		std::string	servFile(std::string& src, t_request& request);
 		void		serverExists(t_request& request);
 		void		locationExists(t_request& request);
 
