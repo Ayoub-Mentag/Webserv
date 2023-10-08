@@ -30,7 +30,8 @@ static void	usage(const char* programName) {
 // 	}
 // }
 
-int	main(int argc, char* argv[], char **env) {
+int	main(int argc, char* argv[]) {
+	// char		buffer[MAX_LEN];
 	t_config	config;
 
 	argv[1] = (argc == 2) ? argv[1] : (char*)DEFAULT_CONFIG_FILE;

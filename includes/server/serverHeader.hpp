@@ -42,8 +42,6 @@ class Server {
 		void		locationRedirection(std::string& path, t_request& request);
 		void		listDirectory(std::string& path, t_request& request);
 		void		servFile(std::string& src, t_request& request);
-		void		execute(char **programWithArgs, char *buffer);
-
 
 	public: 
 		Server(t_config& config, char **env);

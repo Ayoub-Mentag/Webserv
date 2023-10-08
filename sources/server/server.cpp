@@ -146,6 +146,7 @@ std::string	Server::matching(t_request &request)
 			i = j;
 		}
 	}
+
 	if (i == -1)
 		throw std::runtime_error("should I show 404 page or the root page");
 	request.locationIndex = i;
@@ -155,8 +156,8 @@ std::string	Server::matching(t_request &request)
 	return (pathToBeLookFor);
 }
 
-t_request	Server::getRequest(int clientFd) {
-	t_request	request;
+void Server::response(int clientFd)
+{
 	char		buffer[MAX_LEN];
 
 	bzero(buffer, MAX_LEN);
@@ -433,25 +434,26 @@ void Server::response(int clientFd, std::string src, t_request& request) {
 	{
 		std::string	response;
 
-		try {
-	
-			t_location location = getLocation(request.serverIndex, request.locationIndex);
-			correctPath(src);
-			methodNotAllowed(request); // should i check location errpage first when no method in the location?
-			locationRedirection(src, request);
-			listDirectory(src, request);
-			std::cout << src << std::endl;
-			servFile(src, request);
-		} catch (std::out_of_range &ofg) {
-			(void)ofg;
-		} catch (std::exception &ex) {
-			response = ex.what();
-		}
-		write(clientFd, response.c_str(), response.length());
-		close(clientFd);
-		FD_CLR(clientFd, &current_sockets);
+	try {
+
+		t_location location = getLocation(request.serverIndex, request.locationIndex);
+		correctPath(src);
+		methodNotAllowed(request); // should i check location errpage first when no method in the location?
+		locationRedirection(src, request);
+		listDirectory(src, request);
+		std::cout << src << std::endl;
+		servFile(src, request);
+	} catch (std::out_of_range &ofg) {
+		(void)ofg;
+	} catch (std::exception &ex) {
+		response = ex.what();
 	}
-*/
+	write(clientFd, response.c_str(), response.length());
+	close(clientFd);
+	FD_CLR(clientFd, &current_sockets);
+}
+
+
 
 //accept , response
 void Server::serve()
@@ -468,7 +470,7 @@ void Server::serve()
 			else {
 				t_request request = getRequest(clientFd);
 				try {
-					// path = matching(request); // throwing an exception ???
+					path = matching(request); // throwing an exception ???
 					response(clientFd, path, request);
 
 				} catch(const std::exception& e) { // not handled !!!!!!!!
