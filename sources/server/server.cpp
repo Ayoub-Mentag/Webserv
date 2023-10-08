@@ -427,11 +427,6 @@ void Server::response(int clientFd, std::string src, t_request& request) {
 }
 
 
-
-
-
-
-
 // old response
 /*
 	void Server::response(int clientFd, std::string src, t_request& request)
@@ -439,7 +434,7 @@ void Server::response(int clientFd, std::string src, t_request& request) {
 		std::string	response;
 
 		try {
-
+	
 			t_location location = getLocation(request.serverIndex, request.locationIndex);
 			correctPath(src);
 			methodNotAllowed(request); // should i check location errpage first when no method in the location?
