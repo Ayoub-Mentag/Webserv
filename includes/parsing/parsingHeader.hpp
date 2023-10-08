@@ -78,7 +78,7 @@ std::string					trim(const std::string& str);
 bool						bracketsBalance(const std::string& str);
 
 /* Parsing Directives */
-std::map<int, std::string>	getErrorPages(std::string& value, std::string& key);
+void                        getErrorPages(std::string& value, std::string& key, std::map<int, std::string>& errorPages);
 std::vector<std::string>	getAllowedMethods(std::string& value, std::string& key);
 std::string					getIndex(std::string& value, std::string& key);
 std::string					getRoot(std::string& value, std::string& key);
