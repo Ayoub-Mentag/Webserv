@@ -16,11 +16,11 @@ void	initWIthDefault(t_config& config) {
 			config.servers[i].allowedMethods.push_back("POST");
 			config.servers[i].allowedMethods.push_back("DELETE");
 		}
-		for (size_t j = 0; j < config.servers[i].locations.size(); j++) {
-			if (config.servers[i].locations[j].root.empty()) {
-				config.servers[i].locations[j].root = DEFAULT_ROOT;
-			}
-		}
+		// for (size_t j = 0; j < config.servers[i].locations.size(); j++) {
+		// 	if (config.servers[i].locations[j].root.empty()) {
+		// 		// config.servers[i].locations[j].root = DEFAULT_ROOT;
+		// 	}
+		// }
 	}
 }
 

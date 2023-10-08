@@ -4,6 +4,8 @@ void 	requestParse(t_request& request, std::string buffer) {
 	std::istringstream	iss(buffer);
 	std::string			str;
 
+	request.locationIndex = -1;
+	request.serverIndex = -1;
 	// request line 
 	std::getline(iss, str);
 	size_t first = str.find_first_of(' ');
