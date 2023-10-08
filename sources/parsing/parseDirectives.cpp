@@ -103,8 +103,7 @@ int	getPort(std::string& value, std::string& key) {
 	return (atoi(value.c_str()));
 }
 
-std::map<int, std::string>	getErrorPages(std::string& value, std::string& key) {
-	std::map<int, std::string> errorPages;
+void	getErrorPages(std::string& value, std::string& key, std::map<int, std::string>& errorPages) {
 	if (value.empty() || value == ";") {
 		std::cerr << NO_VALUE;
 		std::cerr << PRINT_LINE_AND_FILE;
@@ -128,14 +127,14 @@ std::map<int, std::string>	getErrorPages(std::string& value, std::string& key) {
 			std::cerr << PRINT_LINE_AND_FILE;
 			exit(1);
 		}
+		// if (errorPages[std::atoi(errorIndex.c_str())].empty()) {
 		errorPages[std::atoi(errorIndex.c_str())] = errorValue;
+		// }
 	}
-	
-	return (errorPages);
+	// return (errorPages);
 }
 
 int	getLimitClientBody(std::string& value, std::string& key) {
-	std::map<int, std::string> errorPages;
 	if (value.empty() || value == ";") {
 		std::cerr << NO_VALUE;
 		std::cerr << PRINT_LINE_AND_FILE;

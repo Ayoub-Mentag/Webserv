@@ -175,20 +175,22 @@ void	Server::locationExists(t_request& request) {
 			return ;
 		}
 	}
-	std::string body;
-	try {
-		body = fileToString(config.servers[request.serverIndex].errorPages[NOT_FOUND_STATUS], NOT_FOUND_STATUS);
-	} catch (const std::exception& ex) {
-		body = ex.what();
-	}
-	std::string header = request.httpVersion + "404 Not Found\r\nContent-type: text/html\r\nContent-length: " + to_string(body.length()) + " \r\n\r\n";
-	throw std::runtime_error(header + body);
 }
 
 std::string	Server::matching(t_request &request)
 {
-	serverExists(request);
+	serverExists(request); // check error later!
 	locationExists(request);
+	if (request.locationIndex == -1) {
+		std::string body;
+		try {
+			body = fileToString(config.servers[request.serverIndex].errorPages[NOT_FOUND_STATUS], NOT_FOUND_STATUS);
+		} catch (const std::exception& ex) {
+			body = ex.what();
+		}
+		std::string header = request.httpVersion + "404 Not Found\r\nContent-type: text/html\r\nContent-length: " + to_string(body.length()) + " \r\n\r\n";
+		throw std::runtime_error(header + body);
+	}
 
 	t_location	location = config.servers[request.serverIndex].locations[request.locationIndex];
 	std::string	pathToBeLookFor = request.path;
@@ -233,21 +235,19 @@ void	findAllowedMethod(std::string& method, t_server& server, t_location& locati
 	if (existInLocation) {
 		return ; // means that the method is allowed
 	} else {
-		if (location.allowedMethods.size() == 0)
-		{
+		if (location.allowedMethods.size() == 0) {
 			existInServer = std::find(server.allowedMethods.begin(), server.allowedMethods.end(), method) != server.allowedMethods.end();
 			if (existInServer)
 				return ;
 			throw std::runtime_error(server.errorPages[405]);
 		}
+		throw std::runtime_error(location.errorPages[405]);
 	}
-	throw std::runtime_error(location.errorPages[405]);
 }
 
-void	Server::methodNotAllowed(t_request& request)
-{
+void	Server::methodNotAllowed(t_request& request) {
 	t_server server = getServer(request.serverIndex);
-	t_location location = getLocation(request.serverIndex, request.serverIndex);
+	t_location location = getLocation(request.serverIndex, request.locationIndex);
 
 	if (request.method != "GET" && request.method != "POST" && request.method != "DELETE") {
 		std::string body;
@@ -275,71 +275,73 @@ void	Server::methodNotAllowed(t_request& request)
 	}
 }
 
-void	Server::locationRedirection(std::string& path, t_request& request) {
+std::string	Server::locationRedirection(t_request& request) {
 	std::string	body;
 	std::string header;
 	t_location	location = getLocation(request.serverIndex, request.locationIndex);
 
-	if (path == location.redirectFrom) {
-		try {
-			body = fileToString(location.redirectTo, NOT_FOUND_STATUS);
-			header = request.httpVersion + "301 Moved Permanently\r\nContent-type: text/html\r\nContent-length: " + to_string(body.length()) + " \r\n\r\n";
-		} catch(const std::exception& e) {
-			body = e.what();
-			header = request.httpVersion + "404 Not Found\r\nContent-type: text/html\r\nContent-length: " + to_string(body.length()) + " \r\n\r\n";
-		}
+	try {
+		body = fileToString(location.redirectTo, NOT_FOUND_STATUS);
+		header = request.httpVersion + "301 Moved Permanently\r\nContent-type: text/html\r\nContent-length: " + to_string(body.length()) + " \r\n\r\n";
+	} catch(const std::exception& e) {
+		body = e.what();
+		header = request.httpVersion + "404 Not Found\r\nContent-type: text/html\r\nContent-length: " + to_string(body.length()) + " \r\n\r\n";
 		throw std::runtime_error(header + body);
 	}
+	return (header + body);
 }
 
-void	Server::listDirectory(std::string& path, t_request& request) {
+std::string	Server::listDirectory(t_request& request, DIR *dir) {
 	t_location location = getLocation(request.serverIndex, request.locationIndex);
-	DIR *dir = opendir(path.c_str());
+	
 	std::string	header;
 	std::string	body;
-	if (dir) {
-		if (location.autoindex) {
-			body = directory_listing(dir, request.path);
-			header = request.httpVersion + "200 OK\r\nContent-type: text/html\r\nContent-length: " + to_string(body.length()) + " \r\n\r\n";
-		} else if (!location.index.empty()) {
-			try {
-				body = fileToString(location.index, 404);
-				header = request.httpVersion + "200 OK\r\nContent-type: text/html\r\nContent-length: " + to_string(body.length()) + " \r\n\r\n";
-			} catch (const std::exception& ex) {
-				body = ex.what();
-				header = request.httpVersion + "404 Not Found\r\nContent-type: text/html\r\nContent-length: " + to_string(body.length()) + " \r\n\r\n";
-			}
-		} else {
-			try {
-				body = fileToString(location.errorPages[FORBIDDEN_STATUS], FORBIDDEN_STATUS);
-			} catch (const std::exception& ex) {
-				body = ex.what();
-			}
-			header = request.httpVersion + " 403 Forbidden\r\nContent-type: text/html\r\nContent-length: " + to_string(body.length()) + " \r\n\r\n";
-		}
-		closedir(dir);
-		throw std::runtime_error(header + body);
-	}
-}
-
-void	Server::servFile(std::string& src, t_request& request) {
-	std::string	header;
-	std::string	body;
-
-	if (access(src.c_str(), O_RDONLY) >= 0) {
+	if (location.autoindex) {
+		body = directory_listing(dir, request.path);
+		header = request.httpVersion + "200 OK\r\nContent-type: text/html\r\nContent-length: " + to_string(body.length()) + " \r\n\r\n";
+	} else if (!location.index.empty()) {
 		try {
-			body = fileToString(src, 404);
+			body = fileToString(location.index, 404);
 			header = request.httpVersion + "200 OK\r\nContent-type: text/html\r\nContent-length: " + to_string(body.length()) + " \r\n\r\n";
-		} catch(std::exception& ex) {
+		} catch (const std::exception& ex) {
 			body = ex.what();
 			header = request.httpVersion + "404 Not Found\r\nContent-type: text/html\r\nContent-length: " + to_string(body.length()) + " \r\n\r\n";
 		}
+		throw std::runtime_error(header + body);
+	} else {
+		try {
+			body = fileToString(location.errorPages[FORBIDDEN_STATUS], FORBIDDEN_STATUS);
+		} catch (const std::exception& ex) {
+			body = ex.what();
+		}
+		header = request.httpVersion + " 403 Forbidden\r\nContent-type: text/html\r\nContent-length: " + to_string(body.length()) + " \r\n\r\n";
+		throw std::runtime_error(header + body);
 	}
-	else {
-		body = DEFAULT_404_ERROR_PAGE;
+	closedir(dir);
+	return (header + body);
+}
+
+
+std::string	Server::servFile(std::string& src, t_request& request) {
+	std::string	header;
+	std::string	body;
+
+	// if (access(src.c_str(), O_RDONLY) >= 0) {
+	try {
+		body = fileToString(src, 404);
+		header = request.httpVersion + "200 OK\r\nContent-type: text/html\r\nContent-length: " + to_string(body.length()) + " \r\n\r\n";
+	} catch(std::exception& ex) {
+		body = ex.what();
 		header = request.httpVersion + "404 Not Found\r\nContent-type: text/html\r\nContent-length: " + to_string(body.length()) + " \r\n\r\n";
+		throw std::runtime_error(header + body);
 	}
-	throw std::runtime_error(header + body);
+	// }
+	// else {
+	// 	body = DEFAULT_404_ERROR_PAGE;
+	// 	header = request.httpVersion + "404 Not Found\r\nContent-type: text/html\r\nContent-length: " + to_string(body.length()) + " \r\n\r\n";
+	
+	// }
+	return (header + body);
 }
 
 void Server::response(int clientFd, std::string src, t_request& request)
@@ -350,10 +352,16 @@ void Server::response(int clientFd, std::string src, t_request& request)
 		src = matching(request);
 		t_location location = getLocation(request.serverIndex, request.locationIndex);
 		correctPath(src);
+		DIR *dir = opendir(src.c_str());
 		methodNotAllowed(request); // should i check location errpage first when no method in the location?
-		locationRedirection(src, request);
-		listDirectory(src, request);
-		servFile(src, request);
+		if (src == location.redirectFrom) {
+			response = locationRedirection(request);
+		} else if (dir) {
+			// std::cout << "---- here ----\n";
+			response = listDirectory(request, dir);
+		} else {
+			response = servFile(src, request);
+		}
 	} catch (std::out_of_range &ofg) {
 		(void)ofg;
 	} catch (std::exception &ex) {

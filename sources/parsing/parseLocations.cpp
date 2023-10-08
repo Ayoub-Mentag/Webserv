@@ -18,7 +18,7 @@ static void	parseLocationDirectives(std::string& key, std::string value, t_locat
 	} else if (key == "redirect") {
 		getRedirect(value, key, location.redirectFrom, location.redirectTo);
 	} else if (key == "error_page") {
-		location.errorPages = getErrorPages(value, key);
+		getErrorPages(value, key, location.errorPages);
 	} else if (key == "limit_client_body") {
 		location.clientMaxBodySize = getLimitClientBody(value, key);
 	} else if (key == "root") {
@@ -29,12 +29,10 @@ static void	parseLocationDirectives(std::string& key, std::string value, t_locat
 		exit(1);
 	}
 }
-
 static void	fillLocationStruct(t_location& location, std::vector<std::string>& tokens) {
 
+	std::string test = "none";
 	for (size_t i = 0; i < tokens.size(); i++) {
-		if (tokens[i].find("location") != tokens[i].npos)
-				break ;
 		std::istringstream	tokenStream(tokens[i]);
 		std::string			key;
 		std::string			value;
@@ -43,7 +41,7 @@ static void	fillLocationStruct(t_location& location, std::vector<std::string>& t
 		std::getline(tokenStream, value);
 		key = trim(key);
 		value = trim(value);
-		parseLocationDirectives(key, value, location); 
+		parseLocationDirectives(key, value, location);
 	}
 }
 
