@@ -56,6 +56,8 @@ typedef struct LocationDirectives {
     std::vector<std::string>	allowedMethods;
     std::map<int, std::string> 	errorPages;
     int					    	clientMaxBodySize;
+    std::string                 cgiExecutable;
+    bool                        isCgi;
 }								t_location;
 
 typedef struct ServerDirectives {
@@ -82,6 +84,7 @@ void                        getErrorPages(std::string& value, std::string& key, 
 std::vector<std::string>	getAllowedMethods(std::string& value, std::string& key);
 std::string					getIndex(std::string& value, std::string& key);
 std::string					getRoot(std::string& value, std::string& key);
+std::string					getCgiExecutable(std::string& value, std::string& key);
 std::string					getServerName(std::string& value, std::string& key);
 void						getRedirect(std::string& value, std::string& key, std::string& redirectFrom, std::string& redirectTo);
 bool						getAutoIndex(std::string& value, std::string& key);

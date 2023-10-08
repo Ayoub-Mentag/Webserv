@@ -148,12 +148,34 @@ void	Server::serverExists(t_request& request) {
 	//error page : SERVER_NOT_FOUND
 }
 
+static size_t	findCgiLocation(t_request& request, t_location& location) {
+	size_t index;
+
+	index = location.path.find("*");
+	if (index != std::string::npos) {
+		std::string extention = &location.path[index + 1];
+		size_t len = request.path.length();
+		if (extention != &request.path[len - extention.length()]) {
+			return std::string::npos;
+		}
+	}
+	return index;
+}
+
 void	Server::locationExists(t_request& request) {
 	std::vector<t_location>	locations = config.servers[request.serverIndex].locations;
+	size_t index;
 
 	std::vector<std::string> locationPaths;
 	for (size_t i = 0; i < locations.size(); i++) {
+		index = findCgiLocation(request, locations[i]);
+		if (index != std::string::npos) {
+			request.locationIndex = i;
+			config.servers[request.serverIndex].locations[i].isCgi = true;
+			return ;
+		}
 		locationPaths.push_back(locations[i].path);
+		config.servers[request.serverIndex].locations[i].isCgi = false;
 	}
 	
 	std::string lookFor = request.path;
@@ -194,6 +216,9 @@ std::string	Server::matching(t_request &request)
 
 	t_location	location = config.servers[request.serverIndex].locations[request.locationIndex];
 	std::string	pathToBeLookFor = request.path;
+	if (location.isCgi) {
+		return (location.root + request.path);
+	}
 
 	pathToBeLookFor.erase(0, location.path.size());
 	if (!location.root.empty())
@@ -352,12 +377,12 @@ void Server::response(int clientFd, std::string src, t_request& request)
 		src = matching(request);
 		t_location location = getLocation(request.serverIndex, request.locationIndex);
 		correctPath(src);
+		std::cout << "src: " << src << std::endl;
 		DIR *dir = opendir(src.c_str());
 		methodNotAllowed(request); // should i check location errpage first when no method in the location?
 		if (src == location.redirectFrom) {
 			response = locationRedirection(request);
 		} else if (dir) {
-			// std::cout << "---- here ----\n";
 			response = listDirectory(request, dir);
 		} else {
 			response = servFile(src, request);
