@@ -77,29 +77,32 @@ typedef struct ConfigSettings {
 }							t_config;
 
 /* extra functions */
-std::string					trim(const std::string& str);
-bool						bracketsBalance(const std::string& str);
+std::string					        trim(const std::string& str);
+bool						        bracketsBalance(const std::string& str);
 
 /* Parsing Directives */
-void                        getErrorPages(std::string& value, std::string& key, std::map<int, std::string>& errorPages);
-std::vector<std::string>	getAllowedMethods(std::string& value, std::string& key);
-std::string					getIndex(std::string& value, std::string& key);
-std::string					getRoot(std::string& value, std::string& key);
-std::string					getCgiExecutable(std::string& value, std::string& key);
-std::string					getServerName(std::string& value, std::string& key);
-void						getRedirect(std::string& value, std::string& key, std::string& redirectFrom, std::string& redirectTo);
-bool						getAutoIndex(std::string& value, std::string& key);
-int							getPort(std::string& value, std::string& key);
-int							getLimitClientBody(std::string& value, std::string& key);
+void                                getErrorPages(std::string& value, std::string& key, std::map<int, std::string>& errorPages);
+std::vector<std::string>	        getAllowedMethods(std::string& value, std::string& key);
+std::string					        getIndex(std::string& value, std::string& key);
+std::string					        getRoot(std::string& value, std::string& key);
+std::string					        getCgiExecutable(std::string& value, std::string& key);
+std::string					        getServerName(std::string& value, std::string& key);
+void						        getRedirect(std::string& value, std::string& key, std::string& redirectFrom, std::string& redirectTo);
+bool						        getAutoIndex(std::string& value, std::string& key);
+int							        getPort(std::string& value, std::string& key);
+int							        getLimitClientBody(std::string& value, std::string& key);
 
 /* Parse Locations */
-void						splitLocationBlocks(t_server& server, std::string res);
+void						        splitLocationBlocks(t_server& server, std::string res);
 
 /* Parse Servers */
-void						splitServerBlocks(t_config& config, std::string res);
+void						        splitServerBlocks(t_config& config, std::string res);
 
 /* Parse Config File */
-t_config					parseConFile(const char* file);
+t_config					        parseConFile(const char* file);
 
 /* Parse Request */
-void                        requestParse(t_request& request, std::string buffer);
+void                                requestParse(t_request& request, std::string buffer);
+std::map<std::string, std::string>  fillContentTypeMap();
+void	correctPath(std::string& path); // just for now
+
