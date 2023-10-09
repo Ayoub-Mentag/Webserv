@@ -44,6 +44,7 @@ typedef struct Request {
     int         serverIndex;
     int         locationIndex;
     int         port;
+    std::string contentType;
 } t_request;
 
 typedef struct LocationDirectives {
