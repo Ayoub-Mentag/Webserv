@@ -177,7 +177,7 @@ void	Server::locationExists(t_request& request) {
 		locationPaths.push_back(locations[i].path);
 		config.servers[request.serverIndex].locations[i].isCgi = false;
 	}
-	
+
 	std::string lookFor = request.path;
 	while (lookFor.size() > 0) {
 		std::vector<std::string>::iterator it = std::find(locationPaths.begin(), locationPaths.end(), lookFor);
