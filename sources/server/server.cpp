@@ -11,7 +11,7 @@ void	correctPath(std::string& path) {
 	closedir(dir);
 }
 
-static std::string	to_string(int num) {
+std::string	to_string(int num) {
 	std::stringstream	ss;
 
     ss << num;
@@ -215,24 +215,40 @@ void	Server::locationExists() {
 	}
 }
 
+const std::string&	Server::returnError404() {
+	if (request.serverIndex >= 0) {
+		t_server server = getServer();
+		if (request.locationIndex >= 0) {
+			t_location location = getLocation();
+			try {
+				response.setBody(fileToString(location.errorPages[NOT_FOUND_STATUS], NOT_FOUND_STATUS));
+			} catch(const std::exception& e) {
+				try {
+					response.setBody(fileToString(server.errorPages[NOT_FOUND_STATUS], NOT_FOUND_STATUS));
+				} catch (const std::exception& ex) {
+					response.setBody(ex.what());
+				}
+			}
+		} else {
+			try {
+				response.setBody(fileToString(server.errorPages[NOT_FOUND_STATUS], NOT_FOUND_STATUS));
+			} catch (const std::exception& ex) {
+				response.setBody(ex.what());
+			}
+		}
+	}
+
+	response.setContentType("text/html");
+	response.setHeader(NOT_FOUND_STATUS);
+	return (response.getResponse());
+}
+
 std::string	Server::matching()
 {
 	serverExists(); // check error later!
 	locationExists();
 	if (request.locationIndex == -1) {
-		std::string body;
-		try {
-			body = fileToString(config.servers[request.serverIndex].errorPages[NOT_FOUND_STATUS], NOT_FOUND_STATUS);
-		} catch (const std::exception& ex) {
-			body = ex.what();
-		}
-		
-		std::string header = request.httpVersion;
-		header += " 404 Not Found\r\nContent-type: text/html\r\nContent-length: ";
-		header += to_string(body.length());
-		header += " \r\n\r\n";
-
-		throw std::runtime_error(header + body);
+		throw std::runtime_error(returnError404());
 	}
 
 	t_location	location = config.servers[request.serverIndex].locations[request.locationIndex];
@@ -290,138 +306,144 @@ void	findAllowedMethod(std::string& method, t_server& server, t_location& locati
 	}
 }
 
+const std::string&	Server::returnError501() {
+	if (request.serverIndex >= 0) {
+		t_server server = getServer();
+		if (request.locationIndex >= 0) {
+			t_location location = getLocation();
+			try {
+				response.setBody(fileToString(location.errorPages[NOT_IMPLEMENTED], NOT_IMPLEMENTED));
+			} catch(const std::exception& e) {
+				try {
+					response.setBody(fileToString(server.errorPages[NOT_IMPLEMENTED], NOT_IMPLEMENTED));
+				} catch (const std::exception& ex) {
+					response.setBody(ex.what());
+				}
+			}
+		} else {
+			try {
+				response.setBody(fileToString(server.errorPages[NOT_IMPLEMENTED], NOT_IMPLEMENTED));
+			} catch (const std::exception& ex) {
+				response.setBody(ex.what());
+			}
+		}
+	}
+
+	response.setContentType("text/html");
+	response.setHeader(NOT_IMPLEMENTED);
+	return (response.getResponse());
+}
+
+const std::string&	Server::returnError405() {
+	if (request.serverIndex >= 0) {
+		t_server server = getServer();
+		if (request.locationIndex >= 0) {
+			t_location location = getLocation();
+			try {
+				response.setBody(fileToString(location.errorPages[METHOD_NOT_ALLOWED_STATUS], METHOD_NOT_ALLOWED_STATUS));
+			} catch(const std::exception& e) {
+				try {
+					response.setBody(fileToString(server.errorPages[METHOD_NOT_ALLOWED_STATUS], METHOD_NOT_ALLOWED_STATUS));
+				} catch (const std::exception& ex) {
+					response.setBody(ex.what());
+				}
+			}
+		} else {
+			try {
+				response.setBody(fileToString(server.errorPages[METHOD_NOT_ALLOWED_STATUS], METHOD_NOT_ALLOWED_STATUS));
+			} catch (const std::exception& ex) {
+				response.setBody(ex.what());
+			}
+		}
+	}
+
+	response.setContentType("text/html");
+	response.setHeader(METHOD_NOT_ALLOWED_STATUS);
+	return (response.getResponse());
+}
+
 void	Server::methodNotAllowed() {
 	t_server server = getServer();
 	t_location location = getLocation();
 
 	if (request.method != "GET" && request.method != "POST" && request.method != "DELETE") {
-		std::string body;
-		std::string header;
-		try {
-			body = fileToString(location.errorPages[NOT_IMPLEMENTED], NOT_IMPLEMENTED);
-		} catch(const std::exception& e) {
-			body = e.what();
-		}
-
-		header = request.httpVersion;
-		header += " 501 Not Implemented\r\nContent-type: text/html\r\nContent-length: ";
-		header += to_string(body.length());
-		header += " \r\n\r\n";
-
-		throw std::runtime_error(header + body);
+		throw std::runtime_error(returnError501());
 	}
 	try {
 		findAllowedMethod(request.method, server, location);
 	} catch (std::exception &ex) {
-		std::string body;
-		std::string header;
-		try {
-			body = fileToString(ex.what(), METHOD_NOT_ALLOWED_STATUS);
-		} catch(const std::exception& e) {
-			body = e.what();
-		}
-
-		header = request.httpVersion;
-		header += " 405 Method Not Allowed\r\nContent-type: text/html\r\nContent-length: ";
-		header += to_string(body.length());
-		header += " \r\n\r\n";
-
-		throw std::runtime_error(header + body);
+		throw std::runtime_error(returnError405());
 	}
 }
 
 std::string	Server::locationRedirection() {
-	std::string	body;
-	std::string header;
 	t_location	location = getLocation();
 
 	try {
-		body = fileToString(location.redirectTo, NOT_FOUND_STATUS);
-
-		header = request.httpVersion;
-		header += " 301 Moved Permanently\r\nContent-type: text/html\r\nContent-length: ";
-		header += to_string(body.length());
-		header += " \r\n\r\n";
-
+		response.setBody(fileToString(location.redirectTo, NOT_FOUND_STATUS));
+		response.setContentType("text/html");
+		response.setHeader(MOVED_PERMANENTLY_STATUS);
 	} catch(const std::exception& e) {
-		body = e.what();
-		
-		header = request.httpVersion;
-		header += " 404 Not Found\r\nContent-type: text/html\r\nContent-length: ";
-		header += to_string(body.length());
-		header += " \r\n\r\n";
-
-		throw std::runtime_error(header + body);
+		throw std::runtime_error(returnError404());
 	}
-	return (header + body);
+	return (response.getResponse());
+}
+
+const std::string&	Server::returnError403() {
+	if (request.serverIndex >= 0) {
+		t_server server = getServer();
+		if (request.locationIndex >= 0) {
+			t_location location = getLocation();
+			try {
+				response.setBody(fileToString(location.errorPages[FORBIDDEN_STATUS], FORBIDDEN_STATUS));
+			} catch(const std::exception& e) {
+				try {
+					response.setBody(fileToString(server.errorPages[FORBIDDEN_STATUS], FORBIDDEN_STATUS));
+				} catch (const std::exception& ex) {
+					response.setBody(ex.what());
+				}
+			}
+		} else {
+			try {
+				response.setBody(fileToString(server.errorPages[FORBIDDEN_STATUS], FORBIDDEN_STATUS));
+			} catch (const std::exception& ex) {
+				response.setBody(ex.what());
+			}
+		}
+	}
+
+	response.setContentType("text/html");
+	response.setHeader(FORBIDDEN_STATUS);
+	return (response.getResponse());
 }
 
 std::string	Server::listDirectory(DIR *dir) {
 	t_location location = getLocation();
 	
-	std::string	header;
-	std::string	body;
 	if (location.autoindex) {
-		body = directory_listing(dir, request.path);
-	
-		header = request.httpVersion;
-		header += " 200 OK\r\nContent-type: ";
-		header += request.contentType;
-		header += "\r\nContent-length: ";
-		header += to_string(body.length());
-		header += " \r\n\r\n";
-
+		response.setBody(directory_listing(dir, request.path));
+		response.setHeader(200);
 	} else if (!location.index.empty()) {
 		try {
-			body = fileToString(location.index, 404);
-		
-			header = request.httpVersion;
-			header += " 200 OK\r\nContent-type: ";
-			header += request.contentType;
-			header += "\r\nContent-length: ";
-			header += to_string(body.length());
-			header += " \r\n\r\n";
-
+			response.setBody(fileToString(location.index, NOT_FOUND_STATUS));
+			response.setHeader(200);
 		} catch (const std::exception& ex) {
-			body = ex.what();
-
-			header = request.httpVersion;
-			header += " 404 Not Found\r\nContent-type: text/html\r\nContent-length: ";
-			header += to_string(body.length());
-			header += " \r\n\r\n";
-
-		} 
-		throw std::runtime_error(header + body);
-	} else {
-		try {
-			body = fileToString(location.errorPages[FORBIDDEN_STATUS], FORBIDDEN_STATUS);
-		} catch (const std::exception& ex) {
-			body = ex.what();
+			throw std::runtime_error(returnError404());
 		}
-
-		header = request.httpVersion;
-		header += " 403 Forbidden\r\nContent-type: text/html\r\nContent-length: ";
-		header += to_string(body.length());
-		header += " \r\n\r\n";
-
-		throw std::runtime_error(header + body);
+	} else {
+		throw std::runtime_error(returnError403());
 	}
 	closedir(dir);
-	return (header + body);
+	return (response.getResponse());
 }
 
-
-std::string	Server::servFile(std::string& src) {
-	std::string	header;
-	std::string	body;
-	// if (access(src.c_str(), O_RDONLY) >= 0) {
+std::string	Server::servFile(std::string& path) {
+	// if (access(path.c_str(), O_RDONLY) >= 0) {
 	try {
-		body = fileToString(src, 404);
-		header = request.httpVersion + " 200 OK\r\nContent-type: " + request.contentType + "\r\nContent-length: " + to_string(body.length()) + " \r\n\r\n";
+		response.setBody(fileToString(path, NOT_FOUND_STATUS));
+		response.setHeader(200);
 	} catch(std::exception& ex) {
-		body = ex.what();
-		header = request.httpVersion + " 404 Not Found\r\nContent-type: text/html\r\nContent-length: " + to_string(body.length()) + " \r\n\r\n";
-		throw std::runtime_error(header + body);
+		throw std::runtime_error(returnError404());
 	}
 	// }
 	// else {
@@ -429,7 +451,7 @@ std::string	Server::servFile(std::string& src) {
 	// 	header = request.httpVersion + " 404 Not Found\r\nContent-type: text/html\r\nContent-length: " + to_string(body.length()) + " \r\n\r\n";
 	
 	// }
-	return (header + body);
+	return (response.getResponse());
 }
 
 std::string	Server::executeCgi(std::string path) {
@@ -472,43 +494,51 @@ std::string	Server::executeCgi(std::string path) {
 	return (header + body);
 }
 
-std::string	getContentType(std::string& path) {
-	std::string contentType;
+void	getContentType(std::string& path, t_response& response) {
 
 	size_t dot = path.find_last_of('.');
 	if (dot != path.npos) {
 		if (path[path.length() - 1] == '/')
 			path.erase(path.length() - 1);
 		std::string extention = path.substr(dot, -1);
-		contentType = fillContentTypeMap()[extention];
+	// std::cout << fillContentTypeMap()[extention] << "<---2" << std::endl;
+		response.setContentType(fillContentTypeMap()[extention]);
 	}
 }
 
-void Server::responseFunc(int clientFd, std::string src)
+void	Server::initResponseClass(std::string& path) {
+	getContentType(path, response); // setContentType
+	// std::cout << response.getContentType() << std::endl;
+	response.setHttpVersion(request.httpVersion);
+	response.setStatusCode();
+}
+
+void Server::responseFunc(int clientFd)
 {
-	std::string	response;
+	std::string	_response;
 
 	try {
-		src = matching();
+		initResponseClass(request.path);
+		std::string path = matching();
 		t_location location = getLocation();
-		correctPath(src);
-		DIR *dir = opendir(src.c_str());
+		correctPath(path);
+		DIR *dir = opendir(path.c_str());
 		methodNotAllowed(); // should i check location errpage first when no method in the location?
-		if (src == location.redirectFrom) {
-			response = locationRedirection();
+		if (path == location.redirectFrom) {
+			_response = locationRedirection();
 		} else if (dir) {
-			response = listDirectory(dir);
+			_response = listDirectory(dir);
 		} else if (location.isCgi) {
-			response = executeCgi(src);
+			_response = executeCgi(path);
 		} else {
-			response = servFile(src);
+			_response = servFile(path);
 		}
 	} catch (std::out_of_range &ofg) {
 		(void)ofg;
 	} catch (std::exception &ex) {
-		response = ex.what();
+		_response = ex.what();
 	}
-	write(clientFd, response.c_str(), response.length());
+	write(clientFd, _response.c_str(), _response.length());
 	close(clientFd);
 	FD_CLR(clientFd, &current_sockets);
 }
@@ -516,7 +546,6 @@ void Server::responseFunc(int clientFd, std::string src)
 void Server::serve()
 {
 	fd_set readySocket = getReadyFds();
-	std::string path;
 	for (int clientFd = 0; clientFd < FD_SETSIZE; clientFd++) {
 		if (FD_ISSET(clientFd, &readySocket)) {
 			if (clientFd == this->serverSocketfd) {
@@ -524,7 +553,7 @@ void Server::serve()
 			} else {
 				initRequest(clientFd);
 				try {
-					responseFunc(clientFd, path);
+					responseFunc(clientFd);
 
 				} catch(const std::exception& e) { // not handled !!!!!!!!
 					std::cout << e.what() << std::endl;

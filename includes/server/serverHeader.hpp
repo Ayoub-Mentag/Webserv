@@ -28,10 +28,11 @@
 # define METHOD_NOT_ALLOWED_STATUS 	405
 # define FORBIDDEN_STATUS			403
 # define NOT_IMPLEMENTED			501
+# define MOVED_PERMANENTLY_STATUS	301
 
 typedef class Response {
 	private:
-		std::string					mimeType; // content-type
+		std::string					contentType; // mime type
 		std::string					httpVersion;
 		std::map<int, std::string>	statusCode;
 		std::string					header;
@@ -46,13 +47,15 @@ typedef class Response {
 		const std::string& 			getStatusCode(int status);
 		const std::string&			getHttpVersion();
 		const std::string&			getContentType();
+		std::string					getBodylength();
+		const std::string&			getResponse();
 
-		void						setHeader();
-		void						setBody();
+		void						setHeader(int status);
+		void						setBody(const std::string& body);
 		void			 			setStatusCode();
 		void						setHttpVersion(const std::string&);
 		void						setContentType(const std::string& contentType);
-		// const std::string&			getResponse();
+		void			 			setResponse();
 }               	                t_response;
 
 class Server {
@@ -65,22 +68,26 @@ class Server {
 		t_request	request;
 
 	private:
-		std::string	matching();
-		void		bindServerWithAddress();
-		void		setPortOfListening();
-		fd_set		getReadyFds();
-		void		acceptNewConnection();
-		void		responseFunc(int clientFd, std::string src);
-		void		initRequest(int clientFd);
-		void		methodNotAllowed();
-		std::string	locationRedirection();
-		std::string	listDirectory(DIR *dir);
-		std::string	servFile(std::string& src);
-		void		serverExists();
-		void		locationExists();
-		std::string	executeCgi(std::string path);
-		t_location&	getLocation();
-		t_server&	getServer();
+		std::string			matching();
+		void				bindServerWithAddress();
+		void				setPortOfListening();
+		fd_set				getReadyFds();
+		void				acceptNewConnection();
+		void				responseFunc(int clientFd);
+		void				initRequest(int clientFd);
+		void				methodNotAllowed();
+		std::string			locationRedirection();
+		std::string			listDirectory(DIR *dir);
+		std::string			servFile(std::string& src);
+		void				serverExists();
+		void				locationExists();
+		std::string			executeCgi(std::string path);
+		t_location&			getLocation();
+		t_server&			getServer();
+		const std::string&	returnError403();
+		const std::string&	returnError404();
+		const std::string&	returnError405();
+		const std::string&	returnError501();
 
 	public:
 		Server();
@@ -88,4 +95,9 @@ class Server {
 		~Server();
 
 		void		serve();
+
+	public: // responseClass fuctions
+		void	initResponseClass(std::string& path);
 };
+
+std::string	to_string(int num);
