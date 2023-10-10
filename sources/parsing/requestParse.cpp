@@ -16,13 +16,6 @@ void 	requestParse(t_request& request, std::string buffer) {
 	request.httpVersion = str.substr(last + 1,  -1);
 	request.httpVersion = request.httpVersion.substr(0, request.httpVersion.length() - 1);
 	request.path = str.substr(first + 1, last - first - 1);
-	size_t dot = request.path.find_last_of('.');
-	if (dot != request.path.npos) {
-		if (request.path[request.path.length() - 1] == '/')
-			request.path.erase(request.path.length() - 1);
-		std::string extention = request.path.substr(dot, -1);
-		request.contentType = fillContentTypeMap()[extention];
-	}
 
 	std::getline(iss, str);
 	last = str.find_last_of(':');
