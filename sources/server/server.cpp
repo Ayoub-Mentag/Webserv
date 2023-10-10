@@ -162,6 +162,22 @@ static size_t	findCgiLocation(t_request& request, t_location& location) {
 	return index;
 }
 
+std::string	getCgiPath(t_request& request, t_location& location) {
+	std::string lookFor = request.path;
+	size_t	last = lookFor.find_last_of('/');
+	std::string	path;
+
+	if (last != lookFor.npos) {
+		lookFor.erase(last, -1);
+		if (location.root[0] == '.') {// what if the path contains ./ ../ 
+			path = (&location.root[1] != lookFor) ? location.root + request.path : "." + request.path;
+		} else {
+			path = (location.root != lookFor) ? location.root + request.path : request.path;
+		}
+	}
+	return (path);
+}
+
 void	Server::locationExists(t_request& request) {
 	std::vector<t_location>	locations = config.servers[request.serverIndex].locations;
 	size_t index;
@@ -170,23 +186,11 @@ void	Server::locationExists(t_request& request) {
 	for (size_t i = 0; i < locations.size(); i++) {
 		index = findCgiLocation(request, locations[i]);
 		if (index != std::string::npos) {
-			// std::cout << request.path.substr(locations[i].root.length() - 1) << "--2--\n";
-			std::string lookFor = request.path;
-			size_t	last = lookFor.find_last_of('/');
-			// if (last == lookFor.npos)
-			// 	break ;
-			lookFor.erase(last, -1);
-			std::string path; l
-			if (locations[i].root[0] == '.') {// what if the path contains ./ ../ 
-				std::string path = (&locations[i].root[1] != lookFor) ? locations[i].root + request.path : "." + request.path;
-			} else {
-				std::string path = (locations[i].root != lookFor) ? locations[i].root + request.path : request.path;
-			}
-
-				std::cout << path << std::endl;
-			if (access(path.c_str(), F_OK) != -1) {
+			std::string	cgiPath = getCgiPath(request, locations[i]);
+			if (access(cgiPath.c_str(), F_OK) != -1) {
 				request.locationIndex = i;
 				config.servers[request.serverIndex].locations[i].isCgi = true;
+				request.path = cgiPath;
 				return ;
 			}
 		}
@@ -226,16 +230,14 @@ std::string	Server::matching(t_request &request)
 		} catch (const std::exception& ex) {
 			body = ex.what();
 		}
-		std::string header = request.httpVersion + "404 Not Found\r\nContent-type: text/html\r\nContent-length: " + to_string(body.length()) + " \r\n\r\n";
+		std::string header = request.httpVersion + " 404 Not Found\r\nContent-type: text/html\r\nContent-length: " + to_string(body.length()) + " \r\n\r\n";
 		throw std::runtime_error(header + body);
 	}
 
 	t_location	location = config.servers[request.serverIndex].locations[request.locationIndex];
 	std::string	pathToBeLookFor = request.path;
 	if (location.isCgi) {
-		std::cout << "----------------\n";
-		std::string path = location.root + request.path;
-		return (path);
+		return (request.path);
 	}
 	location.isCgi = false;
 	pathToBeLookFor.erase(0, location.path.size());
@@ -300,7 +302,7 @@ void	Server::methodNotAllowed(t_request& request) {
 		} catch(const std::exception& e) {
 			body = e.what();
 		}
-		header = request.httpVersion += "501 Not Implemented\r\nContent-type: text/html\r\nContent-length: " + to_string(body.length()) + " \r\n\r\n";
+		header = request.httpVersion = " 501 Not Implemented\r\nContent-type: text/html\r\nContent-length: " + to_string(body.length()) + " \r\n\r\n";
 		throw std::runtime_error(header + body);
 	}
 	try {
@@ -313,7 +315,7 @@ void	Server::methodNotAllowed(t_request& request) {
 		} catch(const std::exception& e) {
 			body = e.what();
 		}
-		header = request.httpVersion += "405 Method Not Allowed\r\nContent-type: text/html\r\nContent-length: " + to_string(body.length()) + " \r\n\r\n";
+		header = request.httpVersion = " 405 Method Not Allowed\r\nContent-type: text/html\r\nContent-length: " + to_string(body.length()) + " \r\n\r\n";
 		throw std::runtime_error(header + body);
 	}
 }
@@ -325,10 +327,10 @@ std::string	Server::locationRedirection(t_request& request) {
 
 	try {
 		body = fileToString(location.redirectTo, NOT_FOUND_STATUS);
-		header = request.httpVersion + "301 Moved Permanently\r\nContent-type: text/html\r\nContent-length: " + to_string(body.length()) + " \r\n\r\n";
+		header = request.httpVersion + " 301 Moved Permanently\r\nContent-type: text/html\r\nContent-length: " + to_string(body.length()) + " \r\n\r\n";
 	} catch(const std::exception& e) {
 		body = e.what();
-		header = request.httpVersion + "404 Not Found\r\nContent-type: text/html\r\nContent-length: " + to_string(body.length()) + " \r\n\r\n";
+		header = request.httpVersion + " 404 Not Found\r\nContent-type: text/html\r\nContent-length: " + to_string(body.length()) + " \r\n\r\n";
 		throw std::runtime_error(header + body);
 	}
 	return (header + body);
@@ -369,7 +371,6 @@ std::string	Server::servFile(std::string& src, t_request& request) {
 	std::string	header;
 	std::string	body;
 	// if (access(src.c_str(), O_RDONLY) >= 0) {
-	std::cout << request.contentType << std::endl;
 	try {
 		body = fileToString(src, 404);
 		header = request.httpVersion + " 200 OK\r\nContent-type: " + request.contentType + "\r\nContent-length: " + to_string(body.length()) + " \r\n\r\n";
@@ -381,7 +382,7 @@ std::string	Server::servFile(std::string& src, t_request& request) {
 	// }
 	// else {
 	// 	body = DEFAULT_404_ERROR_PAGE;
-	// 	header = request.httpVersion + "404 Not Found\r\nContent-type: text/html\r\nContent-length: " + to_string(body.length()) + " \r\n\r\n";
+	// 	header = request.httpVersion + " 404 Not Found\r\nContent-type: text/html\r\nContent-length: " + to_string(body.length()) + " \r\n\r\n";
 	
 	// }
 	return (header + body);
@@ -423,11 +424,9 @@ void Server::response(int clientFd, std::string src, t_request& request)
 	std::string	response;
 
 	try {
-		correctPath(request.path);
 		src = matching(request);
 		t_location location = getLocation(request.serverIndex, request.locationIndex);
-		// correctPath(src);
-		// std::cout << "src: " << src << std::endl;
+		correctPath(src);
 		DIR *dir = opendir(src.c_str());
 		methodNotAllowed(request); // should i check location errpage first when no method in the location?
 		if (src == location.redirectFrom) {
