@@ -170,7 +170,20 @@ void	Server::locationExists(t_request& request) {
 	for (size_t i = 0; i < locations.size(); i++) {
 		index = findCgiLocation(request, locations[i]);
 		if (index != std::string::npos) {
-			std::string path = locations[i].root + request.path;
+			// std::cout << request.path.substr(locations[i].root.length() - 1) << "--2--\n";
+			std::string lookFor = request.path;
+			size_t	last = lookFor.find_last_of('/');
+			// if (last == lookFor.npos)
+			// 	break ;
+			lookFor.erase(last, -1);
+			std::string path; l
+			if (locations[i].root[0] == '.') {// what if the path contains ./ ../ 
+				std::string path = (&locations[i].root[1] != lookFor) ? locations[i].root + request.path : "." + request.path;
+			} else {
+				std::string path = (locations[i].root != lookFor) ? locations[i].root + request.path : request.path;
+			}
+
+				std::cout << path << std::endl;
 			if (access(path.c_str(), F_OK) != -1) {
 				request.locationIndex = i;
 				config.servers[request.serverIndex].locations[i].isCgi = true;
@@ -220,6 +233,7 @@ std::string	Server::matching(t_request &request)
 	t_location	location = config.servers[request.serverIndex].locations[request.locationIndex];
 	std::string	pathToBeLookFor = request.path;
 	if (location.isCgi) {
+		std::cout << "----------------\n";
 		std::string path = location.root + request.path;
 		return (path);
 	}
@@ -327,14 +341,14 @@ std::string	Server::listDirectory(t_request& request, DIR *dir) {
 	std::string	body;
 	if (location.autoindex) {
 		body = directory_listing(dir, request.path);
-		header = request.httpVersion + "200 OK\r\nContent-type: text/html\r\nContent-length: " + to_string(body.length()) + " \r\n\r\n";
+		header = request.httpVersion + " 200 OK\r\nContent-type: " + request.contentType + "\r\nContent-length: " + to_string(body.length()) + " \r\n\r\n";
 	} else if (!location.index.empty()) {
 		try {
 			body = fileToString(location.index, 404);
-			header = request.httpVersion + "Status-code: 200\r\nContent-type: text/html\r\nContent-length: " + to_string(body.length()) + " \r\n\r\n";
+		header = request.httpVersion + " 200 OK\r\nContent-type: " + request.contentType + "\r\nContent-length: " + to_string(body.length()) + " \r\n\r\n";
 		} catch (const std::exception& ex) {
 			body = ex.what();
-			header = request.httpVersion + "Status-code: 404 Not Found\r\nContent-type: text/html\r\nContent-length: " + to_string(body.length()) + " \r\n\r\n";
+			header = request.httpVersion + " 404 Not Found\r\nContent-type: text/html\r\nContent-length: " + to_string(body.length()) + " \r\n\r\n";
 		} 
 		throw std::runtime_error(header + body);
 	} else {
@@ -355,17 +369,13 @@ std::string	Server::servFile(std::string& src, t_request& request) {
 	std::string	header;
 	std::string	body;
 	// if (access(src.c_str(), O_RDONLY) >= 0) {
+	std::cout << request.contentType << std::endl;
 	try {
 		body = fileToString(src, 404);
-		header = request.httpVersion + " 200 OK\r\nContent-type: image/jpeg\r\nContent-length: " + to_string(body.length()) + " \r\n\r\n";
-		// header = "HTTP/1.1 200 OK\r\nContent-type: text/html\r\nContent-length: " + to_string(body.length()) + " \r\n\r\n";
+		header = request.httpVersion + " 200 OK\r\nContent-type: " + request.contentType + "\r\nContent-length: " + to_string(body.length()) + " \r\n\r\n";
 	} catch(std::exception& ex) {
 		body = ex.what();
-		// std::cout << request.httpVersion << std::endl;
-		// header = request.httpVersion.substr(0, request.httpVersion.length() - 2);
-		// std::cout << "-" << request.httpVersion.length() << "------" << std::endl;
 		header = request.httpVersion + " 404 Not Found\r\nContent-type: text/html\r\nContent-length: " + to_string(body.length()) + " \r\n\r\n";
-		// header = "HTTP/1.1 404 Not Found\r\nContent-type: text/html\r\nContent-length: " + to_string(body.length()) + " \r\n\r\n";
 		throw std::runtime_error(header + body);
 	}
 	// }
@@ -403,8 +413,8 @@ std::string	Server::executeCgi(std::string path, t_request request) {
 	close(fd[0]);
 	close(fd[1]);
 	body = buffer;
-	// body = body.substr(body.find("\r\n\r\n"), -1);
-	std::string header = "HTTP/1.1 200 OK\r\nContent-type: text/html\r\nContent-length: " + to_string(body.length()) + " \r\n\r\n";
+	body = body.substr(body.find("\r\n\r\n"), -1);
+	std::string	header = request.httpVersion + " 200 OK\r\nContent-type: text/html\r\nContent-length: " + to_string(body.length()) + " \r\n\r\n";
 	return (header + body);
 }
 
@@ -413,9 +423,10 @@ void Server::response(int clientFd, std::string src, t_request& request)
 	std::string	response;
 
 	try {
+		correctPath(request.path);
 		src = matching(request);
 		t_location location = getLocation(request.serverIndex, request.locationIndex);
-		correctPath(src);
+		// correctPath(src);
 		// std::cout << "src: " << src << std::endl;
 		DIR *dir = opendir(src.c_str());
 		methodNotAllowed(request); // should i check location errpage first when no method in the location?
