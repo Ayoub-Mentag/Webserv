@@ -1,5 +1,48 @@
 #include <serverHeader.hpp>
 
+void Server::bindServerWithAddress()
+{
+	int result = bind(this->serverSocketfd, (struct sockaddr*)&serverAddr, sizeof(serverAddr));
+	if (result == -1) {
+		throw std::runtime_error(strerror(errno));
+	}
+}
+
+void Server::setPortOfListening()
+{
+	if (listen(serverSocketfd, 5) == -1)
+	{
+		throw std::runtime_error("listen");
+	}
+}
+
+Server::Server(t_config& config) : config(config) 
+{
+	if ((this->serverSocketfd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+	{
+		perror("socket() : ");
+		throw std::runtime_error("socket()");
+	}
+	int opt = 1;
+	if (setsockopt(this->serverSocketfd, SOL_SOCKET,  SO_REUSEPORT , &opt, sizeof(opt))) {
+		perror("setsockopt");
+		exit(EXIT_FAILURE);
+	}
+	serverAddr.sin_family = AF_INET;
+	serverAddr.sin_addr.s_addr = INADDR_ANY;
+	serverAddr.sin_port = htons(PORT);
+	FD_ZERO(&current_sockets);
+	FD_SET(serverSocketfd, &current_sockets);
+	bindServerWithAddress();
+	setPortOfListening();
+}
+
+Server::~Server()
+{
+	close(serverSocketfd);
+}
+
+/*
 void	correctPath(std::string& path) {
 	// if (!path.empty() && path[0] != '.') {
 	// 	path.insert(0, ".");
@@ -65,74 +108,11 @@ std::string	directory_listing(DIR* dir, std::string root) {
 	return (response);
 }
 
-void Server::bindServerWithAddress()
-{
-	int result = bind(this->serverSocketfd, (struct sockaddr*)&serverAddr, sizeof(serverAddr));
-	if (result == -1) {
-		throw std::runtime_error(strerror(errno));
-	}
-}
 
-void Server::setPortOfListening()
-{
-	if (listen(serverSocketfd, 5) == -1)
-	{
-		throw std::runtime_error("listen");
-	}
-}
 
-Server::Server(t_config& config) : config(config) 
-{
-	if ((this->serverSocketfd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
-	{
-		perror("socket() : ");
-		throw std::runtime_error("socket()");
-	}
-	int opt = 1;
-	if (setsockopt(this->serverSocketfd, SOL_SOCKET,  SO_REUSEPORT , &opt, sizeof(opt))) {
-		perror("setsockopt");
-		exit(EXIT_FAILURE);
-	}
-	serverAddr.sin_family = AF_INET;
-	serverAddr.sin_addr.s_addr = INADDR_ANY;
-	serverAddr.sin_port = htons(PORT);
-	FD_ZERO(&current_sockets);
-	FD_SET(serverSocketfd, &current_sockets);
-	bindServerWithAddress();
-	setPortOfListening();
-}
 
-Server::~Server()
-{
-	close(serverSocketfd);
-}
 
-fd_set Server::getReadyFds() {
-	fd_set ready_socket;
-	FD_ZERO(&ready_socket);
-	ready_socket = current_sockets;
-	//read, write, error , timout
-	if (select(FD_SETSIZE, &ready_socket, NULL, NULL, NULL) < 0)
-	{
-		perror("Select : ");
-		exit(1);
-	}
-	return ready_socket;
-}
 
-void Server::acceptNewConnection()
-{
-	int clientFd;
-	struct sockaddr_in clientAddr;
-	socklen_t clientAddrLen;
-	if ((clientFd = accept(serverSocketfd, (struct sockaddr*)&clientAddr, &clientAddrLen)) == -1) {
-		perror("Accept : ");
-	}
-	else {
-		std::cout << "A new connection Accepted " << std::endl;
-		FD_SET(clientFd, &current_sockets);
-	}
-}
 
 void	Server::serverExists(t_request& request) {
 	std::vector<t_server> servers = config.servers;	
@@ -176,7 +156,7 @@ void	Server::locationExists(t_request& request) {
 			// if (last == lookFor.npos)
 			// 	break ;
 			lookFor.erase(last, -1);
-			std::string path; l
+			std::string path;
 			if (locations[i].root[0] == '.') {// what if the path contains ./ ../ 
 				std::string path = (&locations[i].root[1] != lookFor) ? locations[i].root + request.path : "." + request.path;
 			} else {
@@ -246,16 +226,7 @@ std::string	Server::matching(t_request &request)
 	return (pathToBeLookFor);
 }
 
-t_request	Server::getRequest(int clientFd) {
-	t_request	request;
-	char		buffer[MAX_LEN];
 
-	bzero(buffer, MAX_LEN);
-	recv(clientFd, buffer, MAX_LEN, 0);
-	std::cerr << buffer << std::endl;
-	requestParse(request, buffer);
-	return request;
-}
 
 t_location&	Server::getLocation(int serverIndex, int locationIndex) {
 	if (serverIndex < 0 || locationIndex < 0)
@@ -414,7 +385,7 @@ std::string	Server::executeCgi(std::string path, t_request request) {
 	close(fd[1]);
 	body = buffer;
 	body = body.substr(body.find("\r\n\r\n"), -1);
-	std::string	header = request.httpVersion + " 200 OK\r\nContent-type: text/html\r\nContent-length: " + to_string(body.length()) + " \r\n\r\n";
+	std::string	header = request[HTTPVER] + " 200 OK\r\nContent-type: text/html\r\nContent-length: " + to_string(body.length()) + " \r\n\r\n";
 	return (header + body);
 }
 
@@ -448,6 +419,48 @@ void Server::response(int clientFd, std::string src, t_request& request)
 	close(clientFd);
 	FD_CLR(clientFd, &current_sockets);
 }
+*/
+
+t_request	Server::getRequest(int clientFd) {
+	t_request	request;
+	char		buffer[MAX_LEN];
+
+	bzero(buffer, MAX_LEN);
+	recv(clientFd, buffer, MAX_LEN, 0);
+	// std::cerr << buffer << std::endl;
+
+	requestParse(request, buffer);
+
+	return request;
+}
+
+fd_set Server::getReadyFds() {
+	fd_set ready_socket;
+	FD_ZERO(&ready_socket);
+	ready_socket = current_sockets;
+	//read, write, error , timout
+	if (select(FD_SETSIZE, &ready_socket, NULL, NULL, NULL) < 0)
+	{
+		perror("Select : ");
+		exit(1);
+	}
+	return ready_socket;
+}
+
+void Server::acceptNewConnection()
+{
+	int clientFd;
+	struct sockaddr_in clientAddr;
+	socklen_t clientAddrLen;
+	if ((clientFd = accept(serverSocketfd, (struct sockaddr*)&clientAddr, &clientAddrLen)) == -1) {
+		perror("Accept : ");
+	}
+	else {
+		std::cout << "A new connection Accepted " << std::endl;
+		FD_SET(clientFd, &current_sockets);
+	}
+}
+
 
 void Server::serve()
 {
@@ -459,15 +472,19 @@ void Server::serve()
 				acceptNewConnection();
 			} else {
 				t_request request = getRequest(clientFd);
-				try {
-					// path = matching(request);
-					response(clientFd, path, request);
 
-				} catch(const std::exception& e) { // not handled !!!!!!!!
-					std::cout << e.what() << std::endl;
-				}
-				close(clientFd);
-				FD_CLR(clientFd, &current_sockets);
+
+				
+					// try {
+					// 	// path = matching(request);
+					// 	response(clientFd, path, request);
+
+					// } catch(const std::exception& e) { // not handled !!!!!!!!
+					// 	std::cout << e.what() << std::endl;
+					// }
+				
+				// close(clientFd);
+				// FD_CLR(clientFd, &current_sockets);
 			}
 		}
 	}

@@ -37,14 +37,16 @@
 # define INVALID_DIRECTIVE		RED "Error: " GREEN "Invalid Directive." << RESET_COLOR << "\n"
 
 typedef struct Request {
-    std::string method;
-    std::string path;
-    std::string httpVersion;
-    std::string serverName;
-    int         serverIndex;
-    int         locationIndex;
-    int         port;
-    std::string contentType;
+    // std::string method;
+    // std::string path;
+    // std::string httpVersion;
+    // std::string serverName;
+    // int         serverIndex;
+    // int         locationIndex;
+    // int         port;
+    // std::string contentType;
+    std::map<std::string, std::string> request;
+    bool                                entered;
 } t_request;
 
 typedef struct LocationDirectives {

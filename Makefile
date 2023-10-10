@@ -55,4 +55,4 @@ re:					fclean all
 .PHONY:				all clean fclean re
 
 push:
-					git add . && git commit -m "parsing branch" && (git push || git push --set-upstream origin parsing)
+					git add . && git commit -m "parsing branch" && (git push || git push --set-upstream origin post)
