@@ -27,7 +27,7 @@
 # define NOT_FOUND_STATUS 			404
 # define METHOD_NOT_ALLOWED_STATUS 	405
 # define FORBIDDEN_STATUS			403
-# define NOT_IMPLEMENTED			501
+# define NOT_IMPLEMENTED_STATUS		501
 # define MOVED_PERMANENTLY_STATUS	301
 
 typedef class Response {
@@ -84,10 +84,7 @@ class Server {
 		std::string			executeCgi(std::string path);
 		t_location&			getLocation();
 		t_server&			getServer();
-		const std::string&	returnError403();
-		const std::string&	returnError404();
-		const std::string&	returnError405();
-		const std::string&	returnError501();
+		const std::string&	returnError(int status);
 
 	public:
 		Server();
