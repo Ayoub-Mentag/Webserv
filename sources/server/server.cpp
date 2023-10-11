@@ -476,7 +476,6 @@ void Server::acceptNewConnection()
 	}
 }
 
-
 void Server::serve()
 {
 	int clientFd = 0;
