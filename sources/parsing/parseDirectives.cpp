@@ -158,3 +158,13 @@ int	getLimitClientBody(std::string& value, std::string& key) {
     }
 	return (0);
 }
+
+std::string	getCgiExecutable(std::string& value, std::string& key) {
+	if (value.empty() || value == ";") {
+		std::cerr << NO_VALUE;
+		std::cerr << PRINT_LINE_AND_FILE;
+		exit(1);
+	}
+	return (value);
+}
+

@@ -13,9 +13,9 @@
 # include <stdlib.h>
 # include <dirent.h>
 
-# define MAX_LEN 650
-# define PORT 8080
-# define BACKLOG 5
+# define MAX_LEN	650
+# define PORT		8080
+# define BACKLOG	5
 
 # define DEFAULT_400_ERROR_PAGE 		"<!DOCTYPE><html><body><h1>400 Bad Request</h1></body></html>"
 # define DEFAULT_403_ERROR_PAGE 		"<!DOCTYPE><html><body><h1>403 Forbidden</h1></body></html>"
@@ -27,7 +27,36 @@
 # define NOT_FOUND_STATUS 			404
 # define METHOD_NOT_ALLOWED_STATUS 	405
 # define FORBIDDEN_STATUS			403
-# define NOT_IMPLEMENTED			501
+# define NOT_IMPLEMENTED_STATUS		501
+# define MOVED_PERMANENTLY_STATUS	301
+
+typedef class Response {
+	private:
+		std::string					contentType; // mime type
+		std::string					httpVersion;
+		std::map<int, std::string>	statusCode;
+		std::string					header;
+		std::string					body;
+		std::string					response;
+	public:
+		Response();
+		~Response();
+
+		const std::string&			getHeader();
+		const std::string&			getBody();
+		const std::string& 			getStatusCode(int status);
+		const std::string&			getHttpVersion();
+		const std::string&			getContentType();
+		std::string					getBodylength();
+		const std::string&			getResponse();
+
+		void						setHeader(int status);
+		void						setBody(const std::string& body);
+		void			 			setStatusCode();
+		void						setHttpVersion(const std::string&);
+		void						setContentType(const std::string& contentType);
+		void			 			setResponse();
+}               	                t_response;
 
 class Server {
 	private:
@@ -35,26 +64,37 @@ class Server {
 		struct		sockaddr_in serverAddr;
 		fd_set		current_sockets;
 		t_config	config;
+		t_response	response;
+		t_request	request;
 
 	private:
-		std::string	matching(t_request &request);
-		void		bindServerWithAddress();
-		void		setPortOfListening();
-		fd_set		getReadyFds();
-		void		acceptNewConnection();
-		void		response(int clientFd, std::string src, t_request& request);
-		t_request	getRequest(int clientFd);
-		void		methodNotAllowed(t_request& request);
-		std::string	locationRedirection(t_request& request);
-		std::string	listDirectory(t_request& request, DIR *dir);
-		std::string	servFile(std::string& src, t_request& request);
-		void		serverExists(t_request& request);
-		void		locationExists(t_request& request);
+		std::string			matching();
+		void				bindServerWithAddress();
+		void				setPortOfListening();
+		fd_set				getReadyFds();
+		void				acceptNewConnection();
+		void				responseFunc(int clientFd);
+		void				initRequest(int clientFd);
+		void				methodNotAllowed();
+		std::string			locationRedirection();
+		std::string			listDirectory(DIR *dir);
+		std::string			servFile(std::string& src);
+		void				serverExists();
+		void				locationExists();
+		std::string			executeCgi(std::string path);
+		t_location&			getLocation();
+		t_server&			getServer();
+		const std::string&	returnError(int status);
 
-	public: 
+	public:
+		Server();
 		Server(t_config& config);
 		~Server();
+
 		void		serve();
-		t_location&	getLocation(int serverIndex, int locationIndex);
-		t_server&	getServer(int serverIndex);
+
+	public: // responseClass fuctions
+		void	initResponseClass(std::string& path);
 };
+
+std::string	to_string(int num);

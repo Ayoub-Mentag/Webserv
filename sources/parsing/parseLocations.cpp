@@ -23,6 +23,8 @@ static void	parseLocationDirectives(std::string& key, std::string value, t_locat
 		location.clientMaxBodySize = getLimitClientBody(value, key);
 	} else if (key == "root") {
 		location.root = getRoot(value, key);
+	} else if (key == "cgi_executable") {
+		location.cgiExecutable = getCgiExecutable(value, key);
 	} else {
 		std::cerr << INVALID_LOC_DIRECTIVE;
 		std::cerr << PRINT_LINE_AND_FILE;
