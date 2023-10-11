@@ -39,7 +39,7 @@ int	main(int argc, char* argv[]) {
 		config = parseConFile(argv[1]);
 		try {
 			Server server(config);
-			while (1)
+			// while (1)
 				server.serve();
 		} catch (std::exception &ex) {
 			std::cout << "--" << ex.what() << std::endl;
@@ -49,3 +49,7 @@ int	main(int argc, char* argv[]) {
 	}
 	return (0);
 }
+
+
+
+

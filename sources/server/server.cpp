@@ -423,14 +423,30 @@ void Server::response(int clientFd, std::string src, t_request& request)
 
 t_request	Server::getRequest(int clientFd) {
 	t_request	request;
-	char		buffer[MAX_LEN];
+	// char		buffer[MAX_LEN];
 
-	bzero(buffer, MAX_LEN);
-	recv(clientFd, buffer, MAX_LEN, 0);
+	// bzero(buffer, MAX_LEN);
+	// recv(clientFd, buffer, MAX_LEN, 0);
 	// std::cerr << buffer << std::endl;
 
-	requestParse(request, buffer);
 
+
+	/**
+	 * @test we will work on some examples without getting the request from browser
+	*/
+	std::string buffer;
+
+	// buffer = "POST /endpoint HTTP/1.1\r\nHost: localhost:8080\r\nContent-Type: application/x-www-form-urlencoded\r\n\r\nkey1=value1&key2=value2";
+	buffer = (
+		"POST /upload-endpoint HTTP/1.1\r\nHost: example.com\r\nContent-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW\r\n\r\n"
+		"----WebKitFormBoundary7MA4YWxkTrZu0gW\r\n"
+		"Content-Disposition: form-data; name=\"file\"; filename=\"example.txt\"\r\n\r\n"
+		"Content-Type: text/plain\r\n"
+		"File content goes here\r\n"
+		"----WebKitFormBoundary7MA4YWxkTrZu0gW\r\n"
+	);
+
+	requestParse(request, buffer);
 	return request;
 }
 
@@ -442,7 +458,6 @@ fd_set Server::getReadyFds() {
 	if (select(FD_SETSIZE, &ready_socket, NULL, NULL, NULL) < 0)
 	{
 		perror("Select : ");
-		exit(1);
 	}
 	return ready_socket;
 }
@@ -464,13 +479,14 @@ void Server::acceptNewConnection()
 
 void Server::serve()
 {
-	fd_set readySocket = getReadyFds();
-	std::string path;
-	for (int clientFd = 0; clientFd < FD_SETSIZE; clientFd++) {
-		if (FD_ISSET(clientFd, &readySocket)) {
-			if (clientFd == this->serverSocketfd) {
-				acceptNewConnection();
-			} else {
+	int clientFd = 0;
+	// fd_set readySocket = getReadyFds();
+	// std::string path;
+	// for (clientFd = 0; clientFd < FD_SETSIZE; clientFd++) {
+	// 	if (FD_ISSET(clientFd, &readySocket)) {
+	// 		if (clientFd == this->serverSocketfd) {
+	// 			acceptNewConnection();
+	// 		} else {
 				t_request request = getRequest(clientFd);
 
 
@@ -485,7 +501,7 @@ void Server::serve()
 				
 				// close(clientFd);
 				// FD_CLR(clientFd, &current_sockets);
-			}
-		}
-	}
+			// }
+	// 	}
+	// }
 }

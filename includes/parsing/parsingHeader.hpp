@@ -36,18 +36,26 @@
 # define EXPECTED_SEM			RED "Error: " GREEN "expected ';' at end of declaration." << RESET_COLOR << "\n"
 # define INVALID_DIRECTIVE		RED "Error: " GREEN "Invalid Directive." << RESET_COLOR << "\n"
 
+
+# define HEADER_REQUEST 1
+# define HEADER_BODY    2
+typedef struct sBounderBody {
+    std::string boundary;
+    std::map<std::string, std::string> header;
+    std::string postEntity;
+} bounderyBody;
+
 typedef struct Request {
-    // std::string method;
-    // std::string path;
-    // std::string httpVersion;
-    // std::string serverName;
-    // int         serverIndex;
-    // int         locationIndex;
-    // int         port;
-    // std::string contentType;
-    std::map<std::string, std::string> request;
-    bool                                entered;
-} t_request;
+    std::map<std::string, std::string>  body;
+    int                                 type;
+    std::map<std::string, std::string>  head;
+
+    // it will be called if the request is Boundary Request
+    std::vector<bounderyBody>            boundaries;
+
+}   t_request;
+
+
 
 typedef struct LocationDirectives {
     bool						autoindex;
