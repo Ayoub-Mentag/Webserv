@@ -54,7 +54,7 @@ typedef class Response {
 		void						setBody(const std::string& body);
 		void			 			setStatusCode();
 		void						setHttpVersion(const std::string&);
-		void						setContentType(const std::string& contentType);
+		void						setContentType(const std::string& extention);
 		void			 			setResponse();
 }               	                t_response;
 
@@ -84,6 +84,7 @@ class Server {
 		std::string			executeCgi(std::string path);
 		t_location&			getLocation();
 		t_server&			getServer();
+		void				parseContentType();
 		const std::string&	returnError(int status);
 
 	public:
@@ -94,7 +95,7 @@ class Server {
 		void		serve();
 
 	public: // responseClass fuctions
-		void	initResponseClass(std::string& path);
+		void	initResponseClass();
 };
 
 std::string	to_string(int num);

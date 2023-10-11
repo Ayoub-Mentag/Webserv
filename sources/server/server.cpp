@@ -238,13 +238,12 @@ const std::string&	Server::returnError(int status) {
 		}
 	}
 
-	response.setContentType("text/html");
+	response.setContentType(".html");
 	response.setHeader(status);
 	return (response.getResponse());
 }
 
-std::string	Server::matching()
-{
+std::string	Server::matching() {
 	serverExists(); // check error later!
 	locationExists();
 	if (request.locationIndex == -1) {
@@ -325,7 +324,7 @@ std::string	Server::locationRedirection() {
 
 	try {
 		response.setBody(fileToString(location.redirectTo, NOT_FOUND_STATUS));
-		response.setContentType("text/html");
+		response.setContentType(".html");
 		response.setHeader(MOVED_PERMANENTLY_STATUS);
 	} catch(const std::exception& e) {
 		throw std::runtime_error(returnError(NOT_FOUND_STATUS));
@@ -337,7 +336,7 @@ std::string	Server::listDirectory(DIR *dir) {
 	t_location location = getLocation();
 	
 	if (location.autoindex) {
-		response.setContentType("text/html");
+		response.setContentType(".html");
 		response.setBody(directory_listing(dir, request.path));
 		response.setHeader(200);
 	} else if (!location.index.empty()) {
@@ -355,19 +354,12 @@ std::string	Server::listDirectory(DIR *dir) {
 }
 
 std::string	Server::servFile(std::string& path) {
-	// if (access(path.c_str(), O_RDONLY) >= 0) {
 	try {
 		response.setBody(fileToString(path, NOT_FOUND_STATUS));
 		response.setHeader(200);
 	} catch(std::exception& ex) {
 		throw std::runtime_error(returnError(NOT_FOUND_STATUS));
 	}
-	// }
-	// else {
-	// 	body = DEFAULT_404_ERROR_PAGE;
-	// 	header = request.httpVersion + " 404 Not Found\r\nContent-type: text/html\r\nContent-length: " + to_string(body.length()) + " \r\n\r\n";
-	
-	// }
 	return (response.getResponse());
 }
 
@@ -400,24 +392,26 @@ std::string	Server::executeCgi(std::string path) {
 	body = body.substr(body.find("\r\n\r\n"), -1);
 
 	response.setBody(body);
-	response.setContentType("text/html");
+	response.setContentType(".html");
 	response.setHeader(200);
 	return (response.getResponse());
 }
 
-void	getContentType(std::string& path, t_response& response) {
+void	Server::parseContentType() {
 
-	size_t dot = path.find_last_of('.');
-	if (dot != path.npos) {
-		if (path[path.length() - 1] == '/')
-			path.erase(path.length() - 1);
-		std::string extention = path.substr(dot, -1);
-		response.setContentType(fillContentTypeMap()[extention]);
+	size_t dot = request.path.find_last_of('.');
+	if (dot != request.path.npos) {
+		if (request.path[request.path.length() - 1] == '/')
+			request.path.erase(request.path.length() - 1);
+		std::string extention = request.path.substr(dot, -1);
+		response.setContentType(extention);
+	} else {
+		response.setContentType("");
 	}
 }
 
-void	Server::initResponseClass(std::string& path) {
-	getContentType(path, response); // setContentType
+void	Server::initResponseClass() {
+	parseContentType(); // setContentType
 	response.setHttpVersion(request.httpVersion);
 	response.setStatusCode();
 }
@@ -427,7 +421,7 @@ void Server::responseFunc(int clientFd)
 	std::string	_response;
 
 	try {
-		initResponseClass(request.path);
+		initResponseClass();
 		std::string path = matching();
 		t_location location = getLocation();
 		correctPath(path);
@@ -462,8 +456,7 @@ void Server::serve()
 			} else {
 				initRequest(clientFd);
 				try {
-					responseFunc(clientFd);
-
+					responseFunc(clientFd); 
 				} catch(const std::exception& e) { // not handled !!!!!!!!
 					std::cout << e.what() << std::endl;
 				}
