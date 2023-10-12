@@ -30,7 +30,7 @@
 # define NO_LOC_PATH    		RED "Error: " GREEN << "location has no path." << RESET_COLOR << "\n"
 # define INVALID_ARGUMENT		RED "Error: " GREEN << key << " Invalid argument." << RESET_COLOR << "\n"
 # define NO_VALUE				RED "Error: " GREEN << key << " Directive has no value." << RESET_COLOR << "\n"
-# define PRINT_LINE_AND_FILE	YELLOW "[file: " << __FILE__ << "]\n[line: " << __LINE__ << "]\n" RESET_COLOR
+# define PRINT_LINE_AND_FILE	YELLOW "[" << __FILE__ << ":" << __LINE__ << "]\n" RESET_COLOR
 # define INVALID_METHOD			RED "Error: " GREEN "Invalid method." << RESET_COLOR << "\n"
 # define INVALID_LOC_DIRECTIVE	RED "Error: " GREEN "Invalid location Directive." << RESET_COLOR << "\n"
 # define EXPECTED_SEM			RED "Error: " GREEN "expected ';' at end of declaration." << RESET_COLOR << "\n"

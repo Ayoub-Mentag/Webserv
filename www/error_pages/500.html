@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>500 Internal Server Error</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            overflow: hidden; /* Hide the default scrollbar */
+            margin: 0;
+        }
+
+        video {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: -1; /* Place the video behind other content */
+        }
+
+        .error-container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            max-width: 500px;
+            padding: 20px;
+            background-color: rgb(95, 146, 247);
+            border: 2px solid #ff0000;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        h1 {
+            color: #ff0000;
+            font-size: 2.5em;
+        }
+
+        p {
+            color: #3d0202;
+            font-size: 1.2em;
+        }
+
+        .suggestion {
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <!-- <video autoplay loop muted>
+        <source src="../500_vid.mp4" type="video/mp4">
+        Your browser does not support the video tag.
+    </video> -->
+
+    <div class="error-container">
+        <h1>500 Internal Server Error</h1>
+        <p>Oops! Something went wrong on the server. We're working to fix it.</p>
+        <p class="suggestion">You can try again later.</p>
+    </div>
+</body>
+</html>

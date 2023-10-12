@@ -61,24 +61,21 @@ std::string	directory_listing(DIR* dir, std::string root) {
 	return (response);
 }
 
-void Server::bindServerWithAddress()
-{
+void	Server::bindServerWithAddress() {
 	int result = bind(this->serverSocketfd, (struct sockaddr*)&serverAddr, sizeof(serverAddr));
 	if (result == -1) {
 		throw std::runtime_error(strerror(errno));
 	}
 }
 
-void Server::setPortOfListening()
-{
+void	Server::setPortOfListening() {
 	if (listen(serverSocketfd, 5) == -1)
 	{
 		throw std::runtime_error("listen");
 	}
 }
 
-Server::Server(t_config& config) : config(config) 
-{
+Server::Server(t_config& config) : config(config) {
 	if ((this->serverSocketfd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
 	{
 		perror("socket() : ");
@@ -98,8 +95,7 @@ Server::Server(t_config& config) : config(config)
 	setPortOfListening();
 }
 
-Server::~Server()
-{
+Server::~Server() {
 	close(serverSocketfd);
 }
 
@@ -108,30 +104,28 @@ fd_set Server::getReadyFds() {
 	FD_ZERO(&ready_socket);
 	ready_socket = current_sockets;
 	//read, write, error , timout
-	if (select(FD_SETSIZE, &ready_socket, NULL, NULL, NULL) < 0)
-	{
+	if (select(FD_SETSIZE, &ready_socket, NULL, NULL, NULL) < 0) {
 		perror("Select : ");
 		exit(1);
 	}
 	return ready_socket;
 }
 
-void Server::acceptNewConnection()
-{
-	int clientFd;
-	struct sockaddr_in clientAddr;
-	socklen_t clientAddrLen;
+void	Server::acceptNewConnection() {
+	struct sockaddr_in	clientAddr;
+	int					clientFd;
+	socklen_t			clientAddrLen;
+
 	if ((clientFd = accept(serverSocketfd, (struct sockaddr*)&clientAddr, &clientAddrLen)) == -1) {
 		perror("Accept : ");
-	}
-	else {
+	} else {
 		std::cout << "A new connection Accepted " << std::endl;
 		FD_SET(clientFd, &current_sockets);
 	}
 }
 
 void	Server::serverExists() {
-	std::vector<t_server> servers = config.servers;	
+	std::vector<t_server>	servers = config.servers;	
 
 	for (int serverIndex = 0; serverIndex < (int)config.servers.size(); serverIndex++) {
 		if (servers[serverIndex].serverName == request.serverName
@@ -257,10 +251,11 @@ std::string	Server::matching() {
 	}
 	location.isCgi = false;
 	pathToBeLookFor.erase(0, location.path.size());
-	if (!location.root.empty())
+	if (!location.root.empty()) {
 		pathToBeLookFor.insert(0, location.root);
-	else
+	} else {
 		pathToBeLookFor.insert(0, config.servers[request.serverIndex].root);
+	}
 	return (pathToBeLookFor);
 }
 
@@ -287,9 +282,9 @@ t_server&	Server::getServer() {
 }
 
 void	findAllowedMethod(std::string& method, t_server& server, t_location& location) {
-	bool existInLocation = false;
-	bool existInServer = false;
-	std::string header;
+	bool		existInLocation = false;
+	bool		existInServer = false;
+	std::string	header;
 
 	existInLocation = std::find(location.allowedMethods.begin(), location.allowedMethods.end(), method) != location.allowedMethods.end();
 	if (existInLocation) {
@@ -306,8 +301,8 @@ void	findAllowedMethod(std::string& method, t_server& server, t_location& locati
 }
 
 void	Server::methodNotAllowed() {
-	t_server server = getServer();
-	t_location location = getLocation();
+	t_server	server = getServer();
+	t_location	location = getLocation();
 
 	if (request.method != "GET" && request.method != "POST" && request.method != "DELETE") {
 		throw std::runtime_error(returnError(NOT_IMPLEMENTED_STATUS));
@@ -418,8 +413,6 @@ void	Server::initResponseClass() {
 
 void Server::responseFunc(int clientFd)
 {
-	std::string	_response;
-
 	try {
 		initResponseClass();
 		std::string path = matching();
@@ -428,20 +421,21 @@ void Server::responseFunc(int clientFd)
 		DIR *dir = opendir(path.c_str());
 		methodNotAllowed(); // should i check location errpage first when no method in the location?
 		if (path == location.redirectFrom) {
-			_response = locationRedirection();
+			locationRedirection();
 		} else if (dir) {
-			_response = listDirectory(dir);
+			listDirectory(dir);
 		} else if (location.isCgi) {
-			_response = executeCgi(path);
+			executeCgi(path);
 		} else {
-			_response = servFile(path);
+			servFile(path);
 		}
 	} catch (std::out_of_range &ofg) {
-		(void)ofg;
+		std::cout << __FILE__ << ":" << __LINE__ << std::endl;
+		std::cout << ofg.what() << std::endl;
 	} catch (std::exception &ex) {
-		_response = ex.what();
+		// just to catch the thrown error the response is already ready
 	}
-	write(clientFd, _response.c_str(), _response.length());
+	write(clientFd, response.getResponse().c_str(), response.getResponse().length());
 	close(clientFd);
 	FD_CLR(clientFd, &current_sockets);
 }

@@ -13,7 +13,7 @@
 # include <stdlib.h>
 # include <dirent.h>
 
-# define MAX_LEN	650
+# define MAX_LEN	300000
 # define PORT		8080
 # define BACKLOG	5
 

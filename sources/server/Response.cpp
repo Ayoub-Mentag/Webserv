@@ -30,7 +30,7 @@ std::string	Response::getBodylength() {
 void	Response::setHeader(int status) {
 	header = getHttpVersion();
 	header += getStatusCode(status) + "\r\n";
-	header += "Content-type: " + getContentType();
+	header += "Content-type: " + getContentType() + "\r\n";
 	header += " Content-length: " + getBodylength();
 	header += " \r\n\r\n";
 }
@@ -151,5 +151,9 @@ void	Response::setContentType(const std::string& extention) {
 		contentTypeMap[".7z"]		= "application/x-7z-compressed";
 		i = 1;
 	}
-	this->contentType = contentTypeMap[extention];
+	std::string tmp = contentTypeMap[extention];
+	if (tmp.empty()) {
+		tmp = "text/plain";
+	}
+	this->contentType = tmp;
 }
