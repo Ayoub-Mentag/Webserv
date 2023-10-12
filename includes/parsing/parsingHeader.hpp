@@ -40,21 +40,58 @@
 # define HEADER_REQUEST 1
 # define HEADER_BODY    2
 typedef struct sBounderBody {
-    std::string boundary;
-    std::map<std::string, std::string> header;
     std::string postEntity;
 } bounderyBody;
 
-typedef struct Request {
-    std::map<std::string, std::string>  body;
-    int                                 type;
-    std::map<std::string, std::string>  head;
+// typedef struct Request {
+//     std::map<std::string, std::string>  body;
+//     int                                 type;
+//     std::map<std::string, std::string>  head;
 
-    // it will be called if the request is Boundary Request
-    std::vector<bounderyBody>            boundaries;
+//     // it will be called if the request is Boundary Request
+//     std::vector<bounderyBody>            boundaries;
 
-}   t_request;
+// }   t_request;
 
+
+
+class Request {
+    private :
+        std::map<std::string, std::string>  head;
+        std::map<std::string, std::string>  body;
+    public :
+        virtual void                        parseBody(std::string body) = 0;
+        Request();
+        void                                setHead( std::map<std::string, std::string>  head);
+        void                                setBody( std::map<std::string, std::string>  body);
+};
+
+Request                                *requestParse(std::string buffer);
+
+class BoundaryRequest : public Request {
+    private :
+        // the body will conteain the header elements 
+        // and the entityPost
+        std::vector<std::map<std::string, std::string> > body;
+        std::string                         boundary;
+        std::vector<bounderyBody>           boundaries;
+
+    public :
+        BoundaryRequest();
+        void                                                parseBody(std::string body);
+        void                                              setBoundary(std::string boundary);
+        // void                                              setBody(std::string body);
+        // std::string                                       getBoundary();
+        // std::vector<std::map<std::string, std::string> >   getBody();
+
+};
+
+class SimpleRequest : Request {
+    private:
+        std::string queryString;
+    public:
+        void    parseSimpleBody(std::string body);
+};
 
 
 typedef struct LocationDirectives {
@@ -112,7 +149,6 @@ void						        splitServerBlocks(t_config& config, std::string res);
 t_config					        parseConFile(const char* file);
 
 /* Parse Request */
-void                                requestParse(t_request& request, std::string buffer);
 std::map<std::string, std::string>  fillContentTypeMap();
 void	correctPath(std::string& path); // just for now
 

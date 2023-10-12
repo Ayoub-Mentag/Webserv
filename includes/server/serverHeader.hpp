@@ -42,8 +42,8 @@ class Server {
 		void		setPortOfListening();
 		fd_set		getReadyFds();
 		void		acceptNewConnection();
+		Request		*getRequest();
 		// void		response(int clientFd, std::string src, t_request& request);
-		t_request	getRequest(int clientFd);
 		// void		methodNotAllowed(t_request& request);
 		// std::string	locationRedirection(t_request& request);
 		// std::string	listDirectory(t_request& request, DIR *dir);
