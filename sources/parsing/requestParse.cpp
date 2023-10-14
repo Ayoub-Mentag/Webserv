@@ -1,7 +1,18 @@
 #include <parsingHeader.hpp>
+/** @brief
+	This parsing based on these pillars
+	1- HEADER
+		/r/n/r/n
+		BODY
+	2 - The first line contains the METHOD PATH HTTPVERSION
+	and the second one containg the HOST PORT
+	and the rest would look like Key: Value
+*/
+
 // TODO: check if there are other types cuz it not handled yet
 // like "Content-Type: application/json"
 // add vector of QueryString
+// the request should be corrected before using it
 
 enum BODY_TYPE{
 	SIMPLE,
@@ -11,19 +22,6 @@ enum BODY_TYPE{
 	NONE
 };
 
-/** @brief split the whole line by '\n'*/
-static std::vector<std::string>	getLines(std::string wholeLine) {
-	std::vector<std::string> lines;
-	std::string tmp;
-	std::istringstream iss(wholeLine);
-
-	while (std::getline(iss, tmp)) {
-		size_t backRIndex = tmp.length() - 1;
-		tmp.erase(backRIndex, 1);
-	    lines.push_back(tmp);
-    }
-	return (lines);
-}
 
 static std::vector<std::string>	splitLine(std::string line, std::string delimiter) {
 	std::vector<std::string>	result;
@@ -39,12 +37,12 @@ static std::vector<std::string>	splitLine(std::string line, std::string delimite
 		result.push_back(tmpLine);
         if (end + delimiter.size() > line.size())
             break ;
-        line = &line[end + 3];
+        line = &line[end + delimiter.size()];
 	}
 	return (result);
 }
 
-static void	assignBoundary(std::map<std::string, std::string>& headMap) {
+static bool	assignBoundary(std::map<std::string, std::string>& headMap) {
 	/*
 		std::string type = request.head["Content-Type"];
 		size_t boundaryIndex;
@@ -70,7 +68,7 @@ static void	assignBoundary(std::map<std::string, std::string>& headMap) {
 	size_t boundaryIndex = type.find("boundary");
 
 	if (boundaryIndex == std::string::npos)
-		return ;
+		return false;
 	headMap["Content-Type"] = type.substr(0, boundaryIndex);
 
 	std::string boundary = &type[boundaryIndex];
@@ -82,13 +80,14 @@ static void	assignBoundary(std::map<std::string, std::string>& headMap) {
 		boundary.erase(boundary.length() - 1, 1);
 	}
 	headMap["Boundary"] = boundary;
+	return (true);
 }
 
 
 static void	parseTwoFirstLines(std::map<std::string, std::string> &headMap, std::vector<std::string> lines) {
 	std::string line;
-    std::vector<std::string> firstLine;
-    std::vector<std::string> secondLine;
+	std::vector<std::string> firstLine;
+	std::vector<std::string> secondLine;
 	size_t		size;
 
 	if (lines.size() > 2) {
@@ -113,6 +112,7 @@ static void	parseTwoFirstLines(std::map<std::string, std::string> &headMap, std:
 	}
 }
 
+// TODO: remove the (size_t i) param
 static void	parseHead(std::map<std::string, std::string>& headMap, size_t i, std::vector<std::string> lines) {
 	std::string 						key;
 	std::string 						value;
@@ -144,7 +144,6 @@ static void	parseHead(std::map<std::string, std::string>& headMap, size_t i, std
 	}
 
 	*/
-
 	for (; i < lines.size(); i++) {
 		std::istringstream iss3(lines[i]);
 		std::getline(iss3, key, ':');
@@ -155,30 +154,32 @@ static void	parseHead(std::map<std::string, std::string>& headMap, size_t i, std
 	}
 }
 
-/**
- * @brief this function specify the body type ,and init the request map 
+/** @brief this function specify the body type ,and init the request map 
  * with appropriate elements [if we have a boundary it would be assigned ..]
  * if the type is none then we don't need to parse the request
 */
 static BODY_TYPE	getTypeOfRequestBody(std::map<std::string, std::string>& headMap) {
 	std::string type;
-	assignBoundary(headMap);
 
 	if (headMap["Method"] == "POST") {
-		type = headMap["Boundary"];
-		if (!type.empty()) {
+		if (assignBoundary(headMap))
 			return BOUNDARY;
-		}
 		type = headMap["Transfer-Encoding"];
 		if (type == "Chunked")
 			return (CHUNKED);
 		type = headMap["Content-Type"];
-		if (type == "application/x-www-form-urlencoded") {
+		if (type == "application/x-www-form-urlencoded")
 			return (SIMPLE);
-		}
+		if (type == "application/json")
+			return (JSON);
 	}
 	return (NONE);
 }
+
+std::string	checkRequest(std::string buffer) {
+	std::string correctRequest;
+}
+
 
 Request	*generateRequest(int type) {
 	switch (type) {
@@ -204,20 +205,38 @@ void	BoundaryRequest::setBoundary(std::string boundary) {
 }
 
 void	BoundaryRequest::parseBody(std::string body) {
-	(void)body;
+	std::string 	boundary;
+	size_t			index;
+	std::string 	tmpString;
+	std::string 	header;
+
+	boundary	=	head["Boundary"];
+	index		=	body.find(boundary + "\r\n");
+	while (1) {
+		std::map<std::string, std::string> boundaryMap;
+		index += boundary.size() + 2;
+		if (index >= body.size())
+			break ;
+		tmpString = &body[index];
+		header = tmpString.substr(0, tmpString.find("\r\n\r\n"));
+		parseHead(boundaryMap, 0, splitLine(header, "\r\n"));
+		index += header.size() + 4;
+		if (index >= body.size())
+			break ;
+		tmpString = &body[index];
+		boundaryMap["PostEntity"] = tmpString.substr(0, tmpString.find(boundary + "\r\n"));
+		this->body.push_back(boundaryMap);
+	}
+	printRequest();
+
 }
 
-
-
-/**
- * @example will start from the line that contains the query params
+/** @example will start from the line that contains the query params
 */
 void	SimpleRequest::parseSimpleBody(std::string body) {
 	queryString = body;
 	// std::cout << request.request["Query-String"] << std::endl;
 }
-
-
 
 // static void	parseBoundaryBody(t_request& request, std::string body)
 // void	BoundaryRequest::parseBody(std::string body) {
@@ -246,40 +265,18 @@ void	SimpleRequest::parseSimpleBody(std::string body) {
 // 	}
 // }
 
-
-
-
-/* 
-	This parsing based on these pillars
-	1- HEADER
-		/r/n/r/n
-		BODY
-	2 - The first line contains the METHOD PATH HTTPVERSION
-	and the second one containg the HOST PORT
-	and the rest would look like Key: Value
-*/
-
-// void	printRequest(Request *request) {
-// 	size_t i = 0;
-// 	std::cout << request->boundaries.size() << std::endl;
-// 	for (; i < request->boundaries.size(); i++) {
-// 		std::map<std::string, std::string>::iterator it = request->boundaries[i].header.begin();
-// 		for (; it != request->boundaries[i].header.end(); it++) {
-// 			std::cout << "|"  << it->first << "|" << it->second << "|" << std::endl;
-// 		}
-// 		// std::cout << request->boundaries[i].postEntity << std::endl;
-// 	}
-// }
-
+void	BoundaryRequest::printRequest() {
+	size_t i = 0;
+	std::vector<std::map<std::string, std::string> > m = body;
+}
 
 void	Request::setHead( std::map<std::string, std::string>  head) {
 	this->head = head;
 }
 
-void	Request::setBody( std::map<std::string, std::string>  body) {
+void	BoundaryRequest::setBody(std::vector<std::map<std::string, std::string> >  body) {
 	this->body = body;
 }
-
 
 /** @brief this parse does not check if the request is bad formated
  * //TODO: look for when a request is bad;
@@ -297,25 +294,18 @@ Request 	*requestParse(std::string buffer) {
 		throw std::runtime_error("Bad request");
 
 	head 			= buffer.substr(0, index);
-	lines 			= splitLine(head, "/r/n");
+	lines 			= splitLine(head, "\r\n");
 
 	parseTwoFirstLines(headMap, lines);
-	// parseHeader(map, index, lines(\r\n));
 	parseHead(headMap, 2, lines);
 
 	request = generateRequest(getTypeOfRequestBody(headMap));
 	request->setHead(headMap);
-	// if (index + 4 < buffer.length())
-	// {
-	// 	body 	= buffer.substr(index + 4, buffer.length());
-	// 	request.parseBody(body);
-	// }
+	if (index + 4 < buffer.length())
+	{
+		body 	= buffer.substr(index + 4, buffer.length());
+		request->parseBody(body);
+	}
 
-	// printRequest(request);
 	return (request);
 }
-
-/*
-	1
-	2
-*/

@@ -39,31 +39,21 @@
 
 # define HEADER_REQUEST 1
 # define HEADER_BODY    2
-typedef struct sBounderBody {
-    std::string postEntity;
-} bounderyBody;
 
-// typedef struct Request {
-//     std::map<std::string, std::string>  body;
-//     int                                 type;
-//     std::map<std::string, std::string>  head;
-
-//     // it will be called if the request is Boundary Request
-//     std::vector<bounderyBody>            boundaries;
-
-// }   t_request;
+typedef struct s_request {
+    std::vector<std::string>    head;
+    std::string                 body;
+}   t_request;
 
 
 
 class Request {
-    private :
-        std::map<std::string, std::string>  head;
-        std::map<std::string, std::string>  body;
+    protected :
     public :
+        std::map<std::string, std::string>  head;
         virtual void                        parseBody(std::string body) = 0;
         Request();
         void                                setHead( std::map<std::string, std::string>  head);
-        void                                setBody( std::map<std::string, std::string>  body);
 };
 
 Request                                *requestParse(std::string buffer);
@@ -74,12 +64,13 @@ class BoundaryRequest : public Request {
         // and the entityPost
         std::vector<std::map<std::string, std::string> > body;
         std::string                         boundary;
-        std::vector<bounderyBody>           boundaries;
 
     public :
         BoundaryRequest();
         void                                                parseBody(std::string body);
-        void                                              setBoundary(std::string boundary);
+        void                                                setBoundary(std::string boundary);
+        void                                                setBody(std::vector<std::map<std::string, std::string> >);
+        void	                                               printRequest();
         // void                                              setBody(std::string body);
         // std::string                                       getBoundary();
         // std::vector<std::map<std::string, std::string> >   getBody();
