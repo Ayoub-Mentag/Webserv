@@ -421,75 +421,37 @@ void Server::response(int clientFd, std::string src, t_request& request)
 }
 */
 
-static void removeSpaces(std::string &buffer, size_t index) {
-	size_t		start;
 
-	start = index;
-	while (start < buffer.length() && buffer[start] == ' ')
-		start++;
-	if (start > index + 1)
-		buffer.erase(index, start - index - 1);
-}
-
-static void	checkEnclosed(char c, std::stack<char> &s) {
-	if (c == '\"') {
-		if (s.empty() || s.top() != c)
-			s.push(c);
-		else
-			s.pop();
-	}
-}
-
-void	checkRequest(std::string &buffer) {
-	// std::string correctRequest;
-	size_t				index;
-	std::stack<char> 	myStack;
-	std::string 		head;
-	bool				quotes = false;
-	index = 0;
-	while (index < buffer.size()) {
-		if (buffer[index] == '\r')
-		{
-			index++;
-			if (index >= buffer.size())
-				throw std::runtime_error("Bad end of request line");
-			if (buffer[index] != '\n')
-				throw std::runtime_error("Bad end of request line");
-			index++;
-			continue;
-		}
-		else if (buffer[index] == '\"')
-		{
-			quotes = !quotes;
-			checkEnclosed(buffer[index], myStack);
-		}
-		else if (buffer[index] == ' ' && !quotes)  // remove extra spaces
-			removeSpaces(buffer, index);
-		index++;
-	}
-	if (myStack.size())
-		throw std::runtime_error("something isn't ennclosed");
-}
-
-// Request	*getRequest(int clientFd) {
 Request	*Server::getRequest() {
 	/**
 	 * @test we will work on some examples without getting the request from browser
 	*/
 	std::string							buffer;
 	// buffer = "POST /endpoint HTTP/1.1\r\nHost: localhost:8080\r\nContent-Type: application/x-www-form-urlencoded\r\n\r\nkey1=value1&key2=value2";
-	buffer = (
-		"POST /upload-endpoint HTTP/1.1\r\nHost: localhost:8080\r\nContent-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW\r\n\r\n"
+	// buffer = (
+	// 	"POST /upload-endpoint HTTP/1.1\r\nHost: localhost:8080\r\nContent-Type: multipart/form-data boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW\r\n\r\n"
+	// 	"----WebKitFormBoundary7MA4YWxkTrZu0gW\r\n"
+	// 	"Content-Disposition: form-data; name=\"file\"; filename=\"example.txt\"\r\n\r\n"
+	// 	"Content-Type: text/plain\r\n"
+	// 	"File content goes here\r\n"
+	// 	"----WebKitFormBoundary7MA4YWxkTrZu0gW\r\n"
+	// );
 
-		"----WebKitFormBoundary7MA4YWxkTrZu0gW\r\n"
-		"Content-Disposition: form-data; name=\"file\"; filename=\"example.txt\"\r\n\r\n"
-		"Content-Type: text/plain\r\n"
-		"File content goes here\r\n"
-		"----WebKitFormBoundary7MA4YWxkTrZu0gW\r\n"
+	buffer = (
+		"POST /chunked-endpoint HTTP/1.1\r\n"
+		"Host: example.com\r\n"
+		"Content-Type: application/octet-stream\r\n"
+		"Transfer-Encoding: chunked\r\n\r\n"
+		"2\r\n"
+		"This is the first chunk of data.\r\n"
+		"30\r\n"
+		"This is the second chunk.\r\n"
 	);
+
 	// print buffer after the checking
 	checkRequest(buffer);
 	Request *request = requestParse(buffer);
+	std::cout << request->getEntityPost() << std::endl;
 	return (request);
 }
 

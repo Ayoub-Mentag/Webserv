@@ -24,8 +24,9 @@
 # define CYAN         "\033[1;36m"
 # define WHITE        "\033[1;37m"
 
-# define UNKNOWN_CHAR (char)200
-# define DEFAULT_CONFIG_FILE "./configFiles/def.conf"
+# define ALLOWED_URI_CHARS      "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~:/?#[]@!$&'()*+,;=%"
+# define UNKNOWN_CHAR           (char)200
+# define DEFAULT_CONFIG_FILE    "./configFiles/def.conf"
 
 # define NO_LOC_PATH    		RED "Error: " GREEN << "location has no path." << RESET_COLOR << "\n"
 # define INVALID_ARGUMENT		RED "Error: " GREEN << key << " Invalid argument." << RESET_COLOR << "\n"
@@ -40,74 +41,84 @@
 # define HEADER_REQUEST 1
 # define HEADER_BODY    2
 
+class Request;
+
 typedef struct s_request {
-    std::vector<std::string>    head;
-    std::string                 body;
+	std::vector<std::string>    head;
+	std::string                 body;
 }   t_request;
 
 
 
-class Request {
-    protected :
-    public :
-        std::map<std::string, std::string>  head;
-        virtual void                        parseBody(std::string body) = 0;
-        Request();
-        void                                setHead( std::map<std::string, std::string>  head);
-};
-
+void	                                checkRequest(std::string &buffer);
 Request                                *requestParse(std::string buffer);
 
+
+class Request {
+	protected :
+		std::map<std::string, std::string>	head;
+		std::string							entityPost;
+	public :
+		Request();
+		virtual void                        parseBody(std::string body) = 0;
+		void                                setHead( std::map<std::string, std::string>  head);
+		std::string							getEntityPost() const;
+		void								setEntityPost(std::string body);
+
+};
+
 class BoundaryRequest : public Request {
-    private :
-        // the body will conteain the header elements 
-        // and the entityPost
-        std::vector<std::map<std::string, std::string> > body;
-        std::string                         boundary;
+	private :
+		// the body will conteain the header elements 
+		// and the entityPost
+		std::vector<std::map<std::string, std::string> > body;
+		std::string                         boundary;
 
-    public :
-        BoundaryRequest();
-        void                                                parseBody(std::string body);
-        void                                                setBoundary(std::string boundary);
-        void                                                setBody(std::vector<std::map<std::string, std::string> >);
-        void	                                               printRequest();
-        // void                                              setBody(std::string body);
-        // std::string                                       getBoundary();
-        // std::vector<std::map<std::string, std::string> >   getBody();
+	public :
+		BoundaryRequest();
+		void                                                parseBody(std::string body);
+		void                                                setBoundary(std::string boundary);
+		void                                                setBody(std::vector<std::map<std::string, std::string> >);
+		void	                                            printRequest();
+		// std::string                                       getBoundary();
 
 };
 
-class SimpleRequest : Request {
-    private:
-        std::string queryString;
-    public:
-        void    parseSimpleBody(std::string body);
+class SimpleRequest : public Request {
+	public :
+		SimpleRequest();
+		void                                                parseBody(std::string body);
 };
 
+class ChunkedRequest : public Request {
+	public :
+		ChunkedRequest();
+		void                                                parseBody(std::string body);
+};
 
 typedef struct LocationDirectives {
-    bool						autoindex;
-    std::string					path;
-    std::string					root;
-    std::string					index;
-    std::string					redirectFrom;
-    std::string 				redirectTo;
-    std::vector<std::string>	allowedMethods;
-    std::map<int, std::string> 	errorPages;
-    int					    	clientMaxBodySize;
-    std::string                 cgiExecutable;
-    bool                        isCgi;
+	bool						autoindex;
+	std::string					path;
+	std::string					root;
+	std::string					index;
+	std::string					redirectFrom;
+	std::string 				redirectTo;
+	std::vector<std::string>	allowedMethods;
+	std::map<int, std::string> 	errorPages;
+	int					    	clientMaxBodySize;
+	std::string                 cgiExecutable;
+	bool                        isCgi;
 }								t_location;
 
 typedef struct ServerDirectives {
-    int								port;
-    int					    		clientMaxBodySize;
-    std::map<int, std::string> 		errorPages;
-    std::string						serverName;
-    std::string						root;
-    std::string						index;
-    std::vector<std::string>        allowedMethods;
-    std::vector<t_location>     	locations;
+	int								port;
+	int					    		clientMaxBodySize;
+	std::map<int, std::string> 		errorPages;
+	std::string						serverName;
+	std::string						root;
+	std::string						index;
+	std::vector<std::string>        allowedMethods;
+	std::vector<t_location>     	locations;
 }									t_server;
 
 typedef struct ConfigSettings {
