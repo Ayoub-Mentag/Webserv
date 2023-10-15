@@ -1,4 +1,4 @@
-#include <parsingHeader.hpp>
+#include <headerFile.hpp>
 /** @brief
 	This parsing based on these pillars
 	1- HEADER
@@ -224,34 +224,6 @@ void	SimpleRequest::setEntityPost(std::string entityPost)
 // * Boundary class  *
 // ******************
 
-/*static void	parseBoundaryBody(t_request& request, std::string body)
-void	BoundaryRequest::parseBody(std::string body) {
-	std::string 	boundary;
-	size_t			index;
-	std::string		header;
-	std::string		tmpString;
-	bounderyBody	b;
-
-	boundary	=	request.head["Boundary"];
-	index		=	body.find(boundary + "\r\n");
-	while (1) {
-		index += boundary.size() + 2;
-		if (index >= body.size())
-			break ;
-		tmpString = &body[index];
-		header = tmpString.substr(0, tmpString.find("\r\n\r\n"));
-		// parseHeader(map, index, lines(\r\n));
-		parseHead(b.header, 0, splitLine(header, ": "));
-		index += header.size() + 4;
-		if (index >= body.size())
-			break ;
-		tmpString = &body[index];
-		b.postEntity = tmpString.substr(0, tmpString.find(boundary + "\r\n"));
-		addABoundary(b);
-	}
-}
-
-*/
 
 BoundaryRequest::BoundaryRequest() {}
 
