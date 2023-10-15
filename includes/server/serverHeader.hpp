@@ -87,6 +87,9 @@ class Server {
 		void				parseContentType();
 		const std::string&	returnError(int status);
 
+		// delete method tmp functions
+		void				deleteFile(std::string& path);
+
 	public:
 		Server();
 		Server(t_config& config);

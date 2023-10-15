@@ -330,19 +330,26 @@ std::string	Server::locationRedirection() {
 std::string	Server::listDirectory(DIR *dir) {
 	t_location location = getLocation();
 	
+	// for now i will just throw forbidden!
+	if (request.method == "DELETE") {
+		throw std::runtime_error(returnError(FORBIDDEN_STATUS));
+	}
+
 	if (location.autoindex) {
 		response.setContentType(".html");
 		response.setBody(directory_listing(dir, request.path));
 		response.setHeader(200);
 	} else if (!location.index.empty()) {
 		try {
+
+			response.setContentType(".html");
 			response.setBody(fileToString(location.index, NOT_FOUND_STATUS));
 			response.setHeader(200);
 		} catch (const std::exception& ex) {
 			throw std::runtime_error(returnError(NOT_FOUND_STATUS));
 		}
 	} else {
-		throw std::runtime_error(returnError(MOVED_PERMANENTLY_STATUS));
+		throw std::runtime_error(returnError(FORBIDDEN_STATUS));
 	}
 	closedir(dir);
 	return (response.getResponse());
@@ -411,6 +418,22 @@ void	Server::initResponseClass() {
 	response.setStatusCode();
 }
 
+// void	Server::deleteFile(std::string& path) {
+// 	if (access(path.c_str(), F_OK) > -1) {
+// 		if (std::remove(path.c_str()) == 0) {
+// 			std::string tmp = "<!DOCTYPE html><html><head><title>Success</title></head><body><script>function showAlert() {alert(\"This is an alert message!\");}</script></body></html>";
+// 			response.setBody(tmp);
+// 			response.setHeader(200);
+// 		} else {
+// 			perror("remove");
+// 			// throw std::runtime_error("probleme in deleting file\n");
+// 		}
+// 	} else {
+// 		throw std::runtime_error(returnError(NOT_FOUND_STATUS));
+// 	}
+// 	std::cout << response.getResponse();
+// }
+
 void Server::responseFunc(int clientFd)
 {
 	try {
@@ -418,8 +441,21 @@ void Server::responseFunc(int clientFd)
 		std::string path = matching();
 		t_location location = getLocation();
 		correctPath(path);
+		methodNotAllowed();
+
+		// if (request.method == "DELETE") {
+		// 	DIR *dir = opendir(path.c_str());
+		// 	// if (path == location.redirectFrom) {
+		// 	// 	locationRedirection();
+		// 	if (dir) {
+		// 		listDirectory(dir);
+		// 	} else if (location.isCgi) {
+		// 		executeCgi(path);
+		// 	} else {
+		// 		deleteFile(path);
+		// 	}
+		// }
 		DIR *dir = opendir(path.c_str());
-		methodNotAllowed(); // should i check location errpage first when no method in the location?
 		if (path == location.redirectFrom) {
 			locationRedirection();
 		} else if (dir) {
