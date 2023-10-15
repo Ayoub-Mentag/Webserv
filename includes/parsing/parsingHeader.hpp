@@ -53,17 +53,15 @@ typedef struct s_request {
 void	                                checkRequest(std::string &buffer);
 Request                                *requestParse(std::string buffer);
 
-
 class Request {
 	protected :
 		std::map<std::string, std::string>	head;
-		std::string							entityPost;
 	public :
+		virtual ~Request();
 		Request();
 		virtual void                        parseBody(std::string body) = 0;
 		void                                setHead( std::map<std::string, std::string>  head);
-		std::string							getEntityPost() const;
-		void								setEntityPost(std::string body);
+		std::map<std::string, std::string>	getHead() const;
 
 };
 
@@ -79,22 +77,28 @@ class BoundaryRequest : public Request {
 		void                                                parseBody(std::string body);
 		void                                                setBoundary(std::string boundary);
 		void                                                setBody(std::vector<std::map<std::string, std::string> >);
-		void	                                            printRequest();
-		// std::string                                       getBoundary();
-
 };
 
 class SimpleRequest : public Request {
+	private :
+		std::string entityPost;
 	public :
+		std::string											getEntityPost() const;
+		void												setEntityPost(std::string entityPost);
 		SimpleRequest();
-		void                                                parseBody(std::string body);
+		void												parseBody(std::string body);
 };
 
 class ChunkedRequest : public Request {
+	private :
+		std::string entityPost;
 	public :
 		ChunkedRequest();
-		void                                                parseBody(std::string body);
+		void												parseBody(std::string body);
+		std::string											getEntityPost() const;
+		void												setEntityPost();
 };
+
 
 typedef struct LocationDirectives {
 	bool						autoindex;
@@ -153,4 +157,5 @@ t_config					        parseConFile(const char* file);
 /* Parse Request */
 std::map<std::string, std::string>  fillContentTypeMap();
 void	correctPath(std::string& path); // just for now
-
+std::vector<std::string>	splitLine(std::string line, std::string delimiter);
+void	checkPath(std::string path);

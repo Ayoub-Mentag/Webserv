@@ -427,6 +427,8 @@ Request	*Server::getRequest() {
 	 * @test we will work on some examples without getting the request from browser
 	*/
 	std::string							buffer;
+
+	// Boundary
 	// buffer = "POST /endpoint HTTP/1.1\r\nHost: localhost:8080\r\nContent-Type: application/x-www-form-urlencoded\r\n\r\nkey1=value1&key2=value2";
 	// buffer = (
 	// 	"POST /upload-endpoint HTTP/1.1\r\nHost: localhost:8080\r\nContent-Type: multipart/form-data boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW\r\n\r\n"
@@ -437,21 +439,22 @@ Request	*Server::getRequest() {
 	// 	"----WebKitFormBoundary7MA4YWxkTrZu0gW\r\n"
 	// );
 
-	buffer = (
-		"POST /chunked-endpoint HTTP/1.1\r\n"
-		"Host: example.com\r\n"
-		"Content-Type: application/octet-stream\r\n"
-		"Transfer-Encoding: chunked\r\n\r\n"
-		"2\r\n"
-		"This is the first chunk of data.\r\n"
-		"30\r\n"
-		"This is the second chunk.\r\n"
-	);
+	// Chunked
+	// buffer = (
+	// 	"POST /chunked-endpoint HTTP/1.1\r\n"
+	// 	"Host: example.com\r\n"
+	// 	"Content-Type: application/octet-stream\r\n"
+	// 	"Transfer-Encoding: chunked\r\n\r\n"
+	// 	"2\r\n"
+	// 	"This is the first chunk of data.\r\n"
+	// 	"30\r\n"
+	// 	"This is the second chunk.\r\n"
+	// );
+
 
 	// print buffer after the checking
 	checkRequest(buffer);
 	Request *request = requestParse(buffer);
-	std::cout << request->getEntityPost() << std::endl;
 	return (request);
 }
 
@@ -481,7 +484,19 @@ void Server::acceptNewConnection()
 	}
 }
 
+
 void Server::serve()
 {
 	Request *request = getRequest();
+	std::map<std::string, std::string> head = request->getHead();
+	for (std::map<std::string, std::string>::iterator it = head.begin(); it != head.end(); it++) {
+		std::cout << "Key " << it->first << " Value " << it->second << std::endl;
+	}
+	ChunkedRequest *c = dynamic_cast<ChunkedRequest *>(request);
+	if (c) {
+		std::cout << c->getEntityPost() << std::endl;
+		// SimpleRequest *c = dynamic_cast<SimpleRequest *>(request);
+		// if (c)
+		// 	std::cout << c->getEntityPost() << std::endl;
+	}
 }

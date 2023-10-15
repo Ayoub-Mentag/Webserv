@@ -27,24 +27,7 @@ enum BODY_TYPE{
 ChunkedRequest::ChunkedRequest() {}
 
 
-static std::vector<std::string>	splitLine(std::string line, std::string delimiter) {
-	std::vector<std::string>	result;
-	std::string					tmpLine;
-	size_t						end;
 
-	end = 0;
-	while (line.size()) {
-		end = line.find(delimiter);
-		if (end == std::string::npos)
-			end = line.length();
-		tmpLine = line.substr(0, end);
-		result.push_back(tmpLine);
-        if (end + delimiter.size() > line.size())
-            break ;
-        line = &line[end + delimiter.size()];
-	}
-	return (result);
-}
 
 static bool	assignBoundary(std::map<std::string, std::string>& headMap) {
 	/*
@@ -211,7 +194,10 @@ void	ChunkedRequest::parseBody(std::string body) {
 	}
 }
 
-
+std::string	ChunkedRequest::getEntityPost() const
+{
+	return this->entityPost;
+}
 
 // ******************
 // * Simple class  *
@@ -224,7 +210,15 @@ void	SimpleRequest::parseBody(std::string body) {
 	this->entityPost = body;
 }
 
+std::string	SimpleRequest::getEntityPost() const
+{
+	return this->entityPost;
+}
 
+void	SimpleRequest::setEntityPost(std::string entityPost)
+{
+	this->entityPost = entityPost;
+}
 
 // ******************
 // * Boundary class  *
@@ -296,9 +290,7 @@ void	BoundaryRequest::parseBody(std::string body) {
 		index += boundaryMap["PostEntity"].size() + 2;
 		this->body.push_back(boundaryMap);
 	}
-	std::cout << this->entityPost << std::endl;
 }
-
 
 
 // ******************
@@ -306,6 +298,13 @@ void	BoundaryRequest::parseBody(std::string body) {
 // ******************
 
 Request::Request() {}
+Request::~Request() {}
+
+
+
+std::map<std::string, std::string>	Request::getHead() const {
+	return this->head;
+}
 
 Request	*generateRequest(int type) {
 	switch (type) {
@@ -325,93 +324,6 @@ Request	*generateRequest(int type) {
 void	Request::setHead( std::map<std::string, std::string>  head) {
 	this->head = head;
 }
-
-std::string	Request::getEntityPost() const
-{
-	return this->entityPost;
-}
-
-void	Request::setEntityPost(std::string entityPost)
-{
-	this->entityPost = entityPost;
-}
-
-
-// ******************
-// * checkRequest.c *
-// ******************
-static void removeSpaces(std::string &buffer, size_t index) {
-	size_t		start;
-
-	start = index;
-	while (start < buffer.length() && buffer[start] == ' ')
-		start++;
-	if (start > index + 1)
-		buffer.erase(index, start - index - 1);
-}
-
-static void	checkEnclosed(char c, std::stack<char> &myStack) {
-	if (myStack.empty() || myStack.top() != c)
-		myStack.push(c);
-	else
-		myStack.pop();
-}
-
-void	checkLine(std::string& line, std::stack<char>& myStack, bool& quotes) {
-	for (size_t j = 0; j < line.size(); j++) {
-		if (line[j] == '\"' || line[j] == '\'')
-		{
-			quotes = !quotes;
-			checkEnclosed(line[j], myStack);
-		}
-		else if (line[j] == ' ' && !quotes)  // remove extra spaces
-			removeSpaces(line, j);
-	}
-}
-
-void	checkRequest(std::string &buffer) {
-	// std::string correctRequest;
-	std::stack<char>		myStack;
-	std::string 			head;
-	bool					quotes;
-
-	quotes = false;
-	size_t last = buffer.size() - 1;
-	if (buffer[last] != '\n' || last - 1 < 0 || buffer[last - 1] != '\r')
-		throw std::runtime_error("Bad end of request line:Bad Request 400");
-	std::vector<std::string> lines = splitLine(buffer, "\r\n");
-	buffer = "";
-	for (size_t i = 0; i < lines.size(); i++) {
-		checkLine(lines[i], myStack, quotes);
-		buffer += (lines[i] + "\r\n");
-	}
-
-	/*
-		index = 0;
-		while (index < buffer.size()) {
-			else if (buffer[index] == '\"')
-			{
-				quotes = !quotes;
-				checkEnclosed(buffer[index], myStack);
-			}
-			else if (buffer[index] == ' ' && !quotes)  // remove extra spaces
-				removeSpaces(buffer, index);
-			index++;
-		}
-	*/
-	if (myStack.size())
-		throw std::runtime_error("something isn't ennclosed");
-}
-
-void	checkPath(std::string path) {
-	if (path.length() > 2048)
-	{
-		throw std::runtime_error("414 Request-URI Too Long");
-	}
-	if (path.find_first_not_of(ALLOWED_URI_CHARS) != std::string::npos)
-		throw std::runtime_error("Bad char:400 Bad Request");
-}
-
 
 /** @brief this parse does not check if the request is bad formated
  * //TODO: look for when a request is bad;
