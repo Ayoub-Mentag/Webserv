@@ -206,7 +206,7 @@ void	Server::locationExists() {
 			if (access(cgiPath.c_str(), F_OK) != -1) {
 				request->locationIndex = i;
 				config.servers[request->serverIndex].locations[i].isCgi = true;
-				request->path = cgiPath;
+				request->getHead()[REQ_PATH] = cgiPath;
 				return ;
 			}
 		}
@@ -214,7 +214,7 @@ void	Server::locationExists() {
 		config.servers[request->serverIndex].locations[i].isCgi = false;
 	}
 	
-	std::string lookFor = request->path;
+	std::string lookFor = request->getHead()[REQ_PATH];
 	while (lookFor.size() > 0) {
 		std::vector<std::string>::iterator it = std::find(locationPaths.begin(), locationPaths.end(), lookFor);
 		if (it != locationPaths.end()) {
@@ -226,7 +226,7 @@ void	Server::locationExists() {
 			break ;
 		lookFor.erase(last, -1);
 	}
-	if (request->path[0] == '/' && lookFor.empty()) {
+	if (request->getHead()[REQ_PATH][0] == '/' && lookFor.empty()) {
 		std::vector<std::string>::iterator it = std::find(locationPaths.begin(), locationPaths.end(), "/");
 		if (it != locationPaths.end()) {
 			request->locationIndex = std::distance(locationPaths.begin(), it);
@@ -272,9 +272,9 @@ std::string	Server::matching() {
 	}
 
 	t_location	location = config.servers[request->serverIndex].locations[request->locationIndex];
-	std::string	pathToBeLookFor = request->path;
+	std::string	pathToBeLookFor = request->getHead()[REQ_PATH];
 	if (location.isCgi) {
-		return (request->path);
+		return (request->getHead()[REQ_PATH]);
 	}
 	location.isCgi = false;
 	pathToBeLookFor.erase(0, location.path.size());
@@ -331,11 +331,11 @@ void	Server::methodNotAllowed() {
 	t_server	server = getServer();
 	t_location	location = getLocation();
 
-	if (request->method != "GET" && request->method != "POST" && request->method != "DELETE") {
+	if (request->getHead()[REQ_METHOD] != "GET" && request->getHead()[REQ_METHOD] != "POST" && request->getHead()[REQ_METHOD] != "DELETE") {
 		throw std::runtime_error(returnError(NOT_IMPLEMENTED_STATUS));
 	}
 	try {
-		findAllowedMethod(request->method, server, location);
+		findAllowedMethod(request->getHead()[REQ_METHOD], server, location);
 	} catch (std::exception &ex) {
 		throw std::runtime_error(returnError(METHOD_NOT_ALLOWED_STATUS));
 	}
@@ -359,7 +359,7 @@ std::string	Server::listDirectory(DIR *dir) {
 	
 	if (location.autoindex) {
 		response.setContentType(".html");
-		response.setBody(directory_listing(dir, request->path));
+		response.setBody(directory_listing(dir, request->getHead()[REQ_PATH]));
 		response.setHeader(200);
 	} else if (!location.index.empty()) {
 		try {
@@ -421,11 +421,11 @@ std::string	Server::executeCgi(std::string path) {
 
 void	Server::parseContentType() {
 
-	size_t dot = request->path.find_last_of('.');
-	if (dot != request->path.npos) {
-		if (request->path[request->path.length() - 1] == '/')
-			request->path.erase(request->path.length() - 1);
-		std::string extention = request->path.substr(dot, -1);
+	size_t dot = request->getHead()[REQ_PATH].find_last_of('.');
+	if (dot != request->getHead()[REQ_PATH].npos) {
+		if (request->getHead()[REQ_PATH][request->getHead()[REQ_PATH].length() - 1] == '/')
+			request->getHead()[REQ_PATH].erase(request->getHead()[REQ_PATH].length() - 1);
+		std::string extention = request->getHead()[REQ_PATH].substr(dot, -1);
 		response.setContentType(extention);
 	} else {
 		response.setContentType("");
@@ -434,7 +434,7 @@ void	Server::parseContentType() {
 
 void	Server::initResponseClass() {
 	parseContentType(); // setContentType
-	response.setHttpVersion(request->httpVersion);
+	response.setHttpVersion(request->getHead()[REQ_HTTP_VERSION]);
 	response.setStatusCode();
 }
 

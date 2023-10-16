@@ -74,14 +74,14 @@ class Request {
 		std::map<std::string, std::string>	head;
 		REQUEST_TYPE						typeOfRequest;
 	public :
-		std::string method;
-    	std::string path;
-    	std::string httpVersion;
-    	std::string serverName;
+		// std::string method;
+    	// std::string path;
+    	// std::string httpVersion;
+    	// std::string serverName;
     	int         serverIndex;
     	int         locationIndex;
-    	int         port;
-    	std::string contentType;
+    	// int         port;
+    	// std::string contentType;
 		virtual ~Request();
 		Request();
 		Request(REQUEST_TYPE type);

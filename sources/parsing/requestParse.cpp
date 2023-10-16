@@ -350,11 +350,11 @@ Request 	*requestParse(std::string buffer) {
 		body 	= buffer.substr(index + 4, buffer.length());
 		request->parseBody(body);
 	}
-		request->method = headMap["Method"];
-    	request->path = headMap["Path"];
-    	request->httpVersion = headMap["HttpVersion"];
-    	request->serverName = headMap["ServerName"];
-    	request->port = atoi(headMap["Port"].c_str());
+		// request->method = headMap["Method"];
+    	// request->path = headMap["Path"];
+    	// request->httpVersion = headMap["HttpVersion"];
+    	// request->serverName = headMap["ServerName"];
+    	// request->port = atoi(headMap["Port"].c_str());
 		// request->contentType ;
 	return (request);
 }
