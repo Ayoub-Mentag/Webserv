@@ -41,6 +41,16 @@
 # define HEADER_REQUEST 1
 # define HEADER_BODY    2
 
+enum REQUEST_TYPE{
+	GET,
+	DELETE,
+	POST_SIMPLE,
+	POST_BOUNDARY,
+	POST_CHUNKED,
+	POST_JSON,
+	NONE
+};
+
 class Request;
 
 typedef struct s_request {
@@ -50,19 +60,23 @@ typedef struct s_request {
 
 
 
-void	                                checkRequest(std::string &buffer);
-Request                                *requestParse(std::string buffer);
+void			checkRequest(std::string &buffer);
+Request			*requestParse(std::string buffer);
+REQUEST_TYPE	initTypeOfRequestBody(std::map<std::string, std::string>& headMap);
 
 class Request {
 	protected :
 		std::map<std::string, std::string>	head;
+		REQUEST_TYPE						typeOfRequest;
 	public :
 		virtual ~Request();
 		Request();
-		virtual void                        parseBody(std::string body) = 0;
-		void                                setHead( std::map<std::string, std::string>  head);
+		Request(REQUEST_TYPE type);
+		virtual void						parseBody(std::string body);
+		void								setHead( std::map<std::string, std::string>  head);
 		std::map<std::string, std::string>	getHead() const;
-
+		void								setTypeOfRequest(REQUEST_TYPE typeOfRequest);
+		REQUEST_TYPE						getTypeOfRequest() const;
 };
 
 class BoundaryRequest : public Request {
@@ -74,19 +88,22 @@ class BoundaryRequest : public Request {
 
 	public :
 		BoundaryRequest();
+		BoundaryRequest(REQUEST_TYPE type);
 		void                                                parseBody(std::string body);
 		void                                                setBoundary(std::string boundary);
 		void                                                setBody(std::vector<std::map<std::string, std::string> >);
+		std::vector<std::map<std::string, std::string> >	getBody() const;
 };
 
 class SimpleRequest : public Request {
 	private :
 		std::string entityPost;
 	public :
-		std::string											getEntityPost() const;
-		void												setEntityPost(std::string entityPost);
+		std::string			getEntityPost() const;
+		void				setEntityPost(std::string entityPost);
 		SimpleRequest();
-		void												parseBody(std::string body);
+		SimpleRequest(REQUEST_TYPE type);
+		void				parseBody(std::string body);
 };
 
 class ChunkedRequest : public Request {
@@ -94,6 +111,7 @@ class ChunkedRequest : public Request {
 		std::string entityPost;
 	public :
 		ChunkedRequest();
+		ChunkedRequest(REQUEST_TYPE type);
 		void												parseBody(std::string body);
 		std::string											getEntityPost() const;
 		void												setEntityPost();

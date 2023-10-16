@@ -14,13 +14,7 @@
 // add vector of QueryString
 // the request should be corrected before using it
 // 
-enum BODY_TYPE{
-	SIMPLE,
-	BOUNDARY,
-	CHUNKED,
-	JSON,
-	NONE
-};
+
 
 
 
@@ -139,39 +133,47 @@ static void	parseHead(std::map<std::string, std::string>& headMap, size_t i, std
 			value.erase(0, 1);
 		headMap[key] = value;
 	}
+	// for POST_BOUNDARY request
+	assignBoundary(headMap);
 }
 
 /** @brief this function specify the body type ,and init the request map 
  * with appropriate elements [if we have a boundary it would be assigned ..]
  * if the type is none then we don't need to parse the request
 */
-static BODY_TYPE	getTypeOfRequestBody(std::map<std::string, std::string>& headMap) {
+REQUEST_TYPE	initTypeOfRequestBody(std::map<std::string, std::string>& headMap) {
 	std::string type;
-
-	assignBoundary(headMap);
-	if (headMap["Method"] == "POST") {
+	type = headMap["Method"];
+	if (type == "POST") {
 		type = headMap["Transfer-Encoding"];
 		if (!type.empty())
 		{
 			if (type == "chunked")
-				return (CHUNKED);
+				return (POST_CHUNKED);
 			throw std::runtime_error("Transfert-Encoding contains !Chunked:501 Not Implemented");
 		}
 		type = headMap["Content-Type"];
 		if (type == "application/x-www-form-urlencoded")
-			return (SIMPLE);
+			return (POST_SIMPLE);
 		if (type == "application/json")
-			return (JSON);
+			return (POST_JSON);
 		type = headMap["Boundary"];
 		if (!type.empty())
-			return BOUNDARY;
+			return (POST_BOUNDARY);
 
 		// TODO: when we need to throw this
 		// 	if (headMap["Content-Length"].empty())
 		// throw std::runtime_error("Content-Length not exist:Bad request 400");
 
-	}
+	} else if (type == "GET")
+		return (GET);
+	else if (type == "DELETE")
+		return (DELETE);
 	return (NONE);
+}
+
+void	Request::setTypeOfRequest(REQUEST_TYPE type) {
+	this->typeOfRequest = type;
 }
 
 // ******************
@@ -299,22 +301,37 @@ void	BoundaryRequest::parseBody(std::string body) {
 
 Request::Request() {}
 Request::~Request() {}
+void	Request::parseBody(std::string body) {(void)body;}
+REQUEST_TYPE						Request::getTypeOfRequest() const {
+	return (this->typeOfRequest);
+}
 
+std::vector<std::map<std::string, std::string> >	BoundaryRequest::getBody() const {
+	return (this->body);
+}
 
 
 std::map<std::string, std::string>	Request::getHead() const {
 	return this->head;
 }
 
-Request	*generateRequest(int type) {
+Request::Request(REQUEST_TYPE type) : typeOfRequest(type) {}
+BoundaryRequest::BoundaryRequest(REQUEST_TYPE type) : Request(type) {}
+SimpleRequest::SimpleRequest(REQUEST_TYPE type) : Request(type) {}
+ChunkedRequest::ChunkedRequest(REQUEST_TYPE type) : Request(type) {}
+
+Request	*generateRequest(REQUEST_TYPE type) {
 	switch (type) {
-		case BOUNDARY :
-			return new BoundaryRequest();
-		case SIMPLE :
-			return new SimpleRequest();
-		case CHUNKED : 
-			return new ChunkedRequest();
-		case JSON : 
+		case GET :
+		case DELETE :
+			return new Request(type);
+		case POST_BOUNDARY :
+			return new BoundaryRequest(type);
+		case POST_SIMPLE :
+			return new SimpleRequest(type);
+		case POST_CHUNKED : 
+			return new ChunkedRequest(type);
+		case POST_JSON : 
 			return NULL;
 		default :
 			return NULL;
@@ -348,11 +365,12 @@ Request 	*requestParse(std::string buffer) {
 	parseHead(headMap, 2, lines);
 	checkPath(headMap["Path"]);
 
-	request = generateRequest(getTypeOfRequestBody(headMap));
+
+	request = generateRequest(initTypeOfRequestBody(headMap));
 	if (!request)
 		throw std::runtime_error("Unknown type of body:Bad Request");
 	request->setHead(headMap);
-	if (index + 4 < buffer.length())
+	if (request->getTypeOfRequest() != DELETE && request->getTypeOfRequest() != GET)
 	{
 		body 	= buffer.substr(index + 4, buffer.length());
 		request->parseBody(body);
