@@ -24,8 +24,9 @@
 # define CYAN         "\033[1;36m"
 # define WHITE        "\033[1;37m"
 
-# define UNKNOWN_CHAR (char)200
-# define DEFAULT_CONFIG_FILE "./configFiles/def.conf"
+# define ALLOWED_URI_CHARS      "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~:/?#[]@!$&'()*+,;=%"
+# define UNKNOWN_CHAR           (char)200
+# define DEFAULT_CONFIG_FILE    "./configFiles/def.conf"
 
 # define NO_LOC_PATH    		RED "Error: " GREEN << "location has no path." << RESET_COLOR << "\n"
 # define INVALID_ARGUMENT		RED "Error: " GREEN << key << " Invalid argument." << RESET_COLOR << "\n"
@@ -36,40 +37,110 @@
 # define EXPECTED_SEM			RED "Error: " GREEN "expected ';' at end of declaration." << RESET_COLOR << "\n"
 # define INVALID_DIRECTIVE		RED "Error: " GREEN "Invalid Directive." << RESET_COLOR << "\n"
 
-typedef struct Request {
-    std::string method;
-    std::string path;
-    std::string httpVersion;
-    std::string serverName;
-    int         serverIndex;
-    int         locationIndex;
-    int         port;
-    std::string contentType;
-} t_request;
+
+# define HEADER_REQUEST 1
+# define HEADER_BODY    2
+
+enum REQUEST_TYPE{
+	GET,
+	DELETE,
+	POST_SIMPLE,
+	POST_BOUNDARY,
+	POST_CHUNKED,
+	POST_JSON,
+	NONE
+};
+
+class Request;
+
+typedef struct s_request {
+	std::vector<std::string>    head;
+	std::string                 body;
+}   t_request;
+
+
+
+void			checkRequest(std::string &buffer);
+Request			*requestParse(std::string buffer);
+REQUEST_TYPE	initTypeOfRequestBody(std::map<std::string, std::string>& headMap);
+
+class Request {
+	protected :
+		std::map<std::string, std::string>	head;
+		REQUEST_TYPE						typeOfRequest;
+	public :
+		virtual ~Request();
+		Request();
+		Request(REQUEST_TYPE type);
+		virtual void						parseBody(std::string body);
+		void								setHead( std::map<std::string, std::string>  head);
+		std::map<std::string, std::string>	getHead() const;
+		void								setTypeOfRequest(REQUEST_TYPE typeOfRequest);
+		REQUEST_TYPE						getTypeOfRequest() const;
+};
+
+class BoundaryRequest : public Request {
+	private :
+		// the body will conteain the header elements 
+		// and the entityPost
+		std::vector<std::map<std::string, std::string> > body;
+		std::string                         boundary;
+
+	public :
+		BoundaryRequest();
+		BoundaryRequest(REQUEST_TYPE type);
+		void                                                parseBody(std::string body);
+		void                                                setBoundary(std::string boundary);
+		void                                                setBody(std::vector<std::map<std::string, std::string> >);
+		std::vector<std::map<std::string, std::string> >	getBody() const;
+};
+
+class SimpleRequest : public Request {
+	private :
+		std::string entityPost;
+	public :
+		std::string			getEntityPost() const;
+		void				setEntityPost(std::string entityPost);
+		SimpleRequest();
+		SimpleRequest(REQUEST_TYPE type);
+		void				parseBody(std::string body);
+};
+
+class ChunkedRequest : public Request {
+	private :
+		std::string entityPost;
+	public :
+		ChunkedRequest();
+		ChunkedRequest(REQUEST_TYPE type);
+		void												parseBody(std::string body);
+		std::string											getEntityPost() const;
+		void												setEntityPost();
+};
+
 
 typedef struct LocationDirectives {
-    bool						autoindex;
-    std::string					path;
-    std::string					root;
-    std::string					index;
-    std::string					redirectFrom;
-    std::string 				redirectTo;
-    std::vector<std::string>	allowedMethods;
-    std::map<int, std::string> 	errorPages;
-    int					    	clientMaxBodySize;
-    std::string                 cgiExecutable;
-    bool                        isCgi;
+	bool						autoindex;
+	std::string					path;
+	std::string					root;
+	std::string					index;
+	std::string					redirectFrom;
+	std::string 				redirectTo;
+	std::vector<std::string>	allowedMethods;
+	std::map<int, std::string> 	errorPages;
+	int					    	clientMaxBodySize;
+	std::string                 cgiExecutable;
+	bool                        isCgi;
 }								t_location;
 
 typedef struct ServerDirectives {
-    int								port;
-    int					    		clientMaxBodySize;
-    std::map<int, std::string> 		errorPages;
-    std::string						serverName;
-    std::string						root;
-    std::string						index;
-    std::vector<std::string>        allowedMethods;
-    std::vector<t_location>     	locations;
+	int								port;
+	int					    		clientMaxBodySize;
+	std::map<int, std::string> 		errorPages;
+	std::string						serverName;
+	std::string						root;
+	std::string						index;
+	std::vector<std::string>        allowedMethods;
+	std::vector<t_location>     	locations;
 }									t_server;
 
 typedef struct ConfigSettings {
@@ -102,7 +173,7 @@ void						        splitServerBlocks(t_config& config, std::string res);
 t_config					        parseConFile(const char* file);
 
 /* Parse Request */
-void                                requestParse(t_request& request, std::string buffer);
 std::map<std::string, std::string>  fillContentTypeMap();
 void	correctPath(std::string& path); // just for now
-
+std::vector<std::string>	splitLine(std::string line, std::string delimiter);
+void	checkPath(std::string path);

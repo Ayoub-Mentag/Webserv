@@ -10,7 +10,7 @@ OBJS				= $(patsubst $(SRC_DIR)/%.cpp,$(OBJ_DIR)/%.o,$(SRCS))
 SRC_DIR				= sources
 INC_DIR				= includes
 OBJ_DIR				= objects
-INCLUDES			= -I$(INC_DIR) -I$(INC_DIR)/parsing -I$(INC_DIR)/server
+INCLUDES			= -I$(INC_DIR) -I$(INC_DIR)/parsing -I$(INC_DIR)/server -I$(INC_DIR)/utils
 
 
 #====== Colors =======#
@@ -56,3 +56,4 @@ re:					fclean all
 
 push:
 					git add . && git commit -m "parsing branch" && (git push || git push --set-upstream origin parsing)
+
