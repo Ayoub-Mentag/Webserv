@@ -53,11 +53,16 @@ enum REQUEST_TYPE{
 
 class Request;
 
-typedef struct s_request {
-	std::vector<std::string>    head;
-	std::string                 body;
-}   t_request;
-
+// typedef struct s_request {
+//     std::string method;
+//     std::string path;
+//     std::string httpVersion;
+//     std::string serverName;
+//     int         serverIndex;
+//     int         locationIndex;
+//     int         port;
+//     std::string contentType;
+// } t_request;
 
 
 void			checkRequest(std::string &buffer);
@@ -69,6 +74,14 @@ class Request {
 		std::map<std::string, std::string>	head;
 		REQUEST_TYPE						typeOfRequest;
 	public :
+		std::string method;
+    	std::string path;
+    	std::string httpVersion;
+    	std::string serverName;
+    	int         serverIndex;
+    	int         locationIndex;
+    	int         port;
+    	std::string contentType;
 		virtual ~Request();
 		Request();
 		Request(REQUEST_TYPE type);

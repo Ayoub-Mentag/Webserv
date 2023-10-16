@@ -79,15 +79,17 @@ static void	parseTwoFirstLines(std::map<std::string, std::string> &headMap, std:
 		if (firstLine.size() == 3) {
 			headMap["Method"]  = firstLine[0];
 			headMap["Path"]    = firstLine[1];
-			headMap["HttpVer"] = firstLine[2];
+			headMap["HttpVersion"] = firstLine[2];
 		}
 		std::istringstream iss2(lines[1]);
 		while (std::getline(iss2, line, ':')) {
 			secondLine.push_back(line);
 		}
+		
 		size = secondLine.size();
-		if (size == 2)
-			headMap["Host"] = secondLine[1];
+		if (size >= 2) {
+			headMap["ServerName"] = trim(secondLine[1]);
+		}
 		if (size == 3)
 			headMap["Port"] = secondLine[2];
 	}
@@ -123,7 +125,7 @@ static void	parseHead(std::map<std::string, std::string>& headMap, size_t i, std
 		}
 		i += 2;
 	}
-
+ 
 	*/
 	for (; i < lines.size(); i++) {
 		std::istringstream iss3(lines[i]);
@@ -298,7 +300,8 @@ Request	*generateRequest(REQUEST_TYPE type) {
 		case DELETE :
 			return new Request(type);
 		case POST_BOUNDARY :
-			return new BoundaryRequest(type);
+			return NULL;
+			// return new BoundaryRequest(type);
 		case POST_SIMPLE :
 			return new SimpleRequest(type);
 		case POST_CHUNKED : 
@@ -332,7 +335,7 @@ Request 	*requestParse(std::string buffer) {
 
 	head 			= buffer.substr(0, index);
 	lines 			= splitLine(head, "\r\n");
-
+	std::cout << "-------" << head << "--------" << std::endl;
 	parseTwoFirstLines(headMap, lines);
 	parseHead(headMap, 2, lines);
 	checkPath(headMap["Path"]);
@@ -347,6 +350,11 @@ Request 	*requestParse(std::string buffer) {
 		body 	= buffer.substr(index + 4, buffer.length());
 		request->parseBody(body);
 	}
-
+		request->method = headMap["Method"];
+    	request->path = headMap["Path"];
+    	request->httpVersion = headMap["HttpVersion"];
+    	request->serverName = headMap["ServerName"];
+    	request->port = atoi(headMap["Port"].c_str());
+		// request->contentType ;
 	return (request);
 }

@@ -49,11 +49,8 @@ fclean:				clean
 					@rm -f $(NAME)
 					@echo $(GREEN)---DONE!---$(RESET)
 					@rm -rf .vscode
+					@rm -rf .DS_Store
 
 re:					fclean all
 
 .PHONY:				all clean fclean re
-
-push:
-					git add . && git commit -m "parsing branch" && (git push || git push --set-upstream origin parsing)
-
