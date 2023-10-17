@@ -285,7 +285,7 @@ std::vector<std::map<std::string, std::string> >	BoundaryRequest::getBody() cons
 }
 
 
-std::map<std::string, std::string>	Request::getHead() const {
+std::map<std::string, std::string>&	Request::getHead() {
 	return this->head;
 }
 

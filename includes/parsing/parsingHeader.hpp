@@ -87,7 +87,7 @@ class Request {
 		Request(REQUEST_TYPE type);
 		virtual void						parseBody(std::string body);
 		void								setHead( std::map<std::string, std::string>  head);
-		std::map<std::string, std::string>	getHead() const;
+		std::map<std::string, std::string>&	getHead();
 		void								setTypeOfRequest(REQUEST_TYPE typeOfRequest);
 		REQUEST_TYPE						getTypeOfRequest() const;
 };

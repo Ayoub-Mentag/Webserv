@@ -424,12 +424,16 @@ void	Server::parseContentType() {
 	size_t dot = request->getHead()[REQ_PATH].find_last_of('.');
 	if (dot != request->getHead()[REQ_PATH].npos) {
 		if (request->getHead()[REQ_PATH][request->getHead()[REQ_PATH].length() - 1] == '/')
+		{
+			std::cout << "TRUUUUULU\n";
 			request->getHead()[REQ_PATH].erase(request->getHead()[REQ_PATH].length() - 1);
+		}
 		std::string extention = request->getHead()[REQ_PATH].substr(dot, -1);
 		response.setContentType(extention);
 	} else {
 		response.setContentType("");
 	}
+	std::cout << "<------" << request->getHead()[REQ_PATH] << "<------" << std::endl;
 }
 
 void	Server::initResponseClass() {
