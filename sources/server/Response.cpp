@@ -1,6 +1,8 @@
 #include <Server.hpp>
 #include <Utils.hpp>
+
 Response::Response() {}
+
 Response::~Response() {}
 
 const std::string&	Response::getHeader() {
@@ -39,7 +41,6 @@ void	Response::setBody(const std::string& body) {
 	this->body = body;
 }
 
-
 void	Response::setHttpVersion(const std::string& httpVersion) {
 	this->httpVersion = httpVersion;
 }
@@ -52,7 +53,6 @@ const std::string&	Response::getResponse() {
 	setResponse();
 	return (response);
 }
-
 
 void	Response::setStatusCode() {
 	static int i = 0;

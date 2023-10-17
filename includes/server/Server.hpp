@@ -1,6 +1,6 @@
-#pragma once 
-# include <macros.hpp>
+#pragma once
 
+# include <macros.hpp>
 # include <exception>
 # include <Parsing.hpp>
 # include <sys/socket.h>
@@ -25,6 +25,7 @@ class Server {
 		t_config	config;
 		Request		*request;
 		Response	response;
+
 	private:
 		std::string			matching();
 		void				bindServerWithAddress();
@@ -42,9 +43,8 @@ class Server {
 		t_location&			getLocation();
 		t_server&			getServer();
 		const std::string&	returnError(int status);
-
-		// delete method tmp functions
 		void				deleteFile(std::string& path);
+		void				initRequest(int clientFd);
 
 	public:
 		Server();

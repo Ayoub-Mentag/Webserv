@@ -16,12 +16,7 @@
 # include <macros.hpp>
 # include <Request.hpp>
 
-void			checkRequest(std::string &buffer);
 Request			*requestParse(std::string buffer);
-REQUEST_TYPE	initTypeOfRequestBody(std::map<std::string, std::string>& headMap);
-
-
-
 
 typedef struct LocationDirectives {
 	bool						autoindex;
@@ -81,4 +76,3 @@ t_config					        parseConFile(const char* file);
 std::map<std::string, std::string>  fillContentTypeMap();
 void	correctPath(std::string& path); // just for now
 std::vector<std::string>	splitLine(std::string line, std::string delimiter);
-void	checkPath(std::string path);

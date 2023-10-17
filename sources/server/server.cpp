@@ -93,10 +93,7 @@ Server::~Server() {
 	close(serverSocketfd);
 }
 
-
-
-// tobemove to client.cpp
-Request	*initRequest(int clientFd) {
+void	Server::initRequest(int clientFd) {
 	/** @test we will work on some examples without getting the request from browser*/
 	char		buffer[MAX_LEN];
 	std::string	bufferLine;
@@ -105,9 +102,7 @@ Request	*initRequest(int clientFd) {
 	recv(clientFd, buffer, MAX_LEN, 0);
 	bufferLine = buffer;
 	// print buffer after the checking
-	checkRequest(bufferLine);
-	Request *request = requestParse(bufferLine);
-	return (request);
+	request = requestParse(bufferLine);
 }
 
 fd_set Server::getReadyFds() {
@@ -246,7 +241,6 @@ const std::string&	Server::returnError(int status) {
 			}
 		}
 	}
-
 	response.setContentType(".html");
 	response.setHeader(status);
 	return (response.getResponse());
@@ -255,7 +249,6 @@ const std::string&	Server::returnError(int status) {
 std::string	Server::matching() {
 	serverExists(); // check error later!
 	locationExists();
-	std::cout << "--------\n" << this->request->serverIndex << " " << this->request->locationIndex << std::endl;
 	if (request->locationIndex == -1) {
 		throw std::runtime_error(returnError(NOT_FOUND_STATUS));
 	}
@@ -412,8 +405,7 @@ void	Server::initResponseClass() {
 	response.setStatusCode();
 }
 
-void Server::responseFunc(int clientFd)
-{
+void	Server::responseFunc(int clientFd) {
 	try {
 		initResponseClass();
 		std::string path = matching();
@@ -436,14 +428,12 @@ void Server::responseFunc(int clientFd)
 	} catch (std::exception &ex) {
 		// just to catch the thrown error the response is already ready
 	}
-	// std::cout << response.getResponse();
 	write(clientFd, response.getResponse().c_str(), response.getResponse().length());
 	close(clientFd);
 	FD_CLR(clientFd, &current_sockets);
 }
 
-void Server::serve()
-{
+void	Server::serve() {
 	fd_set readySocket = getReadyFds();
 	for (int fd = 0; fd < FD_SETSIZE; fd++) {
 		if (FD_ISSET(fd, &readySocket)) {
@@ -451,8 +441,7 @@ void Server::serve()
 				acceptNewConnection();
 			} else {
 				try {
-					this->request = initRequest(fd);
-					// printRequest(request);
+					initRequest(fd);
 					responseFunc(fd); 
 				} catch(const std::exception& e) { // not handled !!!!!!!!
 					std::cout << e.what() << std::endl;
