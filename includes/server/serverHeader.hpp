@@ -75,7 +75,6 @@ class Server {
 		fd_set				getReadyFds();
 		void				acceptNewConnection();
 		void				responseFunc(int clientFd);
-		void				initRequest(int clientFd);
 		void				methodNotAllowed();
 		std::string			locationRedirection();
 		std::string			listDirectory(DIR *dir);
@@ -85,7 +84,6 @@ class Server {
 		std::string			executeCgi(std::string path);
 		t_location&			getLocation();
 		t_server&			getServer();
-		void				parseContentType();
 		const std::string&	returnError(int status);
 
 		// delete method tmp functions

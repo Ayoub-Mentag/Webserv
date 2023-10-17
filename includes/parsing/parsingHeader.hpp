@@ -41,17 +41,17 @@
 # define HEADER_REQUEST 1
 # define HEADER_BODY    2
 
-enum REQUEST_TYPE{
-	GET,
-	DELETE,
-	POST_SIMPLE,
-	POST_BOUNDARY,
-	POST_CHUNKED,
-	POST_JSON,
-	NONE
-};
+// enum REQUEST_TYPE{
+// 	GET,
+// 	DELETE,
+// 	POST_SIMPLE,
+// 	POST_BOUNDARY,
+// 	POST_CHUNKED,
+// 	POST_JSON,
+// 	NONE
+// };
 
-class Request;
+// class Request;
 
 // typedef struct s_request {
 //     std::string method;
