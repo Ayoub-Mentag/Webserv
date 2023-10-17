@@ -1,4 +1,4 @@
-#include <parsingHeader.hpp>
+#include <Parsing.hpp>
  
 static void	parseLocationDirectives(std::string& key, std::string value, t_location& location) {
 	if (value[value.length() - 1] != ';') {

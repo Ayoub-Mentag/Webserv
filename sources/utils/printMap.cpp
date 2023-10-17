@@ -1,5 +1,5 @@
-#include <utilsHeader.hpp>
-#include <parsingHeader.hpp>
+#include <Utils.hpp>
+#include <Parsing.hpp>
 
 
 void	printMap(std::map<std::string, std::string>	m) {

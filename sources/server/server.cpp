@@ -1,5 +1,5 @@
-#include <serverHeader.hpp>
-#include <utilsHeader.hpp>
+#include <Server.hpp>
+#include <Utils.hpp>
 
 void	correctPath(std::string& path) {
 	DIR* dir = NULL;
@@ -445,21 +445,21 @@ void Server::responseFunc(int clientFd)
 void Server::serve()
 {
 	fd_set readySocket = getReadyFds();
-	for (int clientFd = 0; clientFd < FD_SETSIZE; clientFd++) {
-		if (FD_ISSET(clientFd, &readySocket)) {
-			if (clientFd == this->serverSocketfd) {
+	for (int fd = 0; fd < FD_SETSIZE; fd++) {
+		if (FD_ISSET(fd, &readySocket)) {
+			if (fd == this->serverSocketfd) {
 				acceptNewConnection();
 			} else {
 				try {
-					this->request = initRequest(clientFd);
-					printRequest(request);
-					responseFunc(clientFd); 
+					this->request = initRequest(fd);
+					// printRequest(request);
+					responseFunc(fd); 
 				} catch(const std::exception& e) { // not handled !!!!!!!!
 					std::cout << e.what() << std::endl;
 				}
 				delete (this->request);
-				close(clientFd);
-				FD_CLR(clientFd, &current_sockets);
+				close(fd);
+				FD_CLR(fd, &current_sockets);
 			}
 		}
 	}

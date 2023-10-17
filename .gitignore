@@ -1,2 +1,2 @@
-includes/client/*
-sources/client/*
+.DS_Store
+.vscode/

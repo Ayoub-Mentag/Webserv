@@ -1,4 +1,4 @@
-#include <parsingHeader.hpp>
+#include <Parsing.hpp>
  
 static void	parseServerDirectives(std::string& key, std::string& value, t_server& server) {
 	if (value[value.length() - 1] != ';') {
