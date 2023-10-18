@@ -10,7 +10,7 @@ OBJS				= $(patsubst $(SRC_DIR)/%.cpp,$(OBJ_DIR)/%.o,$(SRCS))
 SRC_DIR				= sources
 INC_DIR				= includes
 OBJ_DIR				= objects
-INCLUDES			= -I$(INC_DIR) -I$(INC_DIR)/parsing -I$(INC_DIR)/server
+INCLUDES			= -I$(INC_DIR) -I$(INC_DIR)/parsing -I$(INC_DIR)/server -I$(INC_DIR)/utils -I$(INC_DIR)/request 
 
 
 #====== Colors =======#
@@ -49,10 +49,8 @@ fclean:				clean
 					@rm -f $(NAME)
 					@echo $(GREEN)---DONE!---$(RESET)
 					@rm -rf .vscode
+					@rm -rf .DS_Store
 
 re:					fclean all
 
 .PHONY:				all clean fclean re
-
-push:
-					git add . && git commit -m "parsing branch" && (git push || git push --set-upstream origin parsing)

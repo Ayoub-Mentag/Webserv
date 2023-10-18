@@ -1,4 +1,5 @@
-#include <serverHeader.hpp>
+#include <Server.hpp>
+#include <Utils.hpp>
 
 void	correctPath(std::string& path) {
 	DIR* dir = NULL;
@@ -9,13 +10,6 @@ void	correctPath(std::string& path) {
 		return ;
 	}
 	closedir(dir);
-}
-
-std::string	to_string(int num) {
-	std::stringstream	ss;
-
-    ss << num;
-	return (ss.str());
 }
 
 std::string	fileToString(std::string fileName, int status) {
@@ -46,7 +40,7 @@ std::string	fileToString(std::string fileName, int status) {
 	return (result);
 }
 
-std::string	directory_listing(DIR* dir, std::string root) {
+static std::string	directory_listing(DIR* dir, std::string root) {
 	std::string response;
 	response += "<html><body><ul>";
 
@@ -99,6 +93,18 @@ Server::~Server() {
 	close(serverSocketfd);
 }
 
+void	Server::initRequest(int clientFd) {
+	/** @test we will work on some examples without getting the request from browser*/
+	char		buffer[MAX_LEN];
+	std::string	bufferLine;
+
+	bzero(buffer, MAX_LEN);
+	recv(clientFd, buffer, MAX_LEN, 0);
+	bufferLine = buffer;
+	// print buffer after the checking
+	request = requestParse(bufferLine);
+}
+
 fd_set Server::getReadyFds() {
 	fd_set ready_socket;
 	FD_ZERO(&ready_socket);
@@ -106,7 +112,6 @@ fd_set Server::getReadyFds() {
 	//read, write, error , timout
 	if (select(FD_SETSIZE, &ready_socket, NULL, NULL, NULL) < 0) {
 		perror("Select : ");
-		exit(1);
 	}
 	return ready_socket;
 }
@@ -125,51 +130,56 @@ void	Server::acceptNewConnection() {
 }
 
 void	Server::serverExists() {
+	
 	std::vector<t_server>	servers = config.servers;	
 
 	for (int serverIndex = 0; serverIndex < (int)config.servers.size(); serverIndex++) {
-		if (servers[serverIndex].serverName == request.serverName
-			&& request.port == servers[serverIndex].port) {
-			request.serverIndex = serverIndex;
+		if (servers[serverIndex].serverName == request->getHead()["ServerName"]
+			&& atoi(request->getHead()["Port"].c_str()) == servers[serverIndex].port) {
+			request->serverIndex = serverIndex;
 			return ;
 		}
 	}
-	request.serverIndex = -1;
+	request->serverIndex = -1;
 	//error page : SERVER_NOT_FOUND
 }
 
-static size_t	findCgiLocation(t_request& request, t_location& location) {
+///END  OF client.cpp
+
+
+
+static size_t	findCgiLocation(Request* request, t_location& location) {
 	size_t index;
 
 	index = location.path.find("*");
 	if (index != std::string::npos) {
 		std::string extention = &location.path[index + 1];
-		size_t len = request.path.length();
-		if (extention != &request.path[len - extention.length()]) {
+		size_t len = request->getHead()["Path"].length();
+		if (extention != &request->getHead()["Path"][len - extention.length()]) {
 			return std::string::npos;
 		}
 	}
-	return index;
+	return (index);
 }
 
-std::string	getCgiPath(t_request& request, t_location& location) {
-	std::string lookFor = request.path;
+static std::string	getCgiPath(Request* request, t_location& location) {
+	std::string lookFor = request->getHead()["Path"];
 	size_t	last = lookFor.find_last_of('/');
 	std::string	path;
 
 	if (last != lookFor.npos) {
 		lookFor.erase(last, -1);
 		if (location.root[0] == '.') {// what if the path contains ./ ../ 
-			path = (&location.root[1] != lookFor) ? location.root + request.path : "." + request.path;
+			path = (&location.root[1] != lookFor) ? location.root + request->getHead()["Path"] : "." + request->getHead()["Path"];
 		} else {
-			path = (location.root != lookFor) ? location.root + request.path : request.path;
+			path = (location.root != lookFor) ? location.root + request->getHead()["Path"] : request->getHead()["Path"];
 		}
 	}
 	return (path);
 }
 
 void	Server::locationExists() {
-	std::vector<t_location>	locations = config.servers[request.serverIndex].locations;
+	std::vector<t_location>	locations = config.servers[request->serverIndex].locations;
 	size_t index;
 
 	std::vector<std::string> locationPaths;
@@ -178,21 +188,21 @@ void	Server::locationExists() {
 		if (index != std::string::npos) {
 			std::string	cgiPath = getCgiPath(request, locations[i]);
 			if (access(cgiPath.c_str(), F_OK) != -1) {
-				request.locationIndex = i;
-				config.servers[request.serverIndex].locations[i].isCgi = true;
-				request.path = cgiPath;
+				request->locationIndex = i;
+				config.servers[request->serverIndex].locations[i].isCgi = true;
+				request->getHead()[REQ_PATH] = cgiPath;
 				return ;
 			}
 		}
 		locationPaths.push_back(locations[i].path);
-		config.servers[request.serverIndex].locations[i].isCgi = false;
+		config.servers[request->serverIndex].locations[i].isCgi = false;
 	}
 	
-	std::string lookFor = request.path;
+	std::string lookFor = request->getHead()[REQ_PATH];
 	while (lookFor.size() > 0) {
 		std::vector<std::string>::iterator it = std::find(locationPaths.begin(), locationPaths.end(), lookFor);
 		if (it != locationPaths.end()) {
-			request.locationIndex = std::distance(locationPaths.begin(), it);
+			request->locationIndex = std::distance(locationPaths.begin(), it);
 			return ;
 		}
 		size_t	last = lookFor.find_last_of('/');
@@ -200,19 +210,19 @@ void	Server::locationExists() {
 			break ;
 		lookFor.erase(last, -1);
 	}
-	if (request.path[0] == '/' && lookFor.empty()) {
+	if (request->getHead()[REQ_PATH][0] == '/' && lookFor.empty()) {
 		std::vector<std::string>::iterator it = std::find(locationPaths.begin(), locationPaths.end(), "/");
 		if (it != locationPaths.end()) {
-			request.locationIndex = std::distance(locationPaths.begin(), it);
+			request->locationIndex = std::distance(locationPaths.begin(), it);
 			return ;
 		}
 	}
 }
 
 const std::string&	Server::returnError(int status) {
-	if (request.serverIndex >= 0) {
+	if (request->serverIndex >= 0) {
 		t_server server = getServer();
-		if (request.locationIndex >= 0) {
+		if (request->locationIndex >= 0) {
 			t_location location = getLocation();
 			try {
 				response.setBody(fileToString(location.errorPages[status], status));
@@ -231,7 +241,6 @@ const std::string&	Server::returnError(int status) {
 			}
 		}
 	}
-
 	response.setContentType(".html");
 	response.setHeader(status);
 	return (response.getResponse());
@@ -240,48 +249,38 @@ const std::string&	Server::returnError(int status) {
 std::string	Server::matching() {
 	serverExists(); // check error later!
 	locationExists();
-	if (request.locationIndex == -1) {
+	if (request->locationIndex == -1) {
 		throw std::runtime_error(returnError(NOT_FOUND_STATUS));
 	}
 
-	t_location	location = config.servers[request.serverIndex].locations[request.locationIndex];
-	std::string	pathToBeLookFor = request.path;
+	t_location	location = config.servers[request->serverIndex].locations[request->locationIndex];
+	std::string	pathToBeLookFor = request->getHead()[REQ_PATH];
 	if (location.isCgi) {
-		return (request.path);
+		return (request->getHead()[REQ_PATH]);
 	}
 	location.isCgi = false;
 	pathToBeLookFor.erase(0, location.path.size());
 	if (!location.root.empty()) {
 		pathToBeLookFor.insert(0, location.root);
 	} else {
-		pathToBeLookFor.insert(0, config.servers[request.serverIndex].root);
+		pathToBeLookFor.insert(0, config.servers[request->serverIndex].root);
 	}
 	return (pathToBeLookFor);
 }
 
-void	Server::initRequest(int clientFd) {
-	char		buffer[MAX_LEN];
-
-	bzero(buffer, MAX_LEN);
-	recv(clientFd, buffer, MAX_LEN, 0);
-	std::cerr << buffer << std::endl;
-	requestParse(request, buffer);
-
-}
-
 t_location&	Server::getLocation() {
-	if (request.serverIndex < 0 || request.locationIndex < 0)
+	if (request->serverIndex < 0 || request->locationIndex < 0)
 		throw std::out_of_range("getLocation()");
-	return (config.servers[request.serverIndex].locations[request.locationIndex]);
+	return (config.servers[request->serverIndex].locations[request->locationIndex]);
 }
 
 t_server&	Server::getServer() {
-	if (request.serverIndex < 0)
+	if (request->serverIndex < 0)
 		throw std::out_of_range("getServer()");
-	return (config.servers[request.serverIndex]);
+	return (config.servers[request->serverIndex]);
 }
 
-void	findAllowedMethod(std::string& method, t_server& server, t_location& location) {
+static void	findAllowedMethod(std::string& method, t_server& server, t_location& location) {
 	bool		existInLocation = false;
 	bool		existInServer = false;
 	std::string	header;
@@ -304,11 +303,11 @@ void	Server::methodNotAllowed() {
 	t_server	server = getServer();
 	t_location	location = getLocation();
 
-	if (request.method != "GET" && request.method != "POST" && request.method != "DELETE") {
+	if (request->getHead()[REQ_METHOD] != "GET" && request->getHead()[REQ_METHOD] != "POST" && request->getHead()[REQ_METHOD] != "DELETE") {
 		throw std::runtime_error(returnError(NOT_IMPLEMENTED_STATUS));
 	}
 	try {
-		findAllowedMethod(request.method, server, location);
+		findAllowedMethod(request->getHead()[REQ_METHOD], server, location);
 	} catch (std::exception &ex) {
 		throw std::runtime_error(returnError(METHOD_NOT_ALLOWED_STATUS));
 	}
@@ -332,7 +331,7 @@ std::string	Server::listDirectory(DIR *dir) {
 	
 	if (location.autoindex) {
 		response.setContentType(".html");
-		response.setBody(directory_listing(dir, request.path));
+		response.setBody(directory_listing(dir, request->getHead()[REQ_PATH]));
 		response.setHeader(200);
 	} else if (!location.index.empty()) {
 		try {
@@ -342,7 +341,7 @@ std::string	Server::listDirectory(DIR *dir) {
 			throw std::runtime_error(returnError(NOT_FOUND_STATUS));
 		}
 	} else {
-		throw std::runtime_error(returnError(MOVED_PERMANENTLY_STATUS));
+		throw std::runtime_error(returnError(FORBIDDEN_STATUS));
 	}
 	closedir(dir);
 	return (response.getResponse());
@@ -364,7 +363,7 @@ std::string	Server::executeCgi(std::string path) {
 	pid_t pid;
 	int			fd[2];
 	char		buffer[MAX_LEN];
-	t_location	location = config.servers[request.serverIndex].locations[request.locationIndex];
+	t_location	location = config.servers[request->serverIndex].locations[request->locationIndex];
 
 	program[0] = (char *)location.cgiExecutable.c_str();
 	program[1] = (char *)path.c_str();
@@ -392,27 +391,21 @@ std::string	Server::executeCgi(std::string path) {
 	return (response.getResponse());
 }
 
-void	Server::parseContentType() {
-
-	size_t dot = request.path.find_last_of('.');
-	if (dot != request.path.npos) {
-		if (request.path[request.path.length() - 1] == '/')
-			request.path.erase(request.path.length() - 1);
-		std::string extention = request.path.substr(dot, -1);
+void	Server::initResponseClass() {
+	size_t dot = request->getHead()[REQ_PATH].find_last_of('.');
+	if (dot != request->getHead()[REQ_PATH].npos) {
+		if (request->getHead()[REQ_PATH][request->getHead()[REQ_PATH].length() - 1] == '/')
+			request->getHead()[REQ_PATH].erase(request->getHead()[REQ_PATH].length() - 1);
+		std::string extention = request->getHead()[REQ_PATH].substr(dot, -1);
 		response.setContentType(extention);
 	} else {
 		response.setContentType("");
 	}
-}
-
-void	Server::initResponseClass() {
-	parseContentType(); // setContentType
-	response.setHttpVersion(request.httpVersion);
+	response.setHttpVersion(request->getHead()[REQ_HTTP_VERSION]);
 	response.setStatusCode();
 }
 
-void Server::responseFunc(int clientFd)
-{
+void	Server::responseFunc(int clientFd) {
 	try {
 		initResponseClass();
 		std::string path = matching();
@@ -440,22 +433,22 @@ void Server::responseFunc(int clientFd)
 	FD_CLR(clientFd, &current_sockets);
 }
 
-void Server::serve()
-{
+void	Server::serve() {
 	fd_set readySocket = getReadyFds();
-	for (int clientFd = 0; clientFd < FD_SETSIZE; clientFd++) {
-		if (FD_ISSET(clientFd, &readySocket)) {
-			if (clientFd == this->serverSocketfd) {
+	for (int fd = 0; fd < FD_SETSIZE; fd++) {
+		if (FD_ISSET(fd, &readySocket)) {
+			if (fd == this->serverSocketfd) {
 				acceptNewConnection();
 			} else {
-				initRequest(clientFd);
 				try {
-					responseFunc(clientFd); 
+					initRequest(fd);
+					responseFunc(fd); 
 				} catch(const std::exception& e) { // not handled !!!!!!!!
 					std::cout << e.what() << std::endl;
 				}
-				close(clientFd);
-				FD_CLR(clientFd, &current_sockets);
+				delete (this->request);
+				close(fd);
+				FD_CLR(fd, &current_sockets);
 			}
 		}
 	}

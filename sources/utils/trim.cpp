@@ -1,5 +1,6 @@
-#include <parsingHeader.hpp>
-  
+#include <Utils.hpp>
+
+
 std::string	trim(const std::string& str) {
 	size_t first = str.find_first_not_of(" \t\n\r");
 	if (first == std::string::npos) {
