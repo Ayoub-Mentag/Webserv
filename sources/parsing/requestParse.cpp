@@ -16,31 +16,9 @@
 // TODO: check if there are other types cuz it not handled yet
 // like "Content-Type: application/json"
 // add vector of QueryString
-// the request should be corrected before using it
-// 
+// the request should be corrected before using it 
 
 static bool	assignBoundary(std::map<std::string, std::string>& headMap) {
-	/*
-		std::string type = request.head["Content-Type"];
-		size_t boundaryIndex;
-
-		if (type.find("multipart/form-data") == std::string::npos)
-			return ;
-		request.head["Content-Type"] = "multipart/form-data";
-		boundaryIndex = type.find("boundary=");
-		if (boundaryIndex == std::string::npos)
-			return ;
-
-		std::string boundary = &type[boundaryIndex];
-		boundary = boundary.erase(0, 9);// 9 is the "boundary=" length
-		if (!boundary.empty() && (boundary[0] == '\"')) {
-			//remove the double quotes
-			boundary.erase(0, 1);
-			boundary.erase(boundary.length() - 1, 1);
-		}
-		request.head["Boundary"] = boundary;
-	*/
-
 	std::string type = headMap["Content-Type"];
 	size_t boundaryIndex = type.find("boundary");
 
@@ -73,9 +51,9 @@ static void	parseTwoFirstLines(std::map<std::string, std::string> &headMap, std:
 			firstLine.push_back(line);
 		}
 		if (firstLine.size() == 3) {
-			headMap["Method"]  = firstLine[0];
-			headMap["Path"]    = firstLine[1];
-			headMap["HttpVersion"] = firstLine[2];
+			headMap[REQ_METHOD]  = firstLine[0];
+			headMap[REQ_PATH]    = firstLine[1];
+			headMap[REQ_HTTP_VERSION] = firstLine[2];
 		}
 		std::istringstream iss2(lines[1]);
 		while (std::getline(iss2, line, ':')) {
@@ -84,19 +62,20 @@ static void	parseTwoFirstLines(std::map<std::string, std::string> &headMap, std:
 		
 		size = secondLine.size();
 		if (size >= 2) {
-			headMap["ServerName"] = trim(secondLine[1]);
+			headMap[REQ_SERVER_NAME] = trim(secondLine[1]);
+			if (size == 3)
+				headMap[REQ_PORT] = secondLine[2];
+			else
+				headMap[REQ_PORT] = "80";
 		}
-		if (size == 3)
-			headMap["Port"] = secondLine[2];
 	}
 }
 
 // TODO: remove the (size_t i) param
 
-void	parseHead(std::map<std::string, std::string>& headMap, size_t i, std::vector<std::string> lines) {
+void	parseHead(std::map<std::string, std::string>& headMap, std::vector<std::string> lines) {
 	std::string	key;
 	std::string	value;
-
 	/*
 	if (typeOfHeader == HEADER_REQUEST) {
 		if (lines.size() > 2) {
@@ -124,12 +103,13 @@ void	parseHead(std::map<std::string, std::string>& headMap, size_t i, std::vecto
 	}
  
 	*/
-	for (; i < lines.size(); i++) {
+	for (size_t i = 0; i < lines.size(); i++) {
 		std::istringstream iss3(lines[i]);
 		std::getline(iss3, key, ':');
 		std::getline(iss3, value, ':');
-		if (value[0] == ' ')
-			value.erase(0, 1);
+		if (value[0] != ' ')
+			throw std::runtime_error("Bad request");
+		value.erase(0, 1);
 		headMap[key] = value;
 	}
 	// for POST_BOUNDARY request
@@ -284,9 +264,12 @@ Request 	*requestParse(std::string buffer) {
 
 	head 			= buffer.substr(0, index);
 	lines 			= splitLine(head, "\r\n");
+	// key: value
 	parseTwoFirstLines(headMap, lines);
-	parseHead(headMap, 2, lines);
-	checkPath(headMap["Path"]);
+	lines.erase(lines.begin());
+	lines.erase(lines.begin());
+	parseHead(headMap, lines);
+	checkPath(headMap[REQ_PATH]);
 
 
 	request = generateRequest(initTypeOfRequestBody(headMap));

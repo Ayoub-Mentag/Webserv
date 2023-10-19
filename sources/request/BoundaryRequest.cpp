@@ -1,7 +1,7 @@
 #include <BoundaryRequest.hpp>
 #include <Utils.hpp>
 
-void	parseHead(std::map<std::string, std::string>& headMap, size_t i, std::vector<std::string> lines);
+void	parseHead(std::map<std::string, std::string>& headMap, std::vector<std::string> lines);
 
 std::vector<std::map<std::string, std::string> >&	BoundaryRequest::getBody() {
 	return (this->body);
@@ -29,7 +29,7 @@ void	BoundaryRequest::parseBody(std::string body) {
 		tmpString = &body[index];
 
 		header = tmpString.substr(0, tmpString.find("\r\n\r\n"));
-		parseHead(boundaryMap, 0, splitLine(header, "\r\n"));
+		parseHead(boundaryMap, splitLine(header, "\r\n"));
 		index += header.size() + 4;
 		if (index >= body.size())
 			break ;
