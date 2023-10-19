@@ -149,6 +149,7 @@ void	Response::setContentType(const std::string& extention) {
 		contentTypeMap[".3gp"]		= "video/3gpp";
 		contentTypeMap[".3g2"]		= "video/3gpp2";
 		contentTypeMap[".7z"]		= "application/x-7z-compressed";
+		contentTypeMap[".ico"]		= "image/x-icon";
 		i = 1;
 	}
 	std::string tmp = contentTypeMap[extention];

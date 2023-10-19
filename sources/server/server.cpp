@@ -101,6 +101,8 @@ void	Server::initRequest(int clientFd) {
 	bzero(buffer, MAX_LEN);
 	recv(clientFd, buffer, MAX_LEN, 0);
 	bufferLine = buffer;
+	std::cerr << buffer;
+	
 	// print buffer after the checking
 	request = requestParse(bufferLine);
 }
@@ -313,7 +315,7 @@ void	Server::methodNotAllowed() {
 	}
 }
 
-std::string	Server::locationRedirection() {
+void	Server::locationRedirection() {
 	t_location	location = getLocation();
 
 	try {
@@ -323,10 +325,18 @@ std::string	Server::locationRedirection() {
 	} catch(const std::exception& e) {
 		throw std::runtime_error(returnError(NOT_FOUND_STATUS));
 	}
-	return (response.getResponse());
 }
 
-std::string	Server::listDirectory(DIR *dir) {
+void	Server::servFile(std::string& path) {
+	try {
+		response.setBody(fileToString(path, NOT_FOUND_STATUS));
+		response.setHeader(200);
+	} catch(std::exception& ex) {
+		throw std::runtime_error(returnError(NOT_FOUND_STATUS));
+	}
+}
+
+void	Server::listDirectory(DIR *dir) {
 	t_location location = getLocation();
 	
 	if (location.autoindex) {
@@ -334,30 +344,15 @@ std::string	Server::listDirectory(DIR *dir) {
 		response.setBody(directory_listing(dir, request->getHead()[REQ_PATH]));
 		response.setHeader(200);
 	} else if (!location.index.empty()) {
-		try {
-			response.setBody(fileToString(location.index, NOT_FOUND_STATUS));
-			response.setHeader(200);
-		} catch (const std::exception& ex) {
-			throw std::runtime_error(returnError(NOT_FOUND_STATUS));
-		}
+		initResponseClass(location.index);
+		servFile(location.index);
 	} else {
 		throw std::runtime_error(returnError(FORBIDDEN_STATUS));
 	}
 	closedir(dir);
-	return (response.getResponse());
 }
 
-std::string	Server::servFile(std::string& path) {
-	try {
-		response.setBody(fileToString(path, NOT_FOUND_STATUS));
-		response.setHeader(200);
-	} catch(std::exception& ex) {
-		throw std::runtime_error(returnError(NOT_FOUND_STATUS));
-	}
-	return (response.getResponse());
-}
-
-std::string	Server::executeCgi(std::string path) {
+void	Server::executeCgi(std::string path) {
 	std::string body;
 	char		*program[3];
 	pid_t pid;
@@ -388,16 +383,16 @@ std::string	Server::executeCgi(std::string path) {
 	response.setBody(body);
 	response.setContentType(".html");
 	response.setHeader(200);
-	return (response.getResponse());
 }
 
-void	Server::initResponseClass() {
-	size_t dot = request->getHead()[REQ_PATH].find_last_of('.');
-	if (dot != request->getHead()[REQ_PATH].npos) {
-		if (request->getHead()[REQ_PATH][request->getHead()[REQ_PATH].length() - 1] == '/')
-			request->getHead()[REQ_PATH].erase(request->getHead()[REQ_PATH].length() - 1);
-		std::string extention = request->getHead()[REQ_PATH].substr(dot, -1);
+void	Server::initResponseClass(std::string& path) {
+	size_t dot = path.find_last_of('.');
+	if (dot != path.npos) {
+		if (path[path.length() - 1] == '/')
+			path.erase(path.length() - 1);
+		std::string extention = path.substr(dot, -1);
 		response.setContentType(extention);
+		std::cout << "extention: " << response.getContentType() << std::endl;
 	} else {
 		response.setContentType("");
 	}
@@ -407,10 +402,11 @@ void	Server::initResponseClass() {
 
 void	Server::responseFunc(int clientFd) {
 	try {
-		initResponseClass();
+		initResponseClass(request->getHead()[REQ_PATH]);
 		std::string path = matching();
 		t_location location = getLocation();
 		correctPath(path);
+		std::cout << "path: " << path << std::endl;
 		DIR *dir = opendir(path.c_str());
 		methodNotAllowed(); // should i check location errpage first when no method in the location?
 		if (path == location.redirectFrom) {

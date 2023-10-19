@@ -34,16 +34,16 @@ class Server {
 		void				acceptNewConnection();
 		void				responseFunc(int clientFd);
 		void				methodNotAllowed();
-		std::string			locationRedirection();
-		std::string			listDirectory(DIR *dir);
-		std::string			servFile(std::string& src);
+		void				locationRedirection();
+		void				listDirectory(DIR *dir);
+		void				servFile(std::string& src);
 		void				serverExists();
 		void				locationExists();
-		std::string			executeCgi(std::string path);
+		void				executeCgi(std::string path);
 		t_location&			getLocation();
 		t_server&			getServer();
 		const std::string&	returnError(int status);
-		void				deleteFile(std::string& path);
+		// void				deleteFile(std::string& path);
 		void				initRequest(int clientFd);
 
 	public:
@@ -54,5 +54,5 @@ class Server {
 		void		serve();
 
 	public: // responseClass fuctions
-		void	initResponseClass();
+		void	initResponseClass(std::string& path);
 };
