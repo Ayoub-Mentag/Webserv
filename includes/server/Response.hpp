@@ -26,5 +26,5 @@ class Response {
 		void			 			setStatusCode();
 		void						setHttpVersion(const std::string&);
 		void						setContentType(const std::string& extention);
-		void			 			setResponse();
+		void						setResponse(std::string _response);
 };

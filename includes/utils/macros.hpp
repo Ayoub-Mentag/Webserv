@@ -1,10 +1,10 @@
 #pragma once 
-# define REQ_METHOD     	"Method"
-# define REQ_PATH           "Path"
-# define REQ_HTTP_VERSION    "HttpVersion"
-# define REQ_SERVER_NAME	"ServerName"
-# define REQ_PORT       	"Port"
-
+# define REQ_METHOD     	"Request-Method"
+# define REQ_PATH           "REQUEST_URI"
+# define REQ_HTTP_VERSION   "Server-Protocol"
+# define REQ_SERVER_NAME	"Server-Name"
+# define REQ_PORT       	"Server-Port"
+# define REQ_ENTITY_POST    "QUERY_STRING"
 // Server
 # define MAX_LEN	300000
 # define PORT		8080

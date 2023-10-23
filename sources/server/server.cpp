@@ -1,6 +1,8 @@
 #include <Server.hpp>
 #include <Utils.hpp>
 
+
+
 void	correctPath(std::string& path) {
 	DIR* dir = NULL;
 	opendir(path.c_str());
@@ -98,10 +100,11 @@ void	Server::initRequest(int clientFd) {
 	char		buffer[MAX_LEN];
 	std::string	bufferLine;
 
+
 	bzero(buffer, MAX_LEN);
 	recv(clientFd, buffer, MAX_LEN, 0);
 	bufferLine = buffer;
-	std::cerr << buffer;
+	// std::cerr << buffer;
 	
 	// print buffer after the checking
 	request = requestParse(bufferLine);
@@ -136,8 +139,8 @@ void	Server::serverExists() {
 	std::vector<t_server>	servers = config.servers;	
 
 	for (int serverIndex = 0; serverIndex < (int)config.servers.size(); serverIndex++) {
-		if (servers[serverIndex].serverName == request->getHead()["ServerName"]
-			&& atoi(request->getHead()["Port"].c_str()) == servers[serverIndex].port) {
+		if (servers[serverIndex].serverName == request->getValueByKey(REQ_SERVER_NAME)
+			&& atoi(request->getValueByKey(REQ_PORT).c_str()) == servers[serverIndex].port) {
 			request->serverIndex = serverIndex;
 			return ;
 		}
@@ -156,8 +159,8 @@ static size_t	findCgiLocation(Request* request, t_location& location) {
 	index = location.path.find("*");
 	if (index != std::string::npos) {
 		std::string extention = &location.path[index + 1];
-		size_t len = request->getHead()["Path"].length();
-		if (extention != &request->getHead()["Path"][len - extention.length()]) {
+		size_t len = request->getValueByKey(REQ_PATH).length();
+		if (extention != &request->getValueByKey(REQ_PATH)[len - extention.length()]) {
 			return std::string::npos;
 		}
 	}
@@ -165,16 +168,16 @@ static size_t	findCgiLocation(Request* request, t_location& location) {
 }
 
 static std::string	getCgiPath(Request* request, t_location& location) {
-	std::string lookFor = request->getHead()["Path"];
+	std::string lookFor = request->getValueByKey(REQ_PATH);
 	size_t	last = lookFor.find_last_of('/');
 	std::string	path;
 
 	if (last != lookFor.npos) {
 		lookFor.erase(last, -1);
 		if (location.root[0] == '.') {// what if the path contains ./ ../ 
-			path = (&location.root[1] != lookFor) ? location.root + request->getHead()["Path"] : "." + request->getHead()["Path"];
+			path = (&location.root[1] != lookFor) ? location.root + request->getValueByKey(REQ_PATH) : "." + request->getValueByKey(REQ_PATH);
 		} else {
-			path = (location.root != lookFor) ? location.root + request->getHead()["Path"] : request->getHead()["Path"];
+			path = (location.root != lookFor) ? location.root + request->getValueByKey(REQ_PATH) : request->getValueByKey(REQ_PATH);
 		}
 	}
 	return (path);
@@ -192,7 +195,7 @@ void	Server::locationExists() {
 			if (access(cgiPath.c_str(), F_OK) != -1) {
 				request->locationIndex = i;
 				config.servers[request->serverIndex].locations[i].isCgi = true;
-				request->getHead()[REQ_PATH] = cgiPath;
+				request->addToHead(REQ_PATH, cgiPath);
 				return ;
 			}
 		}
@@ -200,7 +203,7 @@ void	Server::locationExists() {
 		config.servers[request->serverIndex].locations[i].isCgi = false;
 	}
 	
-	std::string lookFor = request->getHead()[REQ_PATH];
+	std::string lookFor = request->getValueByKey(REQ_PATH);
 	while (lookFor.size() > 0) {
 		std::vector<std::string>::iterator it = std::find(locationPaths.begin(), locationPaths.end(), lookFor);
 		if (it != locationPaths.end()) {
@@ -212,7 +215,7 @@ void	Server::locationExists() {
 			break ;
 		lookFor.erase(last, -1);
 	}
-	if (request->getHead()[REQ_PATH][0] == '/' && lookFor.empty()) {
+	if (request->getValueByKey(REQ_PATH)[0] == '/' && lookFor.empty()) {
 		std::vector<std::string>::iterator it = std::find(locationPaths.begin(), locationPaths.end(), "/");
 		if (it != locationPaths.end()) {
 			request->locationIndex = std::distance(locationPaths.begin(), it);
@@ -245,6 +248,7 @@ const std::string&	Server::returnError(int status) {
 	}
 	response.setContentType(".html");
 	response.setHeader(status);
+	response.setResponse(response.getHeader() + response.getBody());
 	return (response.getResponse());
 }
 
@@ -254,11 +258,10 @@ std::string	Server::matching() {
 	if (request->locationIndex == -1) {
 		throw std::runtime_error(returnError(NOT_FOUND_STATUS));
 	}
-
 	t_location	location = config.servers[request->serverIndex].locations[request->locationIndex];
-	std::string	pathToBeLookFor = request->getHead()[REQ_PATH];
+	std::string	pathToBeLookFor = request->getValueByKey(REQ_PATH);
 	if (location.isCgi) {
-		return (request->getHead()[REQ_PATH]);
+		return (request->getValueByKey(REQ_PATH));
 	}
 	location.isCgi = false;
 	pathToBeLookFor.erase(0, location.path.size());
@@ -282,7 +285,7 @@ t_server&	Server::getServer() {
 	return (config.servers[request->serverIndex]);
 }
 
-static void	findAllowedMethod(std::string& method, t_server& server, t_location& location) {
+static void	findAllowedMethod(std::string method, t_server& server, t_location& location) {
 	bool		existInLocation = false;
 	bool		existInServer = false;
 	std::string	header;
@@ -304,12 +307,12 @@ static void	findAllowedMethod(std::string& method, t_server& server, t_location&
 void	Server::methodNotAllowed() {
 	t_server	server = getServer();
 	t_location	location = getLocation();
-
-	if (request->getHead()[REQ_METHOD] != "GET" && request->getHead()[REQ_METHOD] != "POST" && request->getHead()[REQ_METHOD] != "DELETE") {
+	std::string method = request->getValueByKey(REQ_METHOD);
+	if (method != "GET" && method != "POST" && method != "DELETE") {
 		throw std::runtime_error(returnError(NOT_IMPLEMENTED_STATUS));
 	}
 	try {
-		findAllowedMethod(request->getHead()[REQ_METHOD], server, location);
+		findAllowedMethod(request->getValueByKey(REQ_METHOD), server, location);
 	} catch (std::exception &ex) {
 		throw std::runtime_error(returnError(METHOD_NOT_ALLOWED_STATUS));
 	}
@@ -322,6 +325,7 @@ void	Server::locationRedirection() {
 		response.setBody(fileToString(location.redirectTo, NOT_FOUND_STATUS));
 		response.setContentType(".html");
 		response.setHeader(MOVED_PERMANENTLY_STATUS);
+		response.setResponse(response.getHeader() + response.getBody());
 	} catch(const std::exception& e) {
 		throw std::runtime_error(returnError(NOT_FOUND_STATUS));
 	}
@@ -331,6 +335,7 @@ void	Server::servFile(std::string& path) {
 	try {
 		response.setBody(fileToString(path, NOT_FOUND_STATUS));
 		response.setHeader(200);
+		response.setResponse(response.getHeader() + response.getBody());
 	} catch(std::exception& ex) {
 		throw std::runtime_error(returnError(NOT_FOUND_STATUS));
 	}
@@ -341,8 +346,9 @@ void	Server::listDirectory(DIR *dir) {
 	
 	if (location.autoindex) {
 		response.setContentType(".html");
-		response.setBody(directory_listing(dir, request->getHead()[REQ_PATH]));
+		response.setBody(directory_listing(dir, request->getValueByKey(REQ_PATH)));
 		response.setHeader(200);
+		response.setResponse(response.getHeader() + response.getBody());
 	} else if (!location.index.empty()) {
 		initResponseClass(location.index);
 		servFile(location.index);
@@ -352,24 +358,64 @@ void	Server::listDirectory(DIR *dir) {
 	closedir(dir);
 }
 
+std::string convertToUpperCaseUnderscore(const std::string &input) {
+    std::string result;
+    for (size_t i = 0; i < input.size(); i++) {
+        char c = input[i];
+		if (std::isalpha(c)) {
+            result += std::toupper(c);
+        } else if (c == '-') {
+            result += '_';
+        }
+		else
+			result += c;
+    }
+    return result;
+}
+
+std::string	getKey(std::string str) {
+	std::string DATA_FROM_CLIENT = "DATA_FROM_CLIENT";
+	size_t index = str.find(DATA_FROM_CLIENT);
+	if (index != std::string::npos) {
+		return (str.erase(0, DATA_FROM_CLIENT.size()));
+	}
+	return (convertToUpperCaseUnderscore(str));
+}
+
+char	**getEnv(std::map<std::string, std::string> headMap) {
+	char **env = new char*[headMap.size() + 1];
+	int i = 0;
+
+	std::map<std::string, std::string>::iterator it;
+	for (it = headMap.begin(); it != headMap.end(); it++) {
+		std::string key = getKey(it->first);
+		env[i] = strdup((char *)(key + "=" + it->second).c_str());
+		// std::cerr << env[i] << std::endl;
+		i++;
+	}
+	env[i] = NULL;
+	return (env);
+}
+
 void	Server::executeCgi(std::string path) {
 	std::string body;
 	char		*program[3];
 	pid_t pid;
 	int			fd[2];
 	char		buffer[MAX_LEN];
-	t_location	location = config.servers[request->serverIndex].locations[request->locationIndex];
 
+	t_location	location = config.servers[request->serverIndex].locations[request->locationIndex];
 	program[0] = (char *)location.cgiExecutable.c_str();
 	program[1] = (char *)path.c_str();
 	program[2] = NULL;
+	// std::cerr << program[0] << " " << program[1] << std::endl;
 	pipe(fd);
 	pid = fork();
 	if (pid == 0) {
 		close(fd[0]);
 		dup2(fd[1], STDOUT_FILENO);
 		close(fd[1]);
-		execve(program[0], program, NULL);
+		execve(program[0], program, (char* const*)getEnv(request->getHead()));
 		perror("Execve");
 	}
 	wait(0);
@@ -377,12 +423,13 @@ void	Server::executeCgi(std::string path) {
 	read(fd[0], buffer, MAX_LEN);
 	close(fd[0]);
 	close(fd[1]);
+	// std::cout << buffer << std::endl;
 	body = buffer;
-	body = body.substr(body.find("\r\n\r\n"), -1);
-
-	response.setBody(body);
-	response.setContentType(".html");
-	response.setHeader(200);
+	// body.insert(0, "Content-Type: text/html\r\n");
+	body.insert(0, "Content-length: " + to_string(body.length()) + "\r\n");
+	body.insert(0, response.getStatusCode(200) + "\r\n");
+	body.insert(0, response.getHttpVersion());
+	response.setResponse(body);
 }
 
 void	Server::initResponseClass(std::string& path) {
@@ -392,28 +439,26 @@ void	Server::initResponseClass(std::string& path) {
 			path.erase(path.length() - 1);
 		std::string extention = path.substr(dot, -1);
 		response.setContentType(extention);
-		std::cout << "extention: " << response.getContentType() << std::endl;
 	} else {
 		response.setContentType("");
 	}
-	response.setHttpVersion(request->getHead()[REQ_HTTP_VERSION]);
+	response.setHttpVersion(request->getValueByKey(REQ_HTTP_VERSION));
 	response.setStatusCode();
 }
 
 void	Server::responseFunc(int clientFd) {
 	try {
-		initResponseClass(request->getHead()[REQ_PATH]);
+		initResponseClass(request->getValueByKey(REQ_PATH));
 		std::string path = matching();
 		t_location location = getLocation();
 		correctPath(path);
-		std::cout << "path: " << path << std::endl;
 		DIR *dir = opendir(path.c_str());
 		methodNotAllowed(); // should i check location errpage first when no method in the location?
 		if (path == location.redirectFrom) {
 			locationRedirection();
 		} else if (dir) {
 			listDirectory(dir);
-		} else if (location.isCgi) {
+		} else if (location.isCgi && request->getValueByKey(REQ_METHOD) == "POST") {
 			executeCgi(path);
 		} else {
 			servFile(path);
@@ -424,9 +469,16 @@ void	Server::responseFunc(int clientFd) {
 	} catch (std::exception &ex) {
 		// just to catch the thrown error the response is already ready
 	}
+	std::cerr << response.getResponse();
 	write(clientFd, response.getResponse().c_str(), response.getResponse().length());
 	close(clientFd);
 	FD_CLR(clientFd, &current_sockets);
+}
+
+void	printMap(std::map<std::string, std::string>	m) {
+	for (std::map<std::string, std::string>::iterator it = m.begin(); it != m.end(); it++) {
+		std::cout << "Key " << it->first << " Value " << it->second << std::endl;
+	}
 }
 
 void	Server::serve() {
@@ -438,11 +490,13 @@ void	Server::serve() {
 			} else {
 				try {
 					initRequest(fd);
-					responseFunc(fd); 
+					// printMap(request->getHead());
+					responseFunc(fd);
+					delete (this->request);
 				} catch(const std::exception& e) { // not handled !!!!!!!!
+				std::cout << PRINT_LINE_AND_FILE;
 					std::cout << e.what() << std::endl;
 				}
-				delete (this->request);
 				close(fd);
 				FD_CLR(fd, &current_sockets);
 			}

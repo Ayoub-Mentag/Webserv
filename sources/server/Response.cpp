@@ -45,12 +45,11 @@ void	Response::setHttpVersion(const std::string& httpVersion) {
 	this->httpVersion = httpVersion;
 }
 
-void	Response::setResponse() {
-	this->response = getHeader() + getBody();
+void	Response::setResponse(std::string _response) {
+	this->response = _response;
 }
 
 const std::string&	Response::getResponse() {
-	setResponse();
 	return (response);
 }
 

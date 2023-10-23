@@ -1,7 +1,6 @@
 #include <Parsing.hpp>
 #include <SimpleRequest.hpp>
-#include <FormRequest.hpp>
-#include <ChunkedRequest.hpp>
+#include <PostRequest.hpp>
 
 /** @brief
 	This parsing based on these pillars
@@ -20,6 +19,7 @@
 
 static bool	assignBoundary(std::map<std::string, std::string>& headMap) {
 	std::string type = headMap["Content-Type"];
+	std::cout << "|" << type << "|" << std::endl;
 	size_t boundaryIndex = type.find("boundary");
 
 	if (boundaryIndex == std::string::npos)
@@ -33,8 +33,8 @@ static bool	assignBoundary(std::map<std::string, std::string>& headMap) {
 		//remove the double quotes
 		boundary.erase(0, 1);
 		boundary.erase(boundary.length() - 1, 1);
+		headMap["Boundary"] = boundary;
 	}
-	headMap["Boundary"] = boundary;
 	return (true);
 }
 
@@ -51,9 +51,9 @@ static void	parseTwoFirstLines(std::map<std::string, std::string> &headMap, std:
 			firstLine.push_back(line);
 		}
 		if (firstLine.size() == 3) {
-			headMap[REQ_METHOD]  = firstLine[0];
-			headMap[REQ_PATH]    = firstLine[1];
-			headMap[REQ_HTTP_VERSION] = firstLine[2];
+			headMap[REQ_METHOD]  = trim(firstLine[0]);
+			headMap[REQ_PATH]    = trim(firstLine[1]);
+			headMap[REQ_HTTP_VERSION] = trim(firstLine[2]);
 		}
 		std::istringstream iss2(lines[1]);
 		while (std::getline(iss2, line, ':')) {
@@ -64,7 +64,7 @@ static void	parseTwoFirstLines(std::map<std::string, std::string> &headMap, std:
 		if (size >= 2) {
 			headMap[REQ_SERVER_NAME] = trim(secondLine[1]);
 			if (size == 3)
-				headMap[REQ_PORT] = secondLine[2];
+				headMap[REQ_PORT] = trim(secondLine[2]);
 			else
 				headMap[REQ_PORT] = "80";
 		}
@@ -76,44 +76,19 @@ static void	parseTwoFirstLines(std::map<std::string, std::string> &headMap, std:
 void	parseHead(std::map<std::string, std::string>& headMap, std::vector<std::string> lines) {
 	std::string	key;
 	std::string	value;
-	/*
-	if (typeOfHeader == HEADER_REQUEST) {
-		if (lines.size() > 2) {
-			std::istringstream iss1(lines[0]);
-			while (std::getline(iss1, line, ' ')) {
-				firstLine.push_back(line);
-			}
-			if (firstLine.size() == 3) {
-				headMap["Method"]  = firstLine[0];
-				headMap["Path"]    = firstLine[1];
-				headMap["HttpVer"] = firstLine[2];
-			}
 
-			std::istringstream iss2(lines[1]);
-			while (std::getline(iss2, line, ':')) {
-				secondLine.push_back(line);
-			}
-			size = secondLine.size();
-			if (size == 2)
-				headMap["Host"] = secondLine[1];
-			if (size == 3)
-				headMap["Port"] = secondLine[2];
-		}
-		i += 2;
-	}
- 
-	*/
 	for (size_t i = 0; i < lines.size(); i++) {
 		std::istringstream iss3(lines[i]);
 		std::getline(iss3, key, ':');
 		std::getline(iss3, value, ':');
-		if (value[0] != ' ')
-			throw std::runtime_error("Bad request");
-		value.erase(0, 1);
+		key = trim(key);
+		value = trim(value);
+		if (key.empty() || value.empty())
+			continue ;
 		headMap[key] = value;
 	}
 	// for POST_BOUNDARY request
-	assignBoundary(headMap);
+	// assignBoundary(headMap);
 }
 
 /** @brief this function specify the body type ,and init the request map 
@@ -121,54 +96,35 @@ void	parseHead(std::map<std::string, std::string>& headMap, std::vector<std::str
  * if the type is none then we don't need to parse the request
 */
 
-static REQUEST_TYPE	initTypeOfRequestBody(std::map<std::string, std::string>& headMap) {
-	std::string type;
-	type = headMap["Method"];
-	if (type == "POST") {
-		type = headMap["Transfer-Encoding"];
-		if (!type.empty())
-		{
-			if (type == "chunked")
-				return (POST_CHUNKED);
-			throw std::runtime_error("Transfert-Encoding contains !Chunked:501 Not Implemented");
-		}
-		type = headMap["Content-Type"];
-		if (type == "application/x-www-form-urlencoded")
-			return (POST_SIMPLE);
-		if (type == "application/json")
-			return (POST_JSON);
-		type = headMap["Boundary"];
-		if (!type.empty())
-			return (POST_BOUNDARY);
+int	parsingTypeValue(std::map<std::string, std::string>& headMap) {
+	int type = NONE;
 
-		// TODO: when we need to throw this
-		// 	if (headMap["Content-Length"].empty())
-		// throw std::runtime_error("Content-Length not exist:Bad request 400");
+	if (headMap["Transfert-Encoding"] == "chunked")
+		type = type | CHUNKED;
+	if (headMap["Boundary"].empty())
+		type = type | BOUNDARY;
 
-	} else if (type == "GET")
-		return (GET);
-	else if (type == "DELETE")
-		return (DELETE);
-	return (NONE);
+	if (type == NONE)
+		type = SIMPLE;
+	return (type);
 }
 
-static Request	*generateRequest(REQUEST_TYPE type) {
-	switch (type) {
-		case GET :
-		case DELETE :
-			return new SimpleRequest(type);
-		case POST_BOUNDARY :
-			return NULL;
-			// return new BoundaryRequest(type);
-		case POST_SIMPLE :
-			return new FormRequest(type);
-		case POST_CHUNKED : 
-			return new ChunkedRequest(type);
-		case POST_JSON : 
-			return NULL;
-		default :
-			return NULL;
+Request *generateRequest(std::map<std::string, std::string>& headMap) {
+	Request *r = NULL;
+	std::string requestType;
+
+	requestType = headMap[REQ_METHOD];
+	if (requestType == "GET")
+		r = new SimpleRequest(GET);
+	else if (requestType == "DELETE")
+		r = new SimpleRequest(DELETE);
+	else if (requestType == "POST") {
+		// either a json or form there are the same, 
+		// what matter is the type of parsing how we will read the data
+		int parsingType = parsingTypeValue(headMap);
+		r = new PostRequest(parsingType);
 	}
+	return (r);
 }
 
 static void removeSpaces(std::string &buffer, size_t index) {
@@ -207,9 +163,9 @@ static void	checkRequest(std::string &buffer) {
 	bool					quotes;
 
 	quotes = false;
-	size_t last = buffer.size() - 1;
-	if (buffer[last] != '\n' || last - 1 < 0 || buffer[last - 1] != '\r')
-		throw std::runtime_error("Bad end of request line:Bad Request 400");
+	// size_t last = buffer.size() - 1;
+	// if (buffer[last] != '\n' || last - 1 < 0 || buffer[last - 1] != '\r')
+	// 	throw std::runtime_error("Bad end of request line:Bad Request 400");
 	std::vector<std::string> lines = splitLine(buffer, "\r\n");
 	buffer = "";
 	for (size_t i = 0; i < lines.size(); i++) {
@@ -217,19 +173,6 @@ static void	checkRequest(std::string &buffer) {
 		buffer += (lines[i] + "\r\n");
 	}
 
-	/*
-		index = 0;
-		while (index < buffer.size()) {
-			else if (buffer[index] == '\"')
-			{
-				quotes = !quotes;
-				checkEnclosed(buffer[index], myStack);
-			}
-			else if (buffer[index] == ' ' && !quotes)  // remove extra spaces
-				removeSpaces(buffer, index);
-			index++;
-		}
-	*/
 	if (myStack.size())
 		throw std::runtime_error("something isn't ennclosed");
 }
@@ -254,6 +197,7 @@ Request 	*requestParse(std::string buffer) {
 	Request								*request;
 	std::map<std::string, std::string >	headMap;
 	std::vector<std::string>			lines;
+	std::vector<std::string>			data;
 
 	checkRequest(buffer);
 
@@ -271,15 +215,26 @@ Request 	*requestParse(std::string buffer) {
 	parseHead(headMap, lines);
 	checkPath(headMap[REQ_PATH]);
 
-
-	request = generateRequest(initTypeOfRequestBody(headMap));
+	request = generateRequest(headMap);
 	if (!request)
 		throw std::runtime_error("Unknown type of body:Bad Request");
-	request->setHead(headMap);
 	if (request->getTypeOfRequest() != DELETE && request->getTypeOfRequest() != GET)
 	{
 		body 	= buffer.substr(index + 4, buffer.length());
 		request->parseBody(body);
+		
+		// name=ayoub&email=a@a
+		data = splitLine(body, "&");
+		for (index = 0; index < data.size(); index++) {
+			size_t length = data[index].length();
+			size_t equalIndex = data[index].find('=');
+			std::string key   = data[index].substr(0, equalIndex);
+			std::string value =	data[index].substr(equalIndex + 1, length); 
+			// std::cout << "Key " << key << " Value " << value << std::endl;
+
+			headMap["DATA_FROM_CLIENT" + key] = value;
+		}
 	}
+	request->setHead(headMap);
 	return (request);
 }

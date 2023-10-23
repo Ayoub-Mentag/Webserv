@@ -21,3 +21,12 @@ std::map<std::string, std::string>&	Request::getHead() {
 REQUEST_TYPE	Request::getTypeOfRequest() const {
 	return (this->typeOfRequest);
 }
+
+void	Request::addToHead(std::string key, std::string value) {
+	this->head[key] = value;
+}
+
+
+std::string&	Request::getValueByKey(std::string key) {
+	return (this->head[key]);
+}

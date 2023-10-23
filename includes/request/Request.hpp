@@ -7,13 +7,13 @@
 # include <iostream>
 
 enum REQUEST_TYPE{
+	NONE,
 	GET,
 	DELETE,
 	POST_SIMPLE,
 	POST_BOUNDARY,
 	POST_CHUNKED,
-	POST_JSON,
-	NONE
+	POST_JSON
 };
 
 class Request {
@@ -26,10 +26,13 @@ class Request {
 		virtual ~Request();
 		Request();
 		Request(REQUEST_TYPE type);
-
-		void								setHead( std::map<std::string, std::string>  head);
-		std::map<std::string, std::string>&	getHead();
-		void								setTypeOfRequest(REQUEST_TYPE typeOfRequest);
-		REQUEST_TYPE						getTypeOfRequest() const;
-		virtual void                        parseBody(std::string body) = 0;
+	
+		void									setHead( std::map<std::string, std::string>  head);
+		std::map<std::string, std::string>&		getHead();
+		void									setTypeOfRequest(REQUEST_TYPE typeOfRequest);
+		REQUEST_TYPE							getTypeOfRequest() const;
+		virtual void                        	parseBody(std::string body) = 0;
+		void									addToHead(std::string key, std::string value);
+		std::string&							getValueByKey(std::string key);
+		// TODO: Add a function to add to head map
 };
