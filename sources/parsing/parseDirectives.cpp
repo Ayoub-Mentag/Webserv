@@ -50,22 +50,39 @@ bool	getAutoIndex(std::string& value, std::string& key) {
 	}
 }
 
-void	getRedirect(std::string& value, std::string& key, std::string& redirectFrom, std::string& redirectTo) {
+void	getRedirect(std::string& value, std::string& key, int& redirectionCode, std::string& redirectTo) {
 	if (value.empty() || value == ";") {
 		std::cerr << NO_VALUE;
 		std::cerr << PRINT_LINE_AND_FILE;
 		exit(1);
 	}
+
 	size_t first = value.find_first_of(",");
-	if (first != std::string::npos) {
-		redirectFrom = trim(value.substr(0, first));
-		redirectTo = trim(value.substr(first + 1, -1));
-	}
-	if (redirectFrom == "" || redirectTo == "") {
+	if (first == std::string::npos) {
 		std::cerr << INVALID_ARGUMENT;
 		std::cerr << PRINT_LINE_AND_FILE;
 		exit(1);
 	}
+	std::string	returnIndex = trim(value.substr(0, first));
+	std::string returnValue = trim(value.substr(first + 1, -1));
+	if (returnIndex == "" || returnValue == ""
+		|| returnIndex.find_first_not_of("0123456789") != value.npos) {
+		std::cerr << INVALID_ARGUMENT;
+		std::cerr << PRINT_LINE_AND_FILE;
+		exit(1);
+	}
+	redirectionCode = atoi(returnIndex.c_str());
+	redirectTo = trim(value.substr(first + 1, -1));
+	// size_t first = value.find_first_of(",");
+	// if (first != std::string::npos) {
+	// 	redirectionCode = atoi(trim(value.substr(0, first)).c_str());
+	// 	redirectTo = trim(value.substr(first + 1, -1));
+	// }
+	// if (redirectFrom == "" || redirectTo == "") {
+	// 	std::cerr << INVALID_ARGUMENT;
+	// 	std::cerr << PRINT_LINE_AND_FILE;
+	// 	exit(1);
+	// }
 }
 
 std::string	getRoot(std::string& value, std::string& key) {
@@ -111,7 +128,7 @@ void	getErrorPages(std::string& value, std::string& key, std::map<int, std::stri
 	}
 	std::string			token;
 	std::istringstream	em(value);
-	while (std::getline(em, token, '&')) {
+	while (std::getline(em, token)) {
 		token = trim(token);
 		size_t first = token.find_first_of(",");
 		if (first == std::string::npos) {

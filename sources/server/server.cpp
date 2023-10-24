@@ -91,7 +91,7 @@ static std::string fileToString(const std::string& fileName, int status) {
             result += line + '\n';
         }
 
-        return result;
+        return (result);
     } catch (const std::exception& e) {
         throw;
     }
@@ -298,7 +298,7 @@ void	Server::locationExists() {
 	The resulting response includes the HTTP status, content type, and the error page or error message.
 	The response is then returned as a string.
 */
-const std::string& Server::returnError(int status) {
+const std::string&	Server::returnError(int status) {
     if (request->serverIndex < 0) {
         // Handle the case when the server index is not set.
         response.setContentType(".html");
@@ -327,7 +327,8 @@ const std::string& Server::returnError(int status) {
         response.setContentType(".html");
         response.setHeader(status);
     }
-    return response.getResponse();
+	response.setResponse();
+	return (response.getResponse());
 }
 
 std::string	Server::matching() {
@@ -336,10 +337,12 @@ std::string	Server::matching() {
 	if (request->locationIndex == -1) {
 		throw std::runtime_error(returnError(NOT_FOUND_STATUS));
 	}
+
 	const t_location&	location = getLocation();
 	if (location.isCgi) {
 		return (request->getHead()[REQ_PATH]);
 	}
+
 	// pathToBeLookFor.erase(0, location.path.size());
 	// correctPath(location.root);
 	std::string	pathToBeLookFor = request->getHead()[REQ_PATH];
@@ -403,9 +406,19 @@ void	Server::locationRedirection() {
 	t_location	location = getLocation();
 
 	try {
+		std::string resp;
+		size_t schemeSeparatorIndex = location.redirectTo.find("://");
+		if (schemeSeparatorIndex != std::string::npos) {
+			resp = /*request->getHead()[REQ_HTTP_VERSION];*/location.redirectTo.substr(0, schemeSeparatorIndex);
+			resp += response.getStatusCode(location.redirectionCode) + "\r\n";
+			resp += "Location: " + location.redirectTo + "\r\n\r\n";
+			response.setResponse(resp);
+			return ;
+		}
 		response.setBody(fileToString(location.redirectTo, NOT_FOUND_STATUS));
 		response.setContentType(".html");
 		response.setHeader(MOVED_PERMANENTLY_STATUS);
+		response.setResponse();
 	} catch(const std::exception& e) {
 		throw std::runtime_error(returnError(NOT_FOUND_STATUS));
 	}
@@ -415,6 +428,7 @@ void	Server::servFile(std::string& path, int status) {
 	try {
 		response.setBody(fileToString(path, NOT_FOUND_STATUS));
 		response.setHeader(status);
+		response.setResponse();
 	} catch(std::exception& ex) {
 		throw std::runtime_error(returnError(NOT_FOUND_STATUS));
 	}
@@ -466,6 +480,7 @@ void	Server::listDirectory(DIR *dir, std::string& path) {
 		response.setContentType(".html");
 		response.setBody(directory_listing(dir, request->getHead()[REQ_PATH]));
 		response.setHeader(200);
+		response.setResponse();
 	} else {
 		throw std::runtime_error(returnError(FORBIDDEN_STATUS));
 	}
@@ -503,6 +518,7 @@ void	Server::executeCgi(std::string path) {
 	response.setBody(body);
 	response.setContentType(".html");
 	response.setHeader(200);
+	response.setResponse();
 }
 
 void	Server::responseFunc(int clientFd) {
@@ -514,7 +530,7 @@ void	Server::responseFunc(int clientFd) {
 		// correctPath(path);
 		DIR *dir = opendir(path.c_str());
 		methodNotAllowed(); // should i check location errpage first when no method in the location?
-		if (path == location.redirectFrom) {
+		if (!location.redirectTo.empty()) {
 			locationRedirection(); // recode this to handle (return -status code-)
 		} else if (dir) {
 			listDirectory(dir, path);
@@ -529,7 +545,7 @@ void	Server::responseFunc(int clientFd) {
 	} catch (std::exception &ex) {
 		// just to catch the thrown error the response is already ready
 	}
-	// std::cout << response.getResponse();
+	// std::cout << response.getRespon=se();
 	write(clientFd, response.getResponse().c_str(), response.getResponse().length());
 	close(clientFd);
 	FD_CLR(clientFd, &current_sockets);

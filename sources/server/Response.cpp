@@ -29,6 +29,10 @@ std::string	Response::getBodylength() {
 	return (to_string(this->body.length()));
 }
 
+void	Response::setHeader(std::string& _header) {
+	header = _header;
+}
+
 void	Response::setHeader(int status) {
 	header = getHttpVersion();
 	header += getStatusCode(status) + "\r\n";
@@ -45,12 +49,16 @@ void	Response::setHttpVersion(const std::string& httpVersion) {
 	this->httpVersion = httpVersion;
 }
 
+void	Response::setResponse(std::string& resp) {
+	this->response = resp;
+}
+
 void	Response::setResponse() {
 	this->response = getHeader() + getBody();
 }
 
 const std::string&	Response::getResponse() {
-	setResponse();
+	// setResponse();
 	return (response);
 }
 

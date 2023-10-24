@@ -23,7 +23,8 @@ typedef struct LocationDirectives {
 	std::string					path;
 	std::string					root;
 	std::string					index;
-	std::string					redirectFrom;
+	int							redirectionCode;
+	// std::string					redirectFrom;
 	std::string 				redirectTo;
 	std::vector<std::string>	allowedMethods;
 	std::map<int, std::string> 	errorPages;
@@ -58,7 +59,7 @@ std::string					        getIndex(std::string& value, std::string& key);
 std::string					        getRoot(std::string& value, std::string& key);
 std::string					        getCgiExecutable(std::string& value, std::string& key);
 std::string					        getServerName(std::string& value, std::string& key);
-void						        getRedirect(std::string& value, std::string& key, std::string& redirectFrom, std::string& redirectTo);
+void						        getRedirect(std::string& value, std::string& key, int& redirectionCode, std::string& redirectTo);
 bool						        getAutoIndex(std::string& value, std::string& key);
 int							        getPort(std::string& value, std::string& key);
 int							        getLimitClientBody(std::string& value, std::string& key);

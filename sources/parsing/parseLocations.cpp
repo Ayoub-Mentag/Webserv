@@ -15,14 +15,17 @@ static void	parseLocationDirectives(std::string& key, std::string value, t_locat
 		location.index = getIndex(value, key);
 	} else if (key == "autoindex") {
 		location.autoindex = getAutoIndex(value, key);
-	} else if (key == "redirect") {
-		getRedirect(value, key, location.redirectFrom, location.redirectTo);
+	// } else if (key == "redirect") {
+	// 	getRedirect(value, key, location.redirectFrom, location.redirectTo);
 	} else if (key == "error_page") {
 		getErrorPages(value, key, location.errorPages);
 	} else if (key == "limit_client_body") {
 		location.clientMaxBodySize = getLimitClientBody(value, key);
 	} else if (key == "root") {
 		location.root = getRoot(value, key);
+	} else if (key == "return") {
+		getRedirect(value, key, location.redirectionCode, location.redirectTo);
+		// location.cgiExecutable = getCgiExecutable(value, key);
 	} else if (key == "cgi_executable") {
 		location.cgiExecutable = getCgiExecutable(value, key);
 	} else {
