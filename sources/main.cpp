@@ -8,6 +8,12 @@ static void	usage(const char* programName) {
 	exit(1);
 }
 
+
+// TODO: Reads the request body, if any (length specified by the Content-Length header)
+// TODO: A few methods (e.g., GET) forbid entity body data in request messages.
+// Before the web server can deliver content to the client, it needs to identify the source
+// of the content, by mapping the URI from the request message to the proper content
+// or content generator on the web server.
 int	main(int argc, char* argv[]) {
 	t_config	config;
 

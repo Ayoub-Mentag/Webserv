@@ -104,9 +104,8 @@ void	Server::initRequest(int clientFd) {
 	bzero(buffer, MAX_LEN);
 	recv(clientFd, buffer, MAX_LEN, 0);
 	bufferLine = buffer;
-	// std::cerr << buffer;
+	std::cerr << bufferLine;
 	
-	// print buffer after the checking
 	request = requestParse(bufferLine);
 }
 
@@ -397,7 +396,17 @@ char	**getEnv(std::map<std::string, std::string> headMap) {
 	return (env);
 }
 
+static void assignHeadAndBody(std::string buffer, std::string& head, std::string& body) {
+	size_t index = buffer.find("\r\n\r\n");
+
+	if (index != std::string::npos) {
+		head = buffer.substr(0, index + 4);
+		body = buffer.substr(index + 4, buffer.length());
+	}
+}
+
 void	Server::executeCgi(std::string path) {
+	std::string head;
 	std::string body;
 	char		*program[3];
 	pid_t pid;
@@ -410,6 +419,7 @@ void	Server::executeCgi(std::string path) {
 	program[2] = NULL;
 	// std::cerr << program[0] << " " << program[1] << std::endl;
 	pipe(fd);
+	// check if fork failed
 	pid = fork();
 	if (pid == 0) {
 		close(fd[0]);
@@ -423,13 +433,14 @@ void	Server::executeCgi(std::string path) {
 	read(fd[0], buffer, MAX_LEN);
 	close(fd[0]);
 	close(fd[1]);
-	// std::cout << buffer << std::endl;
-	body = buffer;
-	// body.insert(0, "Content-Type: text/html\r\n");
-	body.insert(0, "Content-length: " + to_string(body.length()) + "\r\n");
-	body.insert(0, response.getStatusCode(200) + "\r\n");
-	body.insert(0, response.getHttpVersion());
-	response.setResponse(body);
+
+	assignHeadAndBody(buffer, head, body);
+	// std::cout << head << std::endl;
+	// std::cout << body << std::endl;
+	head.insert(0, "Content-length: " + to_string(body.length()) + "\r\n");
+	head.insert(0, response.getStatusCode(200) + "\r\n");
+	head.insert(0, response.getHttpVersion());
+	response.setResponse(head + body);
 }
 
 void	Server::initResponseClass(std::string& path) {
@@ -469,7 +480,7 @@ void	Server::responseFunc(int clientFd) {
 	} catch (std::exception &ex) {
 		// just to catch the thrown error the response is already ready
 	}
-	std::cerr << response.getResponse();
+	// std::cerr << response.getResponse();
 	write(clientFd, response.getResponse().c_str(), response.getResponse().length());
 	close(clientFd);
 	FD_CLR(clientFd, &current_sockets);
@@ -494,7 +505,7 @@ void	Server::serve() {
 					responseFunc(fd);
 					delete (this->request);
 				} catch(const std::exception& e) { // not handled !!!!!!!!
-				std::cout << PRINT_LINE_AND_FILE;
+					std::cout << PRINT_LINE_AND_FILE;
 					std::cout << e.what() << std::endl;
 				}
 				close(fd);

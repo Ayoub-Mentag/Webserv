@@ -17,26 +17,26 @@
 // add vector of QueryString
 // the request should be corrected before using it 
 
-static bool	assignBoundary(std::map<std::string, std::string>& headMap) {
-	std::string type = headMap["Content-Type"];
-	std::cout << "|" << type << "|" << std::endl;
-	size_t boundaryIndex = type.find("boundary");
+// static bool	assignBoundary(std::map<std::string, std::string>& headMap) {
+// 	std::string type = headMap["Content-Type"];
+// 	std::cout << "|" << type << "|" << std::endl;
+// 	size_t boundaryIndex = type.find("boundary");
 
-	if (boundaryIndex == std::string::npos)
-		return false;
-	headMap["Content-Type"] = type.substr(0, boundaryIndex);
+// 	if (boundaryIndex == std::string::npos)
+// 		return false;
+// 	headMap["Content-Type"] = type.substr(0, boundaryIndex);
 
-	std::string boundary = &type[boundaryIndex];
+// 	std::string boundary = &type[boundaryIndex];
 
-	boundary = boundary.erase(0, 9);// 9 is the "boundary=" length
-	if (!boundary.empty() && (boundary[0] == '\"')) {
-		//remove the double quotes
-		boundary.erase(0, 1);
-		boundary.erase(boundary.length() - 1, 1);
-		headMap["Boundary"] = boundary;
-	}
-	return (true);
-}
+// 	boundary = boundary.erase(0, 9);// 9 is the "boundary=" length
+// 	if (!boundary.empty() && (boundary[0] == '\"')) {
+// 		//remove the double quotes
+// 		boundary.erase(0, 1);
+// 		boundary.erase(boundary.length() - 1, 1);
+// 		headMap["Boundary"] = boundary;
+// 	}
+// 	return (true);
+// }
 
 
 static void	parseTwoFirstLines(std::map<std::string, std::string> &headMap, std::vector<std::string> lines) {
@@ -221,19 +221,25 @@ Request 	*requestParse(std::string buffer) {
 	if (request->getTypeOfRequest() != DELETE && request->getTypeOfRequest() != GET)
 	{
 		body 	= buffer.substr(index + 4, buffer.length());
-		request->parseBody(body);
-		
-		// name=ayoub&email=a@a
-		data = splitLine(body, "&");
-		for (index = 0; index < data.size(); index++) {
-			size_t length = data[index].length();
-			size_t equalIndex = data[index].find('=');
-			std::string key   = data[index].substr(0, equalIndex);
-			std::string value =	data[index].substr(equalIndex + 1, length); 
-			// std::cout << "Key " << key << " Value " << value << std::endl;
 
-			headMap["DATA_FROM_CLIENT" + key] = value;
-		}
+		// name=ayoub&email=a@a
+		// data = splitLine(body, "&");
+		// for (index = 0; index < data.size(); index++) {
+		// 	// simple form
+		// 	// size_t length = data[index].length();
+		// 	// size_t equalIndex = data[index].find('=');
+		// 	// std::string key   = data[index].substr(0, equalIndex);
+		// 	// std::string value =	data[index].substr(equalIndex + 1, length); 
+		// 	// // std::cout << "Key " << key << " Value " << value << std::endl;
+
+		// 	// headMap["DATA_FROM_CLIENT" + key] = value;		
+		// }
+
+		// upload a file using boundary
+		// std::cout << "BODY -----\n";
+		// std::cout << body << std::endl;
+		headMap["DATA_FROM_CLIENTboundary"] = body;
+		std::cerr << body;
 	}
 	request->setHead(headMap);
 	return (request);

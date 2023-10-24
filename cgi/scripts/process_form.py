@@ -6,7 +6,7 @@ name = os.environ.get("name", "Unknown")
 # Process the data (e.g., you can save it to a file or a database)
 
 # Generate a response
-print("Content-Type: text/html\r\n")
+print("Content-Type: text/html\r\n\r\n")
 print("<html>")
 print("<head><title>Form Submission</title></head>")
 print("<body>")

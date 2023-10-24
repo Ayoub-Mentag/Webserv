@@ -11,6 +11,8 @@ class PostRequest : public Request {
 	private :
 		std::string	body;
         int			parsingType;
+		std::string	content;
+
 	public :
 		PostRequest();
 		PostRequest(int parsingType);
