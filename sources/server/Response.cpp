@@ -64,6 +64,7 @@ void	Response::setStatusCode() {
 		statusCode[404] = " 404 Not Found";
 		statusCode[405] = " 405 Method Not Allowed";
 		statusCode[501] = " 501 Not Implemented";
+		statusCode[304] = " 304 Not Modified";
 		i = 1;
 	}
 }

@@ -4,7 +4,7 @@
 void	initWIthDefault(t_config& config) {
 	for (size_t i = 0; i < config.servers.size(); i++) {
 		if (config.servers[i].root.empty()) {
-			config.servers[i].root = DEFAULT_ROOT;
+			// config.servers[i].root = DEFAULT_ROOT;
 		}
 		if (config.servers[i].port < -1) {
 			config.servers[i].port = DEFAULT_PORT;

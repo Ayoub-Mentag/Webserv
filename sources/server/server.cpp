@@ -1,58 +1,100 @@
+
+// static std::string	fileToString(std::string fileName, int status) {
+// 	std::string result;
+// 	std::string line;
+// 	std::ifstream os;
+
+// 	os.open(fileName);
+// 	if (os.fail()) {
+// 		switch (status) {
+// 			case METHOD_NOT_ALLOWED_STATUS:
+// 				throw std::runtime_error(DEFAULT_405_ERROR_PAGE);
+// 			case NOT_FOUND_STATUS:
+// 				throw std::runtime_error(DEFAULT_404_ERROR_PAGE);
+// 			case FORBIDDEN_STATUS:
+// 				throw std::runtime_error(DEFAULT_403_ERROR_PAGE);
+// 			case BAD_REQUEST_STATUS:
+// 				throw std::runtime_error(DEFAULT_400_ERROR_PAGE);
+// 			case NOT_IMPLEMENTED_STATUS:
+// 				throw std::runtime_error(DEFAULT_501_ERROR_PAGE);
+// 			default:
+// 				throw std::runtime_error(to_string(status) + " status code not handled");
+// 		}
+// 	}
+// 	while (std::getline(os, line)) {
+// 		result += line + "\n";
+// 	}
+// 	return (result);
+// }
+
+// void	correctPath(std::string& path) {
+// 	DIR* dir = NULL;
+// 	opendir(path.c_str());
+// 	if (!dir) {
+// 		if (path[path.length() - 1] == '/')
+// 			path.erase(path.length() - 1);
+// 		return ;
+// 	}
+// 	closedir(dir);
+// }
+
+
+// static void	findAllowedMethod(std::string& method, t_server& server, t_location& location) {
+// 	bool		existInLocation = false;
+// 	bool		existInServer = false;
+// 	std::string	header;
+
+// 	existInLocation = std::find(location.allowedMethods.begin(), location.allowedMethods.end(), method) != location.allowedMethods.end();
+// 	if (existInLocation) {
+// 		return ; // means that the method is allowed
+// 	} else {
+// 		if (location.allowedMethods.size() == 0) {
+// 			existInServer = std::find(server.allowedMethods.begin(), server.allowedMethods.end(), method) != server.allowedMethods.end();
+// 			if (existInServer)
+// 				return ;
+// 			throw std::runtime_error(server.errorPages[405]);
+// 		}
+// 		throw std::runtime_error(location.errorPages[405]);
+// 	}
+// }
+
 #include <Server.hpp>
 #include <Utils.hpp>
 
-void	correctPath(std::string& path) {
-	DIR* dir = NULL;
-	opendir(path.c_str());
-	if (!dir) {
-		if (path[path.length() - 1] == '/')
-			path.erase(path.length() - 1);
-		return ;
-	}
-	closedir(dir);
+static std::string getDefaultErrorPage(int status) {
+    switch (status) {
+        case METHOD_NOT_ALLOWED_STATUS:
+            return DEFAULT_405_ERROR_PAGE;
+        case NOT_FOUND_STATUS:
+            return DEFAULT_404_ERROR_PAGE;
+        case FORBIDDEN_STATUS:
+            return DEFAULT_403_ERROR_PAGE;
+        case BAD_REQUEST_STATUS:
+            return DEFAULT_400_ERROR_PAGE;
+        case NOT_IMPLEMENTED_STATUS:
+            return DEFAULT_501_ERROR_PAGE;
+        default:
+            return std::to_string(status) + " status code not handled";
+    }
 }
 
-std::string	fileToString(std::string fileName, int status) {
-	std::string result;
-	std::string line;
-	std::ifstream os;
+static std::string fileToString(const std::string& fileName, int status) {
+    try {
+        std::ifstream fileStream(fileName);
+        if (!fileStream.is_open()) {
+            throw std::runtime_error(getDefaultErrorPage(status));
+        }
 
-	os.open(fileName);
-	if (os.fail()) {
-		switch (status) {
-			case METHOD_NOT_ALLOWED_STATUS:
-				throw std::runtime_error(DEFAULT_405_ERROR_PAGE);
-			case NOT_FOUND_STATUS:
-				throw std::runtime_error(DEFAULT_404_ERROR_PAGE);
-			case FORBIDDEN_STATUS:
-				throw std::runtime_error(DEFAULT_403_ERROR_PAGE);
-			case BAD_REQUEST_STATUS:
-				throw std::runtime_error(DEFAULT_400_ERROR_PAGE);
-			case NOT_IMPLEMENTED_STATUS:
-				throw std::runtime_error(DEFAULT_501_ERROR_PAGE);
-			default:
-				throw std::runtime_error(to_string(status) + " status code not handled");
-		}
-	}
-	while (std::getline(os, line)) {
-		result += line + "\n";
-	}
-	return (result);
-}
+        std::string result;
+        std::string line;
+        while (std::getline(fileStream, line)) {
+            result += line + '\n';
+        }
 
-static std::string	directory_listing(DIR* dir, std::string root) {
-	std::string response;
-	response += "<html><body><ul>";
-
-	struct dirent* entry;
-	while ((entry = readdir(dir))) {
-		if (root[root.length() - 1] != '/') {
-			root.insert(root.length(), "/");
-		}
-		response += "<li><a href=\"" + root + std::string(entry->d_name) + "/\">" + std::string(entry->d_name) + "</a></li>";
-	}
-	response += "</ul></body></html>";
-	return (response);
+        return result;
+    } catch (const std::exception& e) {
+        throw;
+    }
 }
 
 void	Server::bindServerWithAddress() {
@@ -63,15 +105,13 @@ void	Server::bindServerWithAddress() {
 }
 
 void	Server::setPortOfListening() {
-	if (listen(serverSocketfd, 5) == -1)
-	{
+	if (listen(serverSocketfd, 5) == -1) {
 		throw std::runtime_error("listen");
 	}
 }
 
 Server::Server(t_config& config) : config(config) {
-	if ((this->serverSocketfd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
-	{
+	if ((this->serverSocketfd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
 		perror("socket() : ");
 		throw std::runtime_error("socket()");
 	}
@@ -91,20 +131,6 @@ Server::Server(t_config& config) : config(config) {
 
 Server::~Server() {
 	close(serverSocketfd);
-}
-
-void	Server::initRequest(int clientFd) {
-	/** @test we will work on some examples without getting the request from browser*/
-	char		buffer[MAX_LEN];
-	std::string	bufferLine;
-
-	bzero(buffer, MAX_LEN);
-	recv(clientFd, buffer, MAX_LEN, 0);
-	bufferLine = buffer;
-	std::cerr << buffer;
-	
-	// print buffer after the checking
-	request = requestParse(bufferLine);
 }
 
 fd_set Server::getReadyFds() {
@@ -131,75 +157,117 @@ void	Server::acceptNewConnection() {
 	}
 }
 
+/*
+	Generates an HTML representation of the contents of a directory.
+	Given a directory pointer `dir` and the `root` path, this function reads
+	the directory entries and constructs an HTML list of links to each entry.
+	If an entry is a directory, it adds a trailing slash to the link to indicate
+	that it's a subdirectory.
+*/
+static std::string	directory_listing(DIR* dir, std::string root) {
+	std::string response;
+	response = "<html><body><ul>";
+
+	struct dirent* entry;
+	while ((entry = readdir(dir))) {
+		if (root[root.length() - 1] != '/') {
+			root.insert(root.length(), "/");
+		}
+		response += "<li><a href=\"" + root + std::string(entry->d_name) +
+					(entry->d_type == DT_DIR ? "/\">" : "\">") +
+					std::string(entry->d_name) + "</a></li>";
+	}
+	response += "</ul></body></html>";
+	return (response);
+}
+
+void	Server::initRequest(int clientFd) {
+	/** @test we will work on some examples without getting the request from browser*/
+	char		buffer[MAX_LEN];
+	std::string	bufferLine;
+
+	bzero(buffer, MAX_LEN);
+	recv(clientFd, buffer, MAX_LEN, 0);
+	bufferLine = buffer;
+	// std::cerr << buffer;
+	
+	// print buffer after the checking
+	request = requestParse(bufferLine);
+	// i add this default valus in 24-10-2023 00:20
+	request->serverIndex = -1; 
+	request->locationIndex = -1;
+}
+
 void	Server::serverExists() {
 	
-	std::vector<t_server>	servers = config.servers;	
+	std::vector<t_server>	servers = config.servers;
 
 	for (int serverIndex = 0; serverIndex < (int)config.servers.size(); serverIndex++) {
-		if (servers[serverIndex].serverName == request->getHead()["ServerName"]
-			&& atoi(request->getHead()["Port"].c_str()) == servers[serverIndex].port) {
+		if (servers[serverIndex].serverName == request->getHead()[REQ_SERVER_NAME]
+			&& atoi(request->getHead()[REQ_PORT].c_str()) == servers[serverIndex].port) {
 			request->serverIndex = serverIndex;
 			return ;
 		}
 	}
-	request->serverIndex = -1;
+	request->serverIndex = -1; // this line is usless cuz this var already contain this value as a def val
 	//error page : SERVER_NOT_FOUND
 }
 
-///END  OF client.cpp
-
-
-
-static size_t	findCgiLocation(Request* request, t_location& location) {
-	size_t index;
-
-	index = location.path.find("*");
-	if (index != std::string::npos) {
-		std::string extention = &location.path[index + 1];
-		size_t len = request->getHead()["Path"].length();
-		if (extention != &request->getHead()["Path"][len - extention.length()]) {
-			return std::string::npos;
-		}
+/*
+	This function checks if the specified location is intended for CGI handling.
+	It examines the location's path and determines whether it contains a '*' character.
+	If a '*' character is found, it indicates that the location should be used for CGI requests,
+	and the function returns true. It also checks if the extension after '*' matches the request's path.
+	If both conditions are met, it returns true; otherwise, it returns false.
+*/
+static bool	findCgiLocation(Request* request, t_location& location) {
+	if (location.path[0] == '*') {
+		std::string extention = &location.path[1];
+		size_t len = request->getHead()[REQ_PATH].length();
+		return (extention == &request->getHead()[REQ_PATH][len - extention.length()]);
 	}
-	return (index);
+	return (false);
 }
 
+// i stil need to check this if it work properly 
 static std::string	getCgiPath(Request* request, t_location& location) {
-	std::string lookFor = request->getHead()["Path"];
+	std::string lookFor = request->getHead()[REQ_PATH];
 	size_t	last = lookFor.find_last_of('/');
 	std::string	path;
 
 	if (last != lookFor.npos) {
 		lookFor.erase(last, -1);
 		if (location.root[0] == '.') {// what if the path contains ./ ../ 
-			path = (&location.root[1] != lookFor) ? location.root + request->getHead()["Path"] : "." + request->getHead()["Path"];
+			path = (&location.root[1] != lookFor) ? location.root + request->getHead()[REQ_PATH]
+													: "." + request->getHead()[REQ_PATH];
 		} else {
-			path = (location.root != lookFor) ? location.root + request->getHead()["Path"] : request->getHead()["Path"];
+			path = (location.root != lookFor) ? location.root + request->getHead()[REQ_PATH]
+												: request->getHead()[REQ_PATH];
 		}
 	}
 	return (path);
 }
 
 void	Server::locationExists() {
-	std::vector<t_location>	locations = config.servers[request->serverIndex].locations;
-	size_t index;
+	std::vector<t_location>		locations = getServer().locations;
+	std::vector<std::string>	locationPaths;
 
-	std::vector<std::string> locationPaths;
 	for (size_t i = 0; i < locations.size(); i++) {
-		index = findCgiLocation(request, locations[i]);
-		if (index != std::string::npos) {
+		// here where the CGI location handled!
+		if (findCgiLocation(request, locations[i])) {
+			// is this the normal behavior?
 			std::string	cgiPath = getCgiPath(request, locations[i]);
 			if (access(cgiPath.c_str(), F_OK) != -1) {
 				request->locationIndex = i;
 				config.servers[request->serverIndex].locations[i].isCgi = true;
 				request->getHead()[REQ_PATH] = cgiPath;
+				// I have updated the request path that I received. Will this modification cause any issues?
 				return ;
 			}
 		}
 		locationPaths.push_back(locations[i].path);
 		config.servers[request->serverIndex].locations[i].isCgi = false;
 	}
-	
 	std::string lookFor = request->getHead()[REQ_PATH];
 	while (lookFor.size() > 0) {
 		std::vector<std::string>::iterator it = std::find(locationPaths.begin(), locationPaths.end(), lookFor);
@@ -221,31 +289,45 @@ void	Server::locationExists() {
 	}
 }
 
-const std::string&	Server::returnError(int status) {
-	if (request->serverIndex >= 0) {
-		t_server server = getServer();
-		if (request->locationIndex >= 0) {
-			t_location location = getLocation();
-			try {
-				response.setBody(fileToString(location.errorPages[status], status));
-			} catch(const std::exception& e) {
-				try {
-					response.setBody(fileToString(server.errorPages[status], status));
-				} catch (const std::exception& ex) {
-					response.setBody(ex.what());
-				}
-			}
-		} else {
-			try {
-				response.setBody(fileToString(server.errorPages[status], status));
-			} catch (const std::exception& ex) {
-				response.setBody(ex.what());
-			}
-		}
-	}
-	response.setContentType(".html");
-	response.setHeader(status);
-	return (response.getResponse());
+/*
+	This function generates an error response based on the provided HTTP status code.
+	It checks if the server and location indices are set in the request object.
+	If both indices are set, it attempts to retrieve an error page from the location's error pages.
+	If the location's error page is not found, it falls back to using the server's error pages.
+	If the server index is not set or any file retrieval fails, it sets the response body to an error message.
+	The resulting response includes the HTTP status, content type, and the error page or error message.
+	The response is then returned as a string.
+*/
+const std::string& Server::returnError(int status) {
+    if (request->serverIndex < 0) {
+        // Handle the case when the server index is not set.
+        response.setContentType(".html");
+        response.setHeader(status);
+        response.setBody("Server index is not set.");
+    } else {
+        t_server server = getServer();
+
+        if (request->locationIndex >= 0) {
+            // Handle the case when the location index is set.
+            t_location location = getLocation();
+            try {
+                response.setBody(fileToString(location.errorPages[status], status));
+            } catch (const std::exception& e) {
+                // Use the server's error pages if the location's error pages are not found.
+                response.setBody(fileToString(server.errorPages[status], status));
+            }
+        } else {
+            // Handle the case when the location index is not set.
+            try {
+                response.setBody(fileToString(server.errorPages[status], status));
+            } catch (const std::exception& ex) {
+                response.setBody(ex.what());
+            }
+        }
+        response.setContentType(".html");
+        response.setHeader(status);
+    }
+    return response.getResponse();
 }
 
 std::string	Server::matching() {
@@ -254,14 +336,13 @@ std::string	Server::matching() {
 	if (request->locationIndex == -1) {
 		throw std::runtime_error(returnError(NOT_FOUND_STATUS));
 	}
-
-	t_location	location = config.servers[request->serverIndex].locations[request->locationIndex];
-	std::string	pathToBeLookFor = request->getHead()[REQ_PATH];
+	const t_location&	location = getLocation();
 	if (location.isCgi) {
 		return (request->getHead()[REQ_PATH]);
 	}
-	location.isCgi = false;
-	pathToBeLookFor.erase(0, location.path.size());
+	// pathToBeLookFor.erase(0, location.path.size());
+	// correctPath(location.root);
+	std::string	pathToBeLookFor = request->getHead()[REQ_PATH];
 	if (!location.root.empty()) {
 		pathToBeLookFor.insert(0, location.root);
 	} else {
@@ -282,39 +363,42 @@ t_server&	Server::getServer() {
 	return (config.servers[request->serverIndex]);
 }
 
-static void	findAllowedMethod(std::string& method, t_server& server, t_location& location) {
-	bool		existInLocation = false;
-	bool		existInServer = false;
-	std::string	header;
+/*
+	Determines if a given HTTP request method is allowed based on the configuration settings.
+	It checks whether the method is included in the allowed methods for the location.
+	If the location-specific allowed methods are empty, it checks the server-level allowed methods.
+	If the method is allowed in either the location or server configuration, it returns true.
+	Otherwise, it returns false, indicating that the method is not allowed.
+*/
+static bool findAllowedMethod(const std::string& method, t_server& server, t_location& location) {
+    bool inLocation = std::find(location.allowedMethods.begin(), location.allowedMethods.end(), method)
+                    != location.allowedMethods.end();
 
-	existInLocation = std::find(location.allowedMethods.begin(), location.allowedMethods.end(), method) != location.allowedMethods.end();
-	if (existInLocation) {
-		return ; // means that the method is allowed
-	} else {
-		if (location.allowedMethods.size() == 0) {
-			existInServer = std::find(server.allowedMethods.begin(), server.allowedMethods.end(), method) != server.allowedMethods.end();
-			if (existInServer)
-				return ;
-			throw std::runtime_error(server.errorPages[405]);
-		}
-		throw std::runtime_error(location.errorPages[405]);
-	}
+    return (inLocation || (location.allowedMethods.empty() && std::find(server.allowedMethods.begin(),
+            server.allowedMethods.end(), method) != server.allowedMethods.end()));
 }
 
+/*
+	Checks if the HTTP request method is allowed based on server and location configuration.
+	It retrieves the current server and location configurations.
+	Then, it examines the HTTP request method to ensure it is either "GET," "POST," or "DELETE."
+	If the method is not one of these allowed methods, it throws a "Not Implemented" error.
+	Next, it checks whether the method is allowed in the server and location configurations.
+	If the method is not allowed, it throws a "Method Not Allowed" error.
+*/
 void	Server::methodNotAllowed() {
-	t_server	server = getServer();
-	t_location	location = getLocation();
+	t_server			server = getServer();
+	t_location			location = getLocation();
+    const std::string&	method = request->getHead()[REQ_METHOD];
 
-	if (request->getHead()[REQ_METHOD] != "GET" && request->getHead()[REQ_METHOD] != "POST" && request->getHead()[REQ_METHOD] != "DELETE") {
+	if (method != "GET" && method != "POST" && method != "DELETE") {
 		throw std::runtime_error(returnError(NOT_IMPLEMENTED_STATUS));
-	}
-	try {
-		findAllowedMethod(request->getHead()[REQ_METHOD], server, location);
-	} catch (std::exception &ex) {
+	} else if (findAllowedMethod(method, server, location) == false) {
 		throw std::runtime_error(returnError(METHOD_NOT_ALLOWED_STATUS));
 	}
 }
 
+// I should refactor this function to handle the format "return {code} {uri/path}".
 void	Server::locationRedirection() {
 	t_location	location = getLocation();
 
@@ -327,25 +411,61 @@ void	Server::locationRedirection() {
 	}
 }
 
-void	Server::servFile(std::string& path) {
+void	Server::servFile(std::string& path, int status) {
 	try {
 		response.setBody(fileToString(path, NOT_FOUND_STATUS));
-		response.setHeader(200);
+		response.setHeader(status);
 	} catch(std::exception& ex) {
 		throw std::runtime_error(returnError(NOT_FOUND_STATUS));
 	}
 }
 
-void	Server::listDirectory(DIR *dir) {
+void	Server::initResponseClass(std::string& path) {
+	size_t len = (path[path.length() - 1] == '/') ? path.length() - 1 : path.length();
+	size_t dot = path.find_last_of('.');
+
+	(dot != path.npos) ? response.setContentType(path.substr(dot, len)) : response.setContentType("");
+	response.setHttpVersion(request->getHead()[REQ_HTTP_VERSION]);
+	response.setStatusCode();
+}
+
+
+
+
+
+
+void	Server::listDirectory(DIR *dir, std::string& path) {
 	t_location location = getLocation();
 	
+	std::string indexFile = path + "/index.html";
+	if (open(indexFile.c_str(), O_RDONLY) >= 0 && location.index.empty()) {
+		try {
+			response.setContentType(".html");
+			servFile(indexFile, 200);
+			// servFile(indexFile, NOT_MODIFIED_STATUS); // this is not working with 304 status code
+			return ;
+		} catch(const std::exception& e) {}
+	}
+	else if (!location.index.empty()) {
+		if (location.index[0] == '/') {
+			throw std::runtime_error(returnError(NOT_FOUND_STATUS));
+		}
+		if (location.index[0] != '/') {
+			location.index.insert(0, "/");
+		}
+		indexFile = path + location.index;
+		// www/index.html;
+		try {
+			response.setContentType(".html");
+			servFile(indexFile, 200);
+			// servFile(indexFile, NOT_MODIFIED_STATUS);
+			return ;
+		} catch(const std::exception& e) {}
+	}
 	if (location.autoindex) {
 		response.setContentType(".html");
 		response.setBody(directory_listing(dir, request->getHead()[REQ_PATH]));
 		response.setHeader(200);
-	} else if (!location.index.empty()) {
-		initResponseClass(location.index);
-		servFile(location.index);
 	} else {
 		throw std::runtime_error(returnError(FORBIDDEN_STATUS));
 	}
@@ -385,45 +505,31 @@ void	Server::executeCgi(std::string path) {
 	response.setHeader(200);
 }
 
-void	Server::initResponseClass(std::string& path) {
-	size_t dot = path.find_last_of('.');
-	if (dot != path.npos) {
-		if (path[path.length() - 1] == '/')
-			path.erase(path.length() - 1);
-		std::string extention = path.substr(dot, -1);
-		response.setContentType(extention);
-		std::cout << "extention: " << response.getContentType() << std::endl;
-	} else {
-		response.setContentType("");
-	}
-	response.setHttpVersion(request->getHead()[REQ_HTTP_VERSION]);
-	response.setStatusCode();
-}
-
 void	Server::responseFunc(int clientFd) {
 	try {
+		std::cout << "req_path: " << request->getHead()[REQ_PATH] << std::endl;
 		initResponseClass(request->getHead()[REQ_PATH]);
 		std::string path = matching();
 		t_location location = getLocation();
-		correctPath(path);
-		std::cout << "path: " << path << std::endl;
+		// correctPath(path);
 		DIR *dir = opendir(path.c_str());
 		methodNotAllowed(); // should i check location errpage first when no method in the location?
 		if (path == location.redirectFrom) {
-			locationRedirection();
+			locationRedirection(); // recode this to handle (return -status code-)
 		} else if (dir) {
-			listDirectory(dir);
+			listDirectory(dir, path);
 		} else if (location.isCgi) {
 			executeCgi(path);
 		} else {
-			servFile(path);
+			servFile(path, 200);
 		}
 	} catch (std::out_of_range &ofg) {
-		std::cout << __FILE__ << ":" << __LINE__ << std::endl;
+		std::cout << PRINT_LINE_AND_FILE;
 		std::cout << ofg.what() << std::endl;
 	} catch (std::exception &ex) {
 		// just to catch the thrown error the response is already ready
 	}
+	// std::cout << response.getResponse();
 	write(clientFd, response.getResponse().c_str(), response.getResponse().length());
 	close(clientFd);
 	FD_CLR(clientFd, &current_sockets);
