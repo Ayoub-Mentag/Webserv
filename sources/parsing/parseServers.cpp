@@ -20,6 +20,8 @@ static void	parseServerDirectives(std::string& key, std::string& value, t_server
 		server.index = getIndex(value, key);
 	} else if (key == "error_page") {
 		getErrorPages(value, key, server.errorPages);
+	} else if (key == "return") {
+		getRedirect(value, key, server.redirectionCode, server.redirectTo);
 	} else if (key == "limit_client_body") {
 		server.clientMaxBodySize = getLimitClientBody(value, key);
 	} else if (key == "allowed_methods") {

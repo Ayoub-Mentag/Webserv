@@ -1,32 +1,4 @@
 
-// static std::string	fileToString(std::string fileName, int status) {
-// 	std::string result;
-// 	std::string line;
-// 	std::ifstream os;
-
-// 	os.open(fileName);
-// 	if (os.fail()) {
-// 		switch (status) {
-// 			case METHOD_NOT_ALLOWED_STATUS:
-// 				throw std::runtime_error(DEFAULT_405_ERROR_PAGE);
-// 			case NOT_FOUND_STATUS:
-// 				throw std::runtime_error(DEFAULT_404_ERROR_PAGE);
-// 			case FORBIDDEN_STATUS:
-// 				throw std::runtime_error(DEFAULT_403_ERROR_PAGE);
-// 			case BAD_REQUEST_STATUS:
-// 				throw std::runtime_error(DEFAULT_400_ERROR_PAGE);
-// 			case NOT_IMPLEMENTED_STATUS:
-// 				throw std::runtime_error(DEFAULT_501_ERROR_PAGE);
-// 			default:
-// 				throw std::runtime_error(to_string(status) + " status code not handled");
-// 		}
-// 	}
-// 	while (std::getline(os, line)) {
-// 		result += line + "\n";
-// 	}
-// 	return (result);
-// }
-
 // void	correctPath(std::string& path) {
 // 	DIR* dir = NULL;
 // 	opendir(path.c_str());
@@ -61,40 +33,68 @@
 #include <Server.hpp>
 #include <Utils.hpp>
 
-static std::string getDefaultErrorPage(int status) {
-    switch (status) {
-        case METHOD_NOT_ALLOWED_STATUS:
-            return DEFAULT_405_ERROR_PAGE;
-        case NOT_FOUND_STATUS:
-            return DEFAULT_404_ERROR_PAGE;
-        case FORBIDDEN_STATUS:
-            return DEFAULT_403_ERROR_PAGE;
-        case BAD_REQUEST_STATUS:
-            return DEFAULT_400_ERROR_PAGE;
-        case NOT_IMPLEMENTED_STATUS:
-            return DEFAULT_501_ERROR_PAGE;
-        default:
-            return std::to_string(status) + " status code not handled";
-    }
-}
+// static std::string getDefaultErrorPage(int status) {
+//     switch (status) {
+//         case METHOD_NOT_ALLOWED_STATUS:
+//             return DEFAULT_405_ERROR_PAGE;
+//         case NOT_FOUND_STATUS:
+//             return DEFAULT_404_ERROR_PAGE;
+//         case FORBIDDEN_STATUS:
+//             return DEFAULT_403_ERROR_PAGE;
+//         case BAD_REQUEST_STATUS:
+//             return DEFAULT_400_ERROR_PAGE;
+//         case NOT_IMPLEMENTED_STATUS:
+//             return DEFAULT_501_ERROR_PAGE;
+//         default:
+//             return std::to_string(status) + " status code not handled";
+//     }
+// }
 
-static std::string fileToString(const std::string& fileName, int status) {
-    try {
-        std::ifstream fileStream(fileName);
-        if (!fileStream.is_open()) {
-            throw std::runtime_error(getDefaultErrorPage(status));
-        }
+// static std::string fileToString(const std::string& fileName, int status) {
+//     try {
+//         std::ifstream fileStream(fileName);
+//         if (!fileStream.is_open()) {
+//             throw std::runtime_error(getDefaultErrorPage(status));
+//         }
 
-        std::string result;
-        std::string line;
-        while (std::getline(fileStream, line)) {
-            result += line + '\n';
-        }
+//         std::string result;
+//         std::string line;
+//         while (std::getline(fileStream, line)) {
+//             result += line + '\n';
+//         }
 
-        return (result);
-    } catch (const std::exception& e) {
-        throw;
-    }
+//         return (result);
+//     } catch (const std::exception& e) {
+//         throw;
+//     }
+// }
+
+static std::string	fileToString(std::string fileName, int status) {
+	std::string result;
+	std::string line;
+	std::ifstream os;
+
+	os.open(fileName);
+	if (os.fail()) {
+		switch (status) {
+			case METHOD_NOT_ALLOWED_STATUS:
+				throw std::runtime_error(DEFAULT_405_ERROR_PAGE);
+			case NOT_FOUND_STATUS:
+				throw std::runtime_error(DEFAULT_404_ERROR_PAGE);
+			case FORBIDDEN_STATUS:
+				throw std::runtime_error(DEFAULT_403_ERROR_PAGE);
+			case BAD_REQUEST_STATUS:
+				throw std::runtime_error(DEFAULT_400_ERROR_PAGE);
+			case NOT_IMPLEMENTED_STATUS:
+				throw std::runtime_error(DEFAULT_501_ERROR_PAGE);
+			default:
+				throw std::runtime_error(to_string(status) + " status code not handled");
+		}
+	}
+	while (std::getline(os, line)) {
+		result += line + "\n";
+	}
+	return (result);
 }
 
 void	Server::bindServerWithAddress() {
@@ -403,22 +403,42 @@ void	Server::methodNotAllowed() {
 
 // I should refactor this function to handle the format "return {code} {uri/path}".
 void	Server::locationRedirection() {
+	t_server	server = getServer();
 	t_location	location = getLocation();
+	std::string redirTo;
+	int			redirCode;
 
+	if (!server.redirectTo.empty()) {
+		redirTo = server.redirectTo;
+		redirCode = server.redirectionCode;
+	} else {
+		redirTo = location.redirectTo;
+		redirCode = location.redirectionCode;
+	}
 	try {
 		std::string resp;
-		size_t schemeSeparatorIndex = location.redirectTo.find("://");
-		if (schemeSeparatorIndex != std::string::npos) {
-			resp = /*request->getHead()[REQ_HTTP_VERSION];*/location.redirectTo.substr(0, schemeSeparatorIndex);
-			resp += response.getStatusCode(location.redirectionCode) + "\r\n";
-			resp += "Location: " + location.redirectTo + "\r\n\r\n";
-			response.setResponse(resp);
-			return ;
-		}
-		response.setBody(fileToString(location.redirectTo, NOT_FOUND_STATUS));
-		response.setContentType(".html");
-		response.setHeader(MOVED_PERMANENTLY_STATUS);
-		response.setResponse();
+		// size_t schemeSeparatorIndex = redirTo.find("://");
+		// if (schemeSeparatorIndex != std::string::npos) {
+		// 	resp = /*request->getHead()[REQ_HTTP_VERSION];*/redirTo.substr(0, schemeSeparatorIndex);
+		// 	resp += response.getStatusCode(redirCode) + "\r\n";
+		// 	resp += "Location: " + redirTo + "\r\n\r\n";
+		// 	response.setResponse(resp);
+		// 	return ;
+		// }
+		
+		// resp = request->getHead()[REQ_HTTP_VERSION];
+		// resp += response.getStatusCode(redirCode) + "\r\n";
+		// resp += ;
+
+		// response.setResponse();
+		// response.setBody(fileToString(redirTo, NOT_FOUND_STATUS));
+		// response.setContentType(".html");
+		resp = response.getHeader();
+		int end = resp.find("\r\n\r\n");
+		resp.erase(end, -1);
+		resp += "Location: " + redirTo + "\r\n\r\n";
+		response.setHeader(redirCode);
+		response.setResponse(resp);
 	} catch(const std::exception& e) {
 		throw std::runtime_error(returnError(NOT_FOUND_STATUS));
 	}
@@ -448,9 +468,9 @@ void	Server::initResponseClass(std::string& path) {
 
 
 
-void	Server::listDirectory(DIR *dir, std::string& path) {
+void	Server::listDirectory(DIR* dir, std::string& path) {
 	t_location location = getLocation();
-	
+
 	std::string indexFile = path + "/index.html";
 	if (open(indexFile.c_str(), O_RDONLY) >= 0 && location.index.empty()) {
 		try {
@@ -493,7 +513,7 @@ void	Server::executeCgi(std::string path) {
 	pid_t pid;
 	int			fd[2];
 	char		buffer[MAX_LEN];
-	t_location	location = config.servers[request->serverIndex].locations[request->locationIndex];
+	t_location	location = getLocation();
 
 	program[0] = (char *)location.cgiExecutable.c_str();
 	program[1] = (char *)path.c_str();
@@ -527,11 +547,11 @@ void	Server::responseFunc(int clientFd) {
 		initResponseClass(request->getHead()[REQ_PATH]);
 		std::string path = matching();
 		t_location location = getLocation();
-		// correctPath(path);
 		DIR *dir = opendir(path.c_str());
 		methodNotAllowed(); // should i check location errpage first when no method in the location?
-		if (!location.redirectTo.empty()) {
-			locationRedirection(); // recode this to handle (return -status code-)
+		if (!getServer().redirectTo.empty()
+			|| !location.redirectTo.empty()) {
+			locationRedirection();
 		} else if (dir) {
 			listDirectory(dir, path);
 		} else if (location.isCgi) {
@@ -545,10 +565,8 @@ void	Server::responseFunc(int clientFd) {
 	} catch (std::exception &ex) {
 		// just to catch the thrown error the response is already ready
 	}
-	// std::cout << response.getRespon=se();
+	// std::cout << response.getResponse();
 	write(clientFd, response.getResponse().c_str(), response.getResponse().length());
-	close(clientFd);
-	FD_CLR(clientFd, &current_sockets);
 }
 
 void	Server::serve() {

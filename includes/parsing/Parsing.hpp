@@ -23,8 +23,8 @@ typedef struct LocationDirectives {
 	std::string					path;
 	std::string					root;
 	std::string					index;
-	int							redirectionCode;
 	// std::string					redirectFrom;
+	int							redirectionCode;
 	std::string 				redirectTo;
 	std::vector<std::string>	allowedMethods;
 	std::map<int, std::string> 	errorPages;
@@ -42,6 +42,8 @@ typedef struct ServerDirectives {
 	std::string						index;
 	std::vector<std::string>        allowedMethods;
 	std::vector<t_location>     	locations;
+	int								redirectionCode;
+	std::string 					redirectTo;
 }									t_server;
 
 typedef struct ConfigSettings {
