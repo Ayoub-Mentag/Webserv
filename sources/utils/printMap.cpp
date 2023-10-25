@@ -1,14 +1,10 @@
-// #include <Utils.hpp>
-// #include <Parsing.hpp>
-// #include <ChunkedRequest.hpp>
-// #include <BoundaryRequest.hpp>
-// #include <FormRequest.hpp>
+#include <Utils.hpp>
 
-// void	printMap(std::map<std::string, std::string>	m) {
-// 	for (std::map<std::string, std::string>::iterator it = m.begin(); it != m.end(); it++) {
-// 		std::cout << "Key " << it->first << " Value " << it->second << std::endl;
-// 	}
-// }
+void	printMap(std::map<std::string, std::string>	m) {
+	for (std::map<std::string, std::string>::iterator it = m.begin(); it != m.end(); it++) {
+		std::cout << "Key " << it->first << " Value " << it->second << std::endl;
+	}
+}
 
 // void	printRequest(Request* request) {
 // 	REQUEST_TYPE type = request->getTypeOfRequest();
@@ -35,3 +31,12 @@
 // 		std::cout << s->getBody() << std::endl;
 // 	}
 // }
+
+
+
+void printVectorOfString(std::vector<std::string> v) {
+	std::cout << "===SIZE " << v.size() << "===\n";
+    for (size_t i = 0; i < v.size(); i++) {
+        std::cout << v[i] << std::endl;
+    }
+}

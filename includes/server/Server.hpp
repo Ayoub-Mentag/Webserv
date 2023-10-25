@@ -52,7 +52,6 @@ class Server {
 		~Server();
 
 		void		serve();
-
 	public: // responseClass fuctions
 		void	initResponseClass(std::string& path);
 };

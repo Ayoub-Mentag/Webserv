@@ -9,6 +9,8 @@
 std::vector<std::string>	splitLine(std::string line, std::string delimiter);
 std::string					trim(const std::string& str);
 std::string                 to_string(int num);
-void                        printRequest(Request* request);
+// void                        printRequest(Request* request);
 
 bool	bracketsBalance(const std::string& str);
+
+void printVectorOfString(std::vector<std::string> v);

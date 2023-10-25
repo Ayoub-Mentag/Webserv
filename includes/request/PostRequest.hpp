@@ -16,9 +16,9 @@ class PostRequest : public Request {
 	public :
 		PostRequest();
 		PostRequest(int parsingType);
-		const std::string&			        getBody() const;
-		void				        	setBody(std::string body);
-        void                        	setParsingType(int& parsingType);
-        const int&							getParsingType() const;
-		void				        	parseBody(std::string body);
+		const std::string&	getBody() const;
+		void				setBody(std::string body);
+        void                setParsingType(int& parsingType);
+        const int&			getParsingType() const;
+		void				parseBody(std::string body);
 };

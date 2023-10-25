@@ -97,15 +97,23 @@ Server::~Server() {
 
 void	Server::initRequest(int clientFd) {
 	/** @test we will work on some examples without getting the request from browser*/
-	char		buffer[MAX_LEN];
 	std::string	bufferLine;
+	// char		buffer[MAX_LEN];
 
+	// bzero(buffer, MAX_LEN);
+	// read(clientFd, buffer, MAX_LEN);
 
-	bzero(buffer, MAX_LEN);
-	recv(clientFd, buffer, MAX_LEN, 0);
-	bufferLine = buffer;
-	std::cerr << bufferLine;
-	
+	// bufferLine = buffer;
+	// std::cout << buffer << std::endl;
+
+	bufferLine =("POST /cgi/scripts/upload.py HTTP/1.1\r\n"
+				"Host: localhost:8080\r\n"
+				"Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW\r\n\r\n"
+				"----WebKitFormBoundary7MA4YWxkTrZu0gW\r\n"
+				"Content-Disposition: form-data; name=\"text\"\r\n"
+				"Text data goes here\r\n"
+				"----WebKitFormBoundary7MA4YWxkTrZu0gW\r\n");
+
 	request = requestParse(bufferLine);
 }
 
@@ -183,7 +191,7 @@ static std::string	getCgiPath(Request* request, t_location& location) {
 }
 
 void	Server::locationExists() {
-	std::vector<t_location>	locations = config.servers[request->serverIndex].locations;
+	std::vector<t_location>	locations = getServer().locations;
 	size_t index;
 
 	std::vector<std::string> locationPaths;
@@ -416,7 +424,7 @@ void	Server::executeCgi(std::string path) {
 	t_location	location = config.servers[request->serverIndex].locations[request->locationIndex];
 	program[0] = (char *)location.cgiExecutable.c_str();
 	program[1] = (char *)path.c_str();
-	program[2] = NULL;
+	program[2] = NULL; 
 	// std::cerr << program[0] << " " << program[1] << std::endl;
 	pipe(fd);
 	// check if fork failed
@@ -486,12 +494,6 @@ void	Server::responseFunc(int clientFd) {
 	FD_CLR(clientFd, &current_sockets);
 }
 
-void	printMap(std::map<std::string, std::string>	m) {
-	for (std::map<std::string, std::string>::iterator it = m.begin(); it != m.end(); it++) {
-		std::cout << "Key " << it->first << " Value " << it->second << std::endl;
-	}
-}
-
 void	Server::serve() {
 	fd_set readySocket = getReadyFds();
 	for (int fd = 0; fd < FD_SETSIZE; fd++) {
@@ -501,7 +503,6 @@ void	Server::serve() {
 			} else {
 				try {
 					initRequest(fd);
-					// printMap(request->getHead());
 					responseFunc(fd);
 					delete (this->request);
 				} catch(const std::exception& e) { // not handled !!!!!!!!

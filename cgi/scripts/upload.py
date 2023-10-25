@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 import os
-# # os.environ.get("name", "Unknown")
-# data = os.environ.get("boundary", "EMPTY")
+# os.environ.get("name", "Unknown")
+data = os.environ.get("boundary", "EMPTY")
 
-# f = open("demofile3.txt", "w")
-# f.write(data)
-# f.close()
+f = open("demofile3.txt", "w")
+f.write(data)
+f.close()
 
 print("Content-Type: text/html\r\n\r\n")
 print("<html>")

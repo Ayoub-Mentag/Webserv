@@ -1,7 +1,7 @@
 #include <Parsing.hpp>
 #include <SimpleRequest.hpp>
 #include <PostRequest.hpp>
-
+#include <Utils.hpp>
 /** @brief
 	This parsing based on these pillars
 	1- HEADER
@@ -17,27 +17,19 @@
 // add vector of QueryString
 // the request should be corrected before using it 
 
-// static bool	assignBoundary(std::map<std::string, std::string>& headMap) {
-// 	std::string type = headMap["Content-Type"];
-// 	std::cout << "|" << type << "|" << std::endl;
-// 	size_t boundaryIndex = type.find("boundary");
-
-// 	if (boundaryIndex == std::string::npos)
-// 		return false;
-// 	headMap["Content-Type"] = type.substr(0, boundaryIndex);
-
-// 	std::string boundary = &type[boundaryIndex];
-
-// 	boundary = boundary.erase(0, 9);// 9 is the "boundary=" length
-// 	if (!boundary.empty() && (boundary[0] == '\"')) {
-// 		//remove the double quotes
-// 		boundary.erase(0, 1);
-// 		boundary.erase(boundary.length() - 1, 1);
-// 		headMap["Boundary"] = boundary;
-// 	}
-// 	return (true);
-// }
-
+static void	assignBoundary(std::map<std::string, std::string>& headMap) {
+	std::string type = headMap["Content-Type"];
+	size_t boundaryIndex = type.find("boundary");
+	if (boundaryIndex == std::string::npos)
+		return ;
+	 
+	headMap["Content-Type"] = type.substr(0, boundaryIndex);
+	std::string boundary = &type[boundaryIndex];
+	boundary = boundary.erase(0, 9);// 9 is the "boundary=" length
+	boundary += "\r\n";
+	headMap["Boundary"] = boundary;
+}
+ 
 
 static void	parseTwoFirstLines(std::map<std::string, std::string> &headMap, std::vector<std::string> lines) {
 	std::string line;
@@ -156,7 +148,7 @@ static void	checkLine(std::string& line, std::stack<char>& myStack, bool& quotes
 	}
 }
 
-static void	checkRequest(std::string &buffer) {
+static void	checkRequest(std::string	buffer) {
 	// std::string correctRequest;
 	std::stack<char>		myStack;
 	std::string 			head;
@@ -190,6 +182,13 @@ static void	checkPath(std::string path) {
  * //TODO: look for when a request is bad;
 */
 
+// WORK ONLY FOR BOUNDARY
+// idea parse first with boundary and then go to chunked ..
+void	getContent(std::string body, std::string boundary) {
+	std::vector<std::string> lines = splitLine(body, boundary);
+	printVectorOfString(lines);
+}
+
 Request 	*requestParse(std::string buffer) {
 	size_t								index;
 	std::string							head;
@@ -205,7 +204,6 @@ Request 	*requestParse(std::string buffer) {
 	if (index == std::string::npos) {
 		throw std::runtime_error("Bad request");
 	}
-
 	head 			= buffer.substr(0, index);
 	lines 			= splitLine(head, "\r\n");
 	// key: value
@@ -221,7 +219,6 @@ Request 	*requestParse(std::string buffer) {
 	if (request->getTypeOfRequest() != DELETE && request->getTypeOfRequest() != GET)
 	{
 		body 	= buffer.substr(index + 4, buffer.length());
-
 		// name=ayoub&email=a@a
 		// data = splitLine(body, "&");
 		// for (index = 0; index < data.size(); index++) {
@@ -238,8 +235,11 @@ Request 	*requestParse(std::string buffer) {
 		// upload a file using boundary
 		// std::cout << "BODY -----\n";
 		// std::cout << body << std::endl;
+		// std::cout << "===BODY===\n";
+		// std::cout << body;
+		assignBoundary(headMap);
+		getContent(body, headMap["Boundary"]);
 		headMap["DATA_FROM_CLIENTboundary"] = body;
-		std::cerr << body;
 	}
 	request->setHead(headMap);
 	return (request);
