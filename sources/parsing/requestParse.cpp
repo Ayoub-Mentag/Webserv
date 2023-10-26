@@ -17,18 +17,17 @@
 // add vector of QueryString
 // the request should be corrected before using it 
 
-static void	assignBoundary(std::map<std::string, std::string>& headMap) {
-	std::string type = headMap["Content-Type"];
-	size_t boundaryIndex = type.find("boundary");
-	if (boundaryIndex == std::string::npos)
-		return ;
-	 
-	headMap["Content-Type"] = type.substr(0, boundaryIndex);
-	std::string boundary = &type[boundaryIndex];
-	boundary = boundary.erase(0, 9);// 9 is the "boundary=" length
-	boundary += "\r\n";
-	headMap["Boundary"] = boundary;
-}
+// static void	assignBoundary(std::map<std::string, std::string>& headMap) {
+// 	std::string type = headMap["Content-Type"];
+// 	size_t boundaryIndex = type.find("; boundary");
+// 	if (boundaryIndex == std::string::npos)
+// 		return ;
+// 	headMap["Content-Type"] = type.substr(0, boundaryIndex);
+// 	std::string boundary = &type[boundaryIndex];
+// 	boundary = boundary.erase(0, 9);// 9 is the "boundary=" length
+// 	boundary += "\r\n";
+// 	headMap["Boundary"] = boundary;
+// }
  
 
 static void	parseTwoFirstLines(std::map<std::string, std::string> &headMap, std::vector<std::string> lines) {
@@ -65,22 +64,51 @@ static void	parseTwoFirstLines(std::map<std::string, std::string> &headMap, std:
 
 // TODO: remove the (size_t i) param
 
-void	parseHead(std::map<std::string, std::string>& headMap, std::vector<std::string> lines) {
-	std::string	key;
-	std::string	value;
-
-	for (size_t i = 0; i < lines.size(); i++) {
-		std::istringstream iss3(lines[i]);
-		std::getline(iss3, key, ':');
-		std::getline(iss3, value, ':');
-		key = trim(key);
-		value = trim(value);
-		if (key.empty() || value.empty())
-			continue ;
-		headMap[key] = value;
+void	setKeyAndValue(std::string& key, std::string& value, std::string line) {
+	std::istringstream iss(line);
+	char delimiter;
+	if (line.find(":") != std::string::npos) {
+		delimiter = ':';
 	}
-	// for POST_BOUNDARY request
-	// assignBoundary(headMap);
+	else if (line.find("=") != std::string::npos) {
+		delimiter = '=';
+	}
+	else
+		throw std::runtime_error("Bad request");
+	std::getline(iss, key, delimiter);
+	std::getline(iss, value, delimiter);
+	key = trim(key);
+	value = trim(value);
+	if (key.empty() || value.empty())
+		throw std::runtime_error("EMPTY");
+}
+
+void	parseHead(std::map<std::string, std::string>& headMap, std::vector<std::string> lines) {
+	std::string					key;
+	std::string					value;
+	std::vector<std::string>	valuesWithinLine;
+	for (size_t i = 0; i < lines.size(); i++) {
+		if (lines[i].find(";"))
+			valuesWithinLine = splitLine(lines[i], ";");
+		else 
+			valuesWithinLine.push_back(lines[i]);
+		for (size_t j = 0; j < valuesWithinLine.size(); j++) {
+			try {
+				setKeyAndValue(key, value, valuesWithinLine[j]);
+				headMap[key] = value;
+			} catch(std::exception &e) {
+				e.what();
+			}
+		}
+		// std::istringstream iss3(lines[i]);
+		// std::getline(iss3, key, ':');
+		// std::getline(iss3, value, ':');
+		// key = trim(key);
+		// value = trim(value);
+		// if (key.empty() || value.empty())
+		// 	continue ;
+		// headMap[key] = value;
+	}
 }
 
 /** @brief this function specify the body type ,and init the request map 
@@ -88,18 +116,18 @@ void	parseHead(std::map<std::string, std::string>& headMap, std::vector<std::str
  * if the type is none then we don't need to parse the request
 */
 
-int	parsingTypeValue(std::map<std::string, std::string>& headMap) {
-	int type = NONE;
+// int	parsingTypeValue(std::map<std::string, std::string>& headMap) {
+// 	int type = NONE;
 
-	if (headMap["Transfert-Encoding"] == "chunked")
-		type = type | CHUNKED;
-	if (headMap["Boundary"].empty())
-		type = type | BOUNDARY;
+// 	if (headMap["Transfert-Encoding"] == "chunked")
+// 		type = type | CHUNKED;
+// 	if (headMap["boundary"].empty())
+// 		type = type | BOUNDARY;
 
-	if (type == NONE)
-		type = SIMPLE;
-	return (type);
-}
+// 	if (type == NONE)
+// 		type = SIMPLE;
+// 	return (type);
+// }
 
 Request *generateRequest(std::map<std::string, std::string>& headMap) {
 	Request *r = NULL;
@@ -113,8 +141,9 @@ Request *generateRequest(std::map<std::string, std::string>& headMap) {
 	else if (requestType == "POST") {
 		// either a json or form there are the same, 
 		// what matter is the type of parsing how we will read the data
-		int parsingType = parsingTypeValue(headMap);
-		r = new PostRequest(parsingType);
+		// int parsingType = parsingTypeValue(headMap);
+		// r = new PostRequest(parsingType);
+		r = new PostRequest(1);
 	}
 	return (r);
 }
@@ -182,11 +211,26 @@ static void	checkPath(std::string path) {
  * //TODO: look for when a request is bad;
 */
 
-// WORK ONLY FOR BOUNDARY
-// idea parse first with boundary and then go to chunked ..
-void	getContent(std::string body, std::string boundary) {
-	std::vector<std::string> lines = splitLine(body, boundary);
-	printVectorOfString(lines);
+
+void	parseBoundary(std::map<std::string, std::string> &headMap, std::string body, std::string boundary) {
+	std::string head;
+	std::string content;
+	int 		i;
+
+	i = 0;
+	while (body.find(boundary) != std::string::npos) {
+		body = &body[boundary.size()];
+		if (body.empty())
+			break;
+		head = body.substr(0, body.find("\r\n\r\n") + 4);
+		body = &body[head.size()];
+		if (body.empty())
+			break ;
+		parseHead(headMap, splitLine(head, "\r\n"));
+		content = body.substr(0, body.find(boundary));
+		body = &body[content.size()];
+		headMap["DATA_FROM_CLIENT" + to_string(i)] = content;
+	}
 }
 
 Request 	*requestParse(std::string buffer) {
@@ -219,6 +263,7 @@ Request 	*requestParse(std::string buffer) {
 	if (request->getTypeOfRequest() != DELETE && request->getTypeOfRequest() != GET)
 	{
 		body 	= buffer.substr(index + 4, buffer.length());
+
 		// name=ayoub&email=a@a
 		// data = splitLine(body, "&");
 		// for (index = 0; index < data.size(); index++) {
@@ -237,9 +282,10 @@ Request 	*requestParse(std::string buffer) {
 		// std::cout << body << std::endl;
 		// std::cout << "===BODY===\n";
 		// std::cout << body;
-		assignBoundary(headMap);
-		getContent(body, headMap["Boundary"]);
-		headMap["DATA_FROM_CLIENTboundary"] = body;
+		if (!headMap["boundary"].empty()) {
+			parseBoundary(headMap, body, headMap["boundary"] + "\r\n");
+		}
+		// headMap["DATA_FROM_CLIENT"] = body;
 	}
 	request->setHead(headMap);
 	return (request);

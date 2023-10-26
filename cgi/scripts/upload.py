@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import os
 # os.environ.get("name", "Unknown")
-data = os.environ.get("boundary", "EMPTY")
+data = os.environ.get("0", "EMPTY")
 
 f = open("demofile3.txt", "w")
 f.write(data)
