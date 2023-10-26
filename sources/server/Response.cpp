@@ -37,7 +37,7 @@ void	Response::setHeader(int status) {
 	header = getHttpVersion();
 	header += getStatusCode(status) + "\r\n";
 	header += "Content-type: " + getContentType() + "\r\n";
-	header += " Content-length: " + getBodylength();
+	header += "Content-length: " + getBodylength();
 	header += " \r\n\r\n";
 }
 
@@ -163,7 +163,7 @@ void	Response::setContentType(const std::string& extention) {
 	}
 	std::string tmp = contentTypeMap[extention];
 	if (tmp.empty()) {
-		tmp = "text/plain";
+		tmp = "application/octet-stream";
 	}
 	this->contentType = tmp;
 }

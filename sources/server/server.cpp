@@ -94,6 +94,7 @@ static std::string	fileToString(std::string fileName, int status) {
 	while (std::getline(os, line)) {
 		result += line + "\n";
 	}
+	os.close();
 	return (result);
 }
 
@@ -416,28 +417,14 @@ void	Server::locationRedirection() {
 		redirCode = location.redirectionCode;
 	}
 	try {
-		std::string resp;
-		// size_t schemeSeparatorIndex = redirTo.find("://");
-		// if (schemeSeparatorIndex != std::string::npos) {
-		// 	resp = /*request->getHead()[REQ_HTTP_VERSION];*/redirTo.substr(0, schemeSeparatorIndex);
-		// 	resp += response.getStatusCode(redirCode) + "\r\n";
-		// 	resp += "Location: " + redirTo + "\r\n\r\n";
-		// 	response.setResponse(resp);
-		// 	return ;
-		// }
-		
-		// resp = request->getHead()[REQ_HTTP_VERSION];
-		// resp += response.getStatusCode(redirCode) + "\r\n";
-		// resp += ;
-
-		// response.setResponse();
-		// response.setBody(fileToString(redirTo, NOT_FOUND_STATUS));
-		// response.setContentType(".html");
-		resp = response.getHeader();
-		int end = resp.find("\r\n\r\n");
-		resp.erase(end, -1);
-		resp += "Location: " + redirTo + "\r\n\r\n";
+		std::string	resp;
 		response.setHeader(redirCode);
+		resp = response.getHeader();
+		size_t end = resp.find("\r\n\r\n");
+		if (end != resp.npos) {
+			resp.erase(end + 2, -1);
+		}
+		resp += "Location: " + redirTo + "\r\n\r\n";
 		response.setResponse(resp);
 	} catch(const std::exception& e) {
 		throw std::runtime_error(returnError(NOT_FOUND_STATUS));
@@ -463,38 +450,49 @@ void	Server::initResponseClass(std::string& path) {
 	response.setStatusCode();
 }
 
-
-
-
-
+static bool	redirectDir(std::string& path, Response& response) {
+	if (path[path.length() - 1] != '/') {
+		std::string	resp;
+		response.setHeader(MOVED_PERMANENTLY_STATUS);
+		resp = response.getHeader();
+		size_t end = resp.find("\r\n\r\n");
+		if (end != resp.npos) {
+			resp.erase(end + 2, -1);
+		}
+		resp += "Location: " + path + "/" + "\r\n\r\n";
+		response.setResponse(resp);
+		return (true);
+	}
+	return (false);
+}
 
 void	Server::listDirectory(DIR* dir, std::string& path) {
 	t_location location = getLocation();
 
+	// Redirect if the path lacks a trailing '/'
+	if (redirectDir(path, response)) return ;
+	// Check if the directory has an index file and the location's index is empty
 	std::string indexFile = path + "/index.html";
-	if (open(indexFile.c_str(), O_RDONLY) >= 0 && location.index.empty()) {
+	if (location.index.empty()) {
 		try {
 			response.setContentType(".html");
 			servFile(indexFile, 200);
 			// servFile(indexFile, NOT_MODIFIED_STATUS); // this is not working with 304 status code
 			return ;
-		} catch(const std::exception& e) {}
-	}
-	else if (!location.index.empty()) {
+		} catch(const std::exception& e) {/* if not found keep going */}
+	} else if (!location.index.empty()) {
 		if (location.index[0] == '/') {
 			throw std::runtime_error(returnError(NOT_FOUND_STATUS));
 		}
-		if (location.index[0] != '/') {
-			location.index.insert(0, "/");
-		}
+		
+		// i know that the path alawys will contain '/' at the end
 		indexFile = path + location.index;
-		// www/index.html;
 		try {
 			response.setContentType(".html");
 			servFile(indexFile, 200);
 			// servFile(indexFile, NOT_MODIFIED_STATUS);
 			return ;
-		} catch(const std::exception& e) {}
+		} catch(const std::exception& e) {/* if not found keep going */}
 	}
 	if (location.autoindex) {
 		response.setContentType(".html");
@@ -543,18 +541,17 @@ void	Server::executeCgi(std::string path) {
 
 void	Server::responseFunc(int clientFd) {
 	try {
-		std::cout << "req_path: " << request->getHead()[REQ_PATH] << std::endl;
+		// std::cout << "req_path: " << request->getHead()[REQ_PATH] << std::endl;
 		initResponseClass(request->getHead()[REQ_PATH]);
 		std::string path = matching();
-		t_location location = getLocation();
 		DIR *dir = opendir(path.c_str());
 		methodNotAllowed(); // should i check location errpage first when no method in the location?
 		if (!getServer().redirectTo.empty()
-			|| !location.redirectTo.empty()) {
+			|| !getLocation().redirectTo.empty()) {
 			locationRedirection();
 		} else if (dir) {
 			listDirectory(dir, path);
-		} else if (location.isCgi) {
+		} else if (getLocation().isCgi) {
 			executeCgi(path);
 		} else {
 			servFile(path, 200);
