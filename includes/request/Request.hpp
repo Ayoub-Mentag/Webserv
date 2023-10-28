@@ -21,6 +21,9 @@ class Request {
 		std::map<std::string, std::string>	head;
 		REQUEST_TYPE						typeOfRequest;
 	public :
+		// tmp
+		std::string							body;
+
     	int         serverIndex;
     	int         locationIndex;
 		virtual ~Request();
@@ -34,5 +37,7 @@ class Request {
 		virtual void                        	parseBody(std::string body) = 0;
 		void									addToHead(std::string key, std::string value);
 		std::string&							getValueByKey(std::string key);
+
+
 		// TODO: Add a function to add to head map
 };

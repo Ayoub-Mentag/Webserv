@@ -94,7 +94,7 @@ Server::Server(t_config& config) : config(config) {
 Server::~Server() {
 	close(serverSocketfd);
 }
-
+ 
 void	Server::initRequest(int clientFd) {
 	/** @test we will work on some examples without getting the request from browser*/
 	std::string	bufferLine;
@@ -102,9 +102,9 @@ void	Server::initRequest(int clientFd) {
 
 	bzero(buffer, MAX_LEN);
 	read(clientFd, buffer, MAX_LEN);
-
+ 
 	bufferLine = buffer;
-	// std::cout << buffer << std::endl;
+	std::cout << buffer << std::endl;
 
 	// bufferLine =("POST /cgi/scripts/upload.py HTTP/1.1\r\n"
 	// 			"Host: localhost:8080\r\n"
@@ -113,7 +113,6 @@ void	Server::initRequest(int clientFd) {
 	// 			"Content-Disposition: form-data; name=\"text\"\r\n\r\n"
 	// 			"Text data goes here\r\n"
 	// 			"----WebKitFormBoundary7MA4YWxkTrZu0gW\r\n");
-
 	request = requestParse(bufferLine);
 }
 
@@ -420,28 +419,24 @@ void	Server::executeCgi(std::string path) {
 	pid_t pid;
 	int			fd[2];
 	char		buffer[MAX_LEN];
-	request->serverIndex = 0;
-	request->locationIndex = 5;
 	t_location	location = config.servers[request->serverIndex].locations[request->locationIndex];
 	program[0] = (char *)location.cgiExecutable.c_str();
-	// program[1] = (char *)path.c_str();
-	program[1] = strdup("cgi/scripts/test.py");
+	program[1] = (char *)path.c_str();
 	program[2] = NULL;
-	// std::cerr << program[0] << " " << program[1] << std::endl;
 	pipe(fd);
 	// check if fork failed
-	pid = fork();
-	if (pid) {
-		write(fd[0], "Hello world\n", 12);
-	}
-	if (pid == 0) {
-		dup2(fd[1], STDIN_FILENO);
+	pid = fork(); 
+	if (pid == -1)
+		throw std::runtime_error("Fork failed");
+	else if (pid)
+		write(fd[1], request->body.c_str(), body.length());
+	else {
 		dup2(fd[1], STDOUT_FILENO);
-		close(fd[0]);
 		close(fd[1]);
+		close(fd[0]);
 		execve(program[0], program, (char* const*)getEnv(request->getHead()));
 		perror("Execve");
-	}
+	} 
 	wait(0);
 	bzero(buffer, MAX_LEN);
 	read(fd[0], buffer, MAX_LEN);
@@ -474,22 +469,23 @@ void	Server::initResponseClass(std::string& path) {
 
 void	Server::responseFunc(int clientFd) {
 	try {
+
 		initResponseClass(request->getValueByKey(REQ_PATH));
-		// std::string path = matching();
-		// t_location location = getLocation();
-		// correctPath(path);
-		// DIR *dir = opendir(path.c_str());
-		// methodNotAllowed(); // should i check location errpage first when no method in the location?
-		executeCgi(request->getValueByKey(REQ_PATH));
-		// if (path == location.redirectFrom) {
-		// 	locationRedirection();
-		// } else if (dir) {
-		// 	listDirectory(dir);
+		std::string path = matching();
+		t_location location = getLocation();
+		correctPath(path);
+		DIR *dir = opendir(path.c_str());
+		methodNotAllowed(); // should i check location errpage first when no method in the location?
+		if (path == location.redirectFrom) {
+			locationRedirection();
+		} else if (dir) {
+			listDirectory(dir);
 		// } else if (location.isCgi && request->getValueByKey(REQ_METHOD) == "POST") {
-		// 	executeCgi(path);
-		// } else {
-		// 	servFile(path);
-		// }
+		} else if (location.isCgi) {
+			executeCgi(path);
+		} else {
+			servFile(path);
+		}
 	} catch (std::out_of_range &ofg) {
 		std::cout << __FILE__ << ":" << __LINE__ << std::endl;
 		std::cout << ofg.what() << std::endl;

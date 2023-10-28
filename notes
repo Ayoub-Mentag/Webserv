@@ -1,3 +1,0 @@
-The parsing of request will happened only if it was 
- : Boundary, Chunked, x-www/form.
-if it was text or [something else] then it won't be parsed/

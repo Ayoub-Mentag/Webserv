@@ -34,8 +34,9 @@ static void	parseTwoFirstLines(std::map<std::string, std::string> &headMap, std:
 	std::string line;
 	std::vector<std::string> firstLine;
 	std::vector<std::string> secondLine;
+	std::vector<std::string> splittedPath;
 	size_t		size;
-
+	
 	if (lines.size() > 2) {
 		std::istringstream iss1(lines[0]);
 		while (std::getline(iss1, line, ' ')) {
@@ -43,7 +44,13 @@ static void	parseTwoFirstLines(std::map<std::string, std::string> &headMap, std:
 		}
 		if (firstLine.size() == 3) {
 			headMap[REQ_METHOD]  = trim(firstLine[0]);
-			headMap[REQ_PATH]    = trim(firstLine[1]);
+			if (firstLine[1].find("?") != std::string::npos) {
+				splittedPath = splitLine(firstLine[1], "?");
+				headMap[REQ_PATH] = splittedPath[0];
+				headMap[REQ_QUERY_STRING] = splittedPath[1];
+			}
+			else
+				headMap[REQ_PATH]    = trim(firstLine[1]);
 			headMap[REQ_HTTP_VERSION] = trim(firstLine[2]);
 		}
 		std::istringstream iss2(lines[1]);
@@ -263,28 +270,11 @@ Request 	*requestParse(std::string buffer) {
 	if (request->getTypeOfRequest() != DELETE && request->getTypeOfRequest() != GET)
 	{
 		body 	= buffer.substr(index + 4, buffer.length());
-
-		// name=ayoub&email=a@a
-		// data = splitLine(body, "&");
-		// for (index = 0; index < data.size(); index++) {
-		// 	// simple form
-		// 	// size_t length = data[index].length();
-		// 	// size_t equalIndex = data[index].find('=');
-		// 	// std::string key   = data[index].substr(0, equalIndex);
-		// 	// std::string value =	data[index].substr(equalIndex + 1, length); 
-		// 	// // std::cout << "Key " << key << " Value " << value << std::endl;
-
-		// 	// headMap["DATA_FROM_CLIENT" + key] = value;		
+		std::cout << body << std::endl;
+		headMap[REQ_QUERY_STRING] = body;
+		// if (!headMap["boundary"].empty()) {
+		// 	parseBoundary(headMap, body, headMap["boundary"] + "\r\n");
 		// }
-
-		// upload a file using boundary
-		// std::cout << "BODY -----\n";
-		// std::cout << body << std::endl;
-		// std::cout << "===BODY===\n";
-		// std::cout << body;
-		if (!headMap["boundary"].empty()) {
-			parseBoundary(headMap, body, headMap["boundary"] + "\r\n");
-		}
 		// headMap["DATA_FROM_CLIENT"] = body;
 	}
 	request->setHead(headMap);

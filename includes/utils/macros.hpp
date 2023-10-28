@@ -4,7 +4,9 @@
 # define REQ_HTTP_VERSION   "Server-Protocol"
 # define REQ_SERVER_NAME	"Server-Name"
 # define REQ_PORT       	"Server-Port"
-# define REQ_ENTITY_POST    "QUERY_STRING"
+# define REQ_QUERY_STRING   "QUERY_STRING"
+# define REQ_ENTITY_POST   "Entity_Post"
+
 // Server
 # define MAX_LEN	300000
 # define PORT		8080

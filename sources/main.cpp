@@ -16,6 +16,7 @@ static void	usage(const char* programName) {
 // or content generator on the web server.
 int	main(int argc, char* argv[]) {
 	t_config	config;
+	std::cout << "Hello";
 
 	argv[1] = (argc == 2) ? argv[1] : (char*)DEFAULT_CONFIG_FILE;
 	if (argc <= 2) {
