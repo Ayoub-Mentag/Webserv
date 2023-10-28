@@ -428,9 +428,7 @@ void	Server::executeCgi(std::string path) {
 	pid = fork(); 
 	if (pid == -1)
 		throw std::runtime_error("Fork failed");
-	else if (pid)
-		write(fd[1], request->body.c_str(), body.length());
-	else {
+	if (!pid) {
 		dup2(fd[1], STDOUT_FILENO);
 		close(fd[1]);
 		close(fd[0]);
@@ -439,11 +437,11 @@ void	Server::executeCgi(std::string path) {
 	} 
 	wait(0);
 	bzero(buffer, MAX_LEN);
+	std::cerr << "BEFORE\n";
+
 	read(fd[0], buffer, MAX_LEN);
-	std::cout << buffer << std::endl;
 	close(fd[0]);
 	close(fd[1]);
-
 	assignHeadAndBody(buffer, head, body);
 	// std::cout << head << std::endl;
 	// std::cout << body << std::endl;
