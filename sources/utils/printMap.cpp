@@ -2,7 +2,7 @@
 
 void	printMap(std::map<std::string, std::string>	m) {
 	for (std::map<std::string, std::string>::iterator it = m.begin(); it != m.end(); it++) {
-		std::cout << "Key " << it->first << " Value " << it->second << std::endl;
+		std::cerr << it->first << " " << it->second << std::endl;
 	}
 }
 

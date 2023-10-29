@@ -1,10 +1,19 @@
 <html>
     <head><title>Test Form</title></head>
     <body>
-        <form action="../../scripts/simpleForm.perl" method="get">
+        <!-- <form action="../../scripts/simpleForm.perl" method="get">
             First Name: <input type="text" name="fname" size=30><p>
             Last Name: <input type="text" name="lname" size=30><p>
             <input type="submit">
+        </form> -->
+        <form action="../../scripts/simpleForm.perl" method="post" enctype="multipart/form-data">
+            First Name: <input type="text" name="fname" size=30><p>
+            Last Name: <input type="text" name="lname" size=30><p>
+            <input type="file" name="image"/>
+            <input type="file" name="image"/>
+            <input type="file" name="image"/>
+            <input type="submit">
         </form>
+  
     </body>
 </html>

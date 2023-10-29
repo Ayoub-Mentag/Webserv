@@ -5,7 +5,9 @@
 # define REQ_SERVER_NAME	"Server-Name"
 # define REQ_PORT       	"Server-Port"
 # define REQ_QUERY_STRING   "QUERY_STRING"
-# define REQ_ENTITY_POST   "Entity_Post"
+# define REQ_ENTITY_POST    "Entity_Post"
+# define REQ_BOUNDARY       "boundary"
+# define REQ_TRANSFER       "Transfer-Encoding"
 
 // Server
 # define MAX_LEN	300000

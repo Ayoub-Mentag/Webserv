@@ -25,3 +25,22 @@ const int&	PostRequest::getParsingType() const {
 void	PostRequest::setParsingType(int& parsingType) {
 	this->parsingType = parsingType;
 }
+
+const std::vector<t_data>&	PostRequest::getData() const {
+	return (this->data);
+}
+
+void	PostRequest::setDataByValues(std::map<std::string, std::string> head, std::string content) {
+	t_data d;
+
+	d.head = head;
+	d.content = content;
+	this->data.push_back(d);
+}
+t_data	&PostRequest::getDataByIndex(size_t index) {
+	return this->data[index];
+}
+
+void	PostRequest::setContent(std::string content, size_t index) {
+	this->getDataByIndex(index).content = content;
+}

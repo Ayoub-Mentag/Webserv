@@ -12,5 +12,5 @@ std::string                 to_string(int num);
 // void                        printRequest(Request* request);
 
 bool	bracketsBalance(const std::string& str);
-
+void	printMap(std::map<std::string, std::string>	m);
 void printVectorOfString(std::vector<std::string> v);

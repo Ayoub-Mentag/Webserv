@@ -104,15 +104,26 @@ void	Server::initRequest(int clientFd) {
 	read(clientFd, buffer, MAX_LEN);
  
 	bufferLine = buffer;
-	std::cout << buffer << std::endl;
+	// std::cout << buffer << std::endl;
 
-	// bufferLine =("POST /cgi/scripts/upload.py HTTP/1.1\r\n"
-	// 			"Host: localhost:8080\r\n"
-	// 			"Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW\r\n\r\n"
-	// 			"----WebKitFormBoundary7MA4YWxkTrZu0gW\r\n"
-	// 			"Content-Disposition: form-data; name=\"text\"\r\n\r\n"
-	// 			"Text data goes here\r\n"
-	// 			"----WebKitFormBoundary7MA4YWxkTrZu0gW\r\n");
+	bufferLine =("POST /cgi/scripts/upload.py HTTP/1.1\r\n"
+				"Host: localhost:8080\r\n"
+				"Transfer-Encoding: chunked\r\n"
+				"Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW\r\n\r\n"
+				"----WebKitFormBoundary7MA4YWxkTrZu0gW\r\n"
+				"Content-Disposition: form-data; name=\"file1\" ; filename=file1\r\n\r\n"
+				"25\r\n"
+				"Text data goes here !!!!!\r\n"
+				"19\r\n"
+				"Text data goes here\r\n"
+				"20\r\n"
+				"Text data goes here.\r\n"
+				"----WebKitFormBoundary7MA4YWxkTrZu0gW\r\n"
+				"----WebKitFormBoundary7MA4YWxkTrZu0gW\r\n"
+				"Content-Disposition: form-data; name=\"file2\" ; filename=file2\r\n\r\n"
+				"19\r\n"
+				"Text data goes here\r\n"
+				"----WebKitFormBoundary7MA4YWxkTrZu0gW\r\n");
 	request = requestParse(bufferLine);
 }
 
@@ -429,15 +440,17 @@ void	Server::executeCgi(std::string path) {
 	if (pid == -1)
 		throw std::runtime_error("Fork failed");
 	if (!pid) {
+		dup2(fd[0], STDIN_FILENO);
 		dup2(fd[1], STDOUT_FILENO);
 		close(fd[1]);
 		close(fd[0]);
 		execve(program[0], program, (char* const*)getEnv(request->getHead()));
 		perror("Execve");
-	} 
+	}
+	std::cout << "BODY REQUEST" << request->getValueByKey(REQ_QUERY_STRING) << std::endl;
+	write(fd[1], request->getValueByKey(REQ_QUERY_STRING).c_str(), request->getValueByKey(REQ_QUERY_STRING).length());
 	wait(0);
 	bzero(buffer, MAX_LEN);
-	std::cerr << "BEFORE\n";
 
 	read(fd[0], buffer, MAX_LEN);
 	close(fd[0]);

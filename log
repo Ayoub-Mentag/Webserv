@@ -1,0 +1,10 @@
+BEGIN-----
+Content-Disposition form-data
+filename file1
+name "file1"
+Text data goes here !!!!!Text data goes hereText data goes here.------------------------------
+Content-Disposition form-data
+filename file2
+name "file2"
+Text data goes here------------------------------
+END-------
