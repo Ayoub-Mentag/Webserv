@@ -11,7 +11,7 @@
 
 // Server
 # define MAX_LEN	300000
-# define PORT		8080
+# define PORT		18000
 # define BACKLOG	5
 
 # define DEFAULT_400_ERROR_PAGE 		"<!DOCTYPE><html><body><h1>400 Bad Request</h1></body></html>"
@@ -26,6 +26,13 @@
 # define FORBIDDEN_STATUS			403
 # define NOT_IMPLEMENTED_STATUS		501
 # define MOVED_PERMANENTLY_STATUS	301
+
+
+
+// PARSINGTYPE
+# define BOUNDARY			1
+# define CHUNKED			2
+# define BOUNDARYCHUNKED	3
 
 
 // parsing

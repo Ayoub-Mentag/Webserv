@@ -1,6 +1,8 @@
 #include <Server.hpp>
 #include <Utils.hpp>
-
+#include <BoundaryRequest.hpp>
+#include <PostRequest.hpp>
+#include <DelGetRequest.hpp>
 
 
 void	correctPath(std::string& path) {
@@ -59,12 +61,12 @@ static std::string	directory_listing(DIR* dir, std::string root) {
 
 void	Server::bindServerWithAddress() {
 	int result = bind(this->serverSocketfd, (struct sockaddr*)&serverAddr, sizeof(serverAddr));
-	if (result == -1) {
+	if (result < 0) {
 		throw std::runtime_error(strerror(errno));
 	}
 }
 
-void	Server::setPortOfListening() {
+void	Server::_listen() {
 	if (listen(serverSocketfd, 5) == -1)
 	{
 		throw std::runtime_error("listen");
@@ -83,18 +85,27 @@ Server::Server(t_config& config) : config(config) {
 		exit(EXIT_FAILURE);
 	}
 	serverAddr.sin_family = AF_INET;
-	serverAddr.sin_addr.s_addr = INADDR_ANY;
+	serverAddr.sin_addr.s_addr = htonl(INADDR_ANY);
 	serverAddr.sin_port = htons(PORT);
 	FD_ZERO(&current_sockets);
 	FD_SET(serverSocketfd, &current_sockets);
 	bindServerWithAddress();
-	setPortOfListening();
+	_listen();
 }
 
 Server::~Server() {
 	close(serverSocketfd);
 }
  
+
+void	uploadFile(Data& d) {
+	std::string filename = d.getHead().at("filename");
+	std::ofstream MyFile("/Users/amentag/Desktop/Webserv/uploads/" + filename);
+	MyFile << d.getContent();
+	MyFile.close();
+}
+
+
 void	Server::initRequest(int clientFd) {
 	/** @test we will work on some examples without getting the request from browser*/
 	std::string	bufferLine;
@@ -104,33 +115,44 @@ void	Server::initRequest(int clientFd) {
 	read(clientFd, buffer, MAX_LEN);
  
 	bufferLine = buffer;
-	// std::cout << buffer << std::endl;
-
-	bufferLine =("POST /cgi/scripts/upload.py HTTP/1.1\r\n"
-				"Host: localhost:8080\r\n"
-				"Transfer-Encoding: chunked\r\n"
-				"Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW\r\n\r\n"
-				"----WebKitFormBoundary7MA4YWxkTrZu0gW\r\n"
-				"Content-Disposition: form-data; name=\"file1\" ; filename=file1\r\n\r\n"
-				"25\r\n"
-				"Text data goes here !!!!!\r\n"
-				"19\r\n"
-				"Text data goes here\r\n"
-				"20\r\n"
-				"Text data goes here.\r\n"
-				"----WebKitFormBoundary7MA4YWxkTrZu0gW\r\n"
-				"----WebKitFormBoundary7MA4YWxkTrZu0gW\r\n"
-				"Content-Disposition: form-data; name=\"file2\" ; filename=file2\r\n\r\n"
-				"19\r\n"
-				"Text data goes here\r\n"
-				"----WebKitFormBoundary7MA4YWxkTrZu0gW\r\n");
+	std::cout << bufferLine << std::endl;
+	// bufferLine =("POST /cgi/scripts/upload.py HTTP/1.1\r\n"
+	// 			"Host: localhost:8080\r\n"
+	// 			"Transfer-Encoding: chunked\r\n"
+	// 			"Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW\r\n\r\n"
+	// 			"----WebKitFormBoundary7MA4YWxkTrZu0gW\r\n"
+	// 			"Content-Disposition: form-data; name=\"file1\" ; filename=file1\r\n\r\n"
+	// 			"25\r\n"
+	// 			"Text data goes here !!!!!\r\n"
+	// 			"19\r\n"
+	// 			"Text data goes here\r\n"
+	// 			"20\r\n"
+	// 			"Text data goes here.\r\n"
+	// 			"----WebKitFormBoundary7MA4YWxkTrZu0gW\r\n"
+	// 			"----WebKitFormBoundary7MA4YWxkTrZu0gW\r\n"
+	// 			"Content-Disposition: form-data; name=\"file2\" ; filename=file2\r\n\r\n"
+	// 			"19\r\n"
+	// 			"Text data goes here\r\n"
+	// 			"----WebKitFormBoundary7MA4YWxkTrZu0gW\r\n");
 	request = requestParse(bufferLine);
+
+	/*testing the upload*/
+	PostRequest *p = dynamic_cast<PostRequest *>(request);
+	if (p) {
+		BoundaryRequest *b = dynamic_cast<BoundaryRequest *>(p);
+		for (size_t i = 0; i < b->getData().size(); i++) {
+			Data d = b->getData()[i];
+			uploadFile(d);
+		}
+		// exit(0);
+	}
+	/*testing the upload*/
 }
 
 fd_set Server::getReadyFds() {
 	fd_set ready_socket;
 	FD_ZERO(&ready_socket);
-	ready_socket = current_sockets;
+	ready_socket = this->current_sockets;
 	//read, write, error , timout
 	if (select(FD_SETSIZE, &ready_socket, NULL, NULL, NULL) < 0) {
 		perror("Select : ");
@@ -147,7 +169,7 @@ void	Server::acceptNewConnection() {
 		perror("Accept : ");
 	} else {
 		std::cout << "A new connection Accepted " << std::endl;
-		FD_SET(clientFd, &current_sockets);
+		FD_SET(clientFd, &(this->current_sockets));
 	}
 }
 
@@ -518,14 +540,20 @@ void	Server::serve() {
 			} else {
 				try {
 					initRequest(fd);
-					responseFunc(fd);
+					write(fd, "HTTP/1.1 200 OK\r\n\r\n", 19);
+					// responseFunc(fd);
 					delete (this->request);
 				} catch(const std::exception& e) { // not handled !!!!!!!!
+					std::string error = e.what();
+					if (error == "Bad Request")
+						write(fd, "HTTP/1.1 400 BAD\r\n\r\n", 20);
 					std::cout << PRINT_LINE_AND_FILE;
 					std::cout << e.what() << std::endl;
 				}
-				close(fd);
+				std::cerr << "CLOSING CONNECTION" << std::endl;
 				FD_CLR(fd, &current_sockets);
+				close(fd);
+				std::cerr << "CLOSING CONNECTION" << std::endl;
 			}
 		}
 	}

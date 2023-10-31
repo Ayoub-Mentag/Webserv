@@ -1,5 +1,6 @@
 #include <Parsing.hpp>
-#include <SimpleRequest.hpp>
+#include <DelGetRequest.hpp>
+#include <BoundaryRequest.hpp>
 #include <PostRequest.hpp>
 #include <Utils.hpp>
 #include <macros.hpp>
@@ -102,25 +103,30 @@ void	parseHead(std::map<std::string, std::string>& headMap, std::vector<std::str
 
 
 Request *generateRequest(std::map<std::string, std::string>& headMap) {
-	Request *r = NULL;
 	std::string requestType;
 	int			typeOfParsing = 0;
 
 	requestType = headMap[REQ_METHOD];
 	if (requestType == "GET")
-		r = new SimpleRequest(GET);
+		return (new DelGetRequest(GET));
 	else if (requestType == "DELETE")
-		r = new SimpleRequest(DELETE);
+		return (new DelGetRequest(DELETE));
 	else if (requestType == "POST") {
+		PostRequest *p; 
 		if (!headMap[REQ_BOUNDARY].empty()) {
+			p = new BoundaryRequest();
 			typeOfParsing += BOUNDARY;
 		}
-		if (headMap[REQ_TRANSFER] == "chunked") {
-			typeOfParsing += CHUNKED;
+		else 
+		{
+			p = new PostRequest();
+			if (headMap[REQ_TRANSFER] == "chunked") {
+				typeOfParsing += CHUNKED;
+			}
 		}
-		r = new PostRequest(typeOfParsing);
+		return (p);
 	}
-	return (r);
+	return (NULL);
 }
 
 static void removeSpaces(std::string &buffer, size_t index) {
@@ -186,7 +192,7 @@ static void	checkPath(std::string path) {
 */
 
 
-void	parseBoundary(PostRequest *p, std::string body, std::string boundary) {
+void	parseBoundary(BoundaryRequest *b, std::string body, std::string boundary) {
 	std::string							head;
 	std::string							content;
 	int 								i;
@@ -204,10 +210,11 @@ void	parseBoundary(PostRequest *p, std::string body, std::string boundary) {
 		parseHead(headOfBody, splitLine(head, "\r\n"));
 		content = body.substr(0, body.find(boundary)) + "\r\n";
 		body = &body[content.size()];
-		p->setDataByValues(headOfBody, content);
+		b->setDataByValues(headOfBody, content);
 		i++;
 	}
 }
+
 
 std::string	parseChunked(std::string body) {
 	std::vector<std::string> lines;
@@ -225,39 +232,45 @@ std::string	parseChunked(std::string body) {
 	return (content);
 }
 
+
 void	parseBody(PostRequest *post) {
 	size_t		i;
 	std::string	content;
+	bool		chunked = true ? true : false;
 
-	if (post->getParsingType() == BOUNDARYCHUNKED) {
-		parseBoundary(post, post->getBody(), post->getValueByKey(REQ_BOUNDARY));
-		i = 0;
-		for (; i < post->getData().size(); i++) {
-			content = parseChunked(post->getDataByIndex(i).content);
-			post->setContent(content, i);
+
+	BoundaryRequest *b = dynamic_cast<BoundaryRequest *>(post);
+	if (b) {
+		parseBoundary(b, post->getBody(), post->getValueByKey(REQ_BOUNDARY));
+		if (chunked) {
+			i = 0;
+			for (; i < b->getData().size(); i++) {
+				content = parseChunked(b->getDataByIndex(i).getContent());
+				b->setContentByIndex(content, i);
+			}
 		}
 	}
-	else if (post->getParsingType() == BOUNDARY) {
-		parseBoundary(post, post->getBody(), post->getValueByKey(REQ_BOUNDARY));
-	}
-	else if (post->getParsingType() == CHUNKED) {
+	else if (chunked) {
 		post->setBody(parseChunked(post->getBody()));
 	}
 
-	i = 0;
-	std::cerr << "BEGIN-----\n";
-	if (post->getParsingType() == BOUNDARY || post->getParsingType() == BOUNDARYCHUNKED) {
-		for (; i < post->getData().size(); i++) {
-			t_data tmp = post->getDataByIndex(i);
-			printMap(tmp.head);
-			std::cerr << tmp.content;
-			std::cerr << "------------------------------" << std::endl;
-		}
-	}
-	else 
-		std::cerr << post->getBody() << std::endl;
-	std::cerr << "END-------\n";
+	// print the content
+	// i = 0;
+	// std::cerr << "BEGIN-----\n";
+	// if (b) {
+	// 	for (; i < b->getData().size(); i++) {
+	// 		Data tmp = b->getDataByIndex(i);
+	// 		printMap(tmp.getHead());
+	// 		std::cerr << tmp.getContent();
+	// 		std::cerr << "------------------------------" << std::endl;
+	// 	}
+	// }
+	// else 
+	// 	std::cerr << post->getBody() << std::endl;
+	// std::cerr << "END-------\n";
 }
+
+
 
 Request 	*requestParse(std::string buffer) {
 	size_t								index;
@@ -289,21 +302,10 @@ Request 	*requestParse(std::string buffer) {
 		throw std::runtime_error("Unknown type of body:Bad Request");
 	if (request->getTypeOfRequest() != DELETE && request->getTypeOfRequest() != GET)
 	{
+		// exit(1);
 		PostRequest *p = dynamic_cast<PostRequest *>(request);
 		p->setBody(buffer.substr(index + 4, buffer.length()));
-		int type = 0;
-		if (!p->getValueByKey(REQ_BOUNDARY).empty())
-			type |= BOUNDARY;
-		if (p->getValueByKey(REQ_TRANSFER) == "chunked") 
-			type |= CHUNKED;
 		parseBody(p);
-		exit(1);
-		// std::cout << body << std::endl;
-		// headMap[REQ_QUERY_STRING] = body;
-		// if (!headMap["boundary"].empty()) {
-		// 	parseBoundary(headMap, body, headMap["boundary"] + "\r\n");
-		// }
-		// headMap["DATA_FROM_CLIENT"] = body;
 	}
 	return (request);
 }

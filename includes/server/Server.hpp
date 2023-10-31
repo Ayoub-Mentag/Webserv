@@ -29,7 +29,7 @@ class Server {
 	private:
 		std::string			matching();
 		void				bindServerWithAddress();
-		void				setPortOfListening();
+		void				_listen();
 		fd_set				getReadyFds();
 		void				acceptNewConnection();
 		void				responseFunc(int clientFd);
