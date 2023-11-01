@@ -23,7 +23,7 @@ const std::string &Data::getContent() const {
 
 BoundaryRequest::BoundaryRequest()   {}
 
-BoundaryRequest::BoundaryRequest(std::map<std::string, std::string> head) : PostRequest(head){}
+BoundaryRequest::BoundaryRequest(std::map<std::string, std::string> head, std::string body) : PostRequest(head, body){}
 
 
 void    BoundaryRequest::parseBoundary(){}

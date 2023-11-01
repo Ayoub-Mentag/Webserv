@@ -122,6 +122,8 @@ void	Server::acceptNewConnection() {
 		perror("Accept : ");
 	} else {
 		std::cout << "A new connection Accepted " << std::endl;
+		Client client(clientFd);
+		clients.push_back(client);
 		FD_SET(clientFd, &(this->current_sockets));
 	}
 }
@@ -464,8 +466,6 @@ Request *Server::getRequestByFd(int clientFd) {
 void	Server::responseFunc(int fd) {
 	try {
 		currentRequest = getRequestByFd(fd);
-		if (!currentRequest)
-			return ;
 		initResponseClass(currentRequest->getValueByKey(REQ_PATH));
 		std::string path = matching();
 		t_location location = getLocation();
@@ -489,7 +489,7 @@ void	Server::responseFunc(int fd) {
 		// just to catch the thrown error the response is already ready
 	}
 	write(fd, response.getResponse().c_str(), response.getResponse().length());
-	std::cout << response.getResponse() << std::endl;
+	// std::cout << response.getResponse() << std::endl;
 	currentRequest = NULL;
 }
 
@@ -500,41 +500,36 @@ void	Server::serve() {
 	FD_ZERO(&readyToRead);
 	FD_ZERO(&readyToWrite);
 	readyToRead = this->current_sockets;
-	// readyToWrite = this->current_sockets;
+	readyToWrite = this->current_sockets;
 
 	//read, write, error , timout
-	if (select(FD_SETSIZE, &readyToRead, NULL, NULL, NULL) < 0) {
+	if (select(serverSocketfd + clients.size() + 1, &readyToRead, &readyToWrite, NULL, NULL) < 0) {
 		perror("Select : ");
 	}
-	for (int fd = 0; fd < FD_SETSIZE; fd++) {
-		if (FD_ISSET(fd, &readyToRead)) {
-			if (fd == this->serverSocketfd) {
-				// The server is ready to read				
-				acceptNewConnection();
-			} else {
-				try {
-					Client client(fd);
 
-					client.initRequest();
-					clients.push_back(client);
-					responseFunc(fd);
-				} catch(const std::exception& e) { // not handled !!!!!!!!
+	if (FD_ISSET(serverSocketfd, &readyToRead))
+		acceptNewConnection();
+	else
+	{
+		for (size_t i = 0; i < clients.size(); i++) {
+			int clientFd = clients[i].getFd();
+			if (FD_ISSET(clientFd, &readyToRead)) {
+				try {
+					clients[i].initRequest();
+					if (FD_ISSET(clientFd, &readyToWrite)) {
+						if (clients[i].getRequest())
+							responseFunc(clientFd);
+						delete (clients[i].getRequest());
+						clients[i].setRequest(NULL);
+					}
+				} catch(const std::exception& e) {
 					std::string error = e.what();
 					if (error == "Bad Request")
-						write(fd, "HTTP/1.1 400 BAD\r\n\r\n", 20);
+						write(clientFd, "HTTP/1.1 400 BAD\r\n\r\n", 20);
 					std::cout << PRINT_LINE_AND_FILE;
 					std::cout << e.what() << std::endl;
 				}
 			}
 		}
-		// if (FD_ISSET(fd, &readyToWrite)) {
-		// 	//The client ready to get the reponse
-		// 	try { 
-		// 		FD_CLR(fd, &this->current_sockets);
-		// 	} catch (std::exception &e) {
-		// 		std::cout << e.what();
-		// 	}
-		// }
 	}
-
 }

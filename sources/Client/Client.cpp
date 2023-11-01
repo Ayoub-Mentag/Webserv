@@ -60,15 +60,17 @@ void	Client::initRequest() {
 			break ;
 		}
 	}
+	// std::cout << head << std::endl;
 	checkRequest(head);
 	std::vector<std::string> lines = splitLine(head, "\r\n");
 	if (lines.size() > 0)
 		parseStartLine(headMap, lines[0]);
 	parseHead(headMap, lines);
 	checkPath(headMap[REQ_PATH]);
-	if (headMap[REQ_METHOD] == "Post") {
+	if (headMap[REQ_METHOD] == "POST") {
 		// TODO: what to do when the content len is > that the body that comes
-		contentLength = atoi(request->getValueByKey(REQ_CONTENT_LENGTH).c_str());
+		contentLength = atoi(headMap[REQ_CONTENT_LENGTH].c_str());
+		std::cout << "content length " << contentLength << std::endl;
 		for (int i = 0; i < contentLength; i++) {
 			bytes = read(fd, &c, 1);
 			if (bytes <= 0)
@@ -76,9 +78,9 @@ void	Client::initRequest() {
 			body += c;
 		}
 		if (!headMap[REQ_BOUNDARY].empty())
-			request = new BoundaryRequest(headMap);
+			request = new BoundaryRequest(headMap, body);
 		else 
-			request = new PostRequest(headMap);
+			request = new PostRequest(headMap, body);
 		parseBody(dynamic_cast<PostRequest *>(request));
 	}
 	else

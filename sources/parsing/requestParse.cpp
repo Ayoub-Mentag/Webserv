@@ -175,17 +175,18 @@ void	parseBoundary(BoundaryRequest *b, std::string body, std::string boundary) {
 	std::map<std::string, std::string>	headOfBody;
 
 	i = 0;
+	boundary.insert(0, "--");
 	while (body.find(boundary) != std::string::npos) {
 		body = &body[boundary.size()];
-		if (body.empty())
+		if (body.empty() || body == "--\r\n")
 			break;
 		head = body.substr(0, body.find("\r\n\r\n") + 4);
 		body = &body[head.size()];
 		if (body.empty())
 			break ;
 		parseHead(headOfBody, splitLine(head, "\r\n"));
-		content = body.substr(0, body.find(boundary)) + "\r\n";
-		body = &body[content.size()];
+		content = body.substr(0, body.find(boundary) - 2);
+		body = &body[content.size() + 2];
 		b->setDataByValues(headOfBody, content);
 		i++;
 	}
@@ -212,9 +213,9 @@ std::string	parseChunked(std::string body) {
 void	parseBody(PostRequest *post) {
 	size_t		i;
 	std::string	content;
-	bool		chunked = true ? true : false;
+	bool		chunked = post->getValueByKey(REQ_TRANSFER) == "chunked" ? true : false;
 
-
+	std::cout << post->getBody() << std::endl;
 	BoundaryRequest *b = dynamic_cast<BoundaryRequest *>(post);
 	if (b) {
 		parseBoundary(b, post->getBody(), post->getValueByKey(REQ_BOUNDARY));
@@ -231,19 +232,16 @@ void	parseBody(PostRequest *post) {
 	}
 
 	// print the content
-	// i = 0;
-	// std::cerr << "BEGIN-----\n";
-	// if (b) {
-	// 	for (; i < b->getData().size(); i++) {
-	// 		Data tmp = b->getDataByIndex(i);
-	// 		printMap(tmp.getHead());
-	// 		std::cerr << tmp.getContent();
-	// 		std::cerr << "------------------------------" << std::endl;
-	// 	}
-	// }
-	// else 
-	// 	std::cerr << post->getBody() << std::endl;
-	// std::cerr << "END-------\n";
+	i = 0;
+	if (b) {
+		for (; i < b->getData().size(); i++) {
+			Data tmp = b->getDataByIndex(i);
+			printMap(tmp.getHead());
+			std::cerr << tmp.getContent();
+		}
+	}
+	else 
+		std::cerr << post->getBody() << std::endl;
 }
 
 
@@ -284,3 +282,4 @@ void	parseBody(PostRequest *post) {
 // 	}
 // 	return (request);
 // }
+
