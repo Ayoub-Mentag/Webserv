@@ -33,7 +33,7 @@ void	Response::setHeader(int status) {
 	header = getHttpVersion();
 	header += getStatusCode(status) + "\r\n";
 	header += "Content-type: " + getContentType() + "\r\n";
-	header += " Content-length: " + getBodylength();
+	header += "Content-length: " + getBodylength();
 	header += " \r\n\r\n";
 }
 

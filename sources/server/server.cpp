@@ -3,6 +3,9 @@
 #include <BoundaryRequest.hpp>
 #include <PostRequest.hpp>
 #include <DelGetRequest.hpp>
+#include <Client.hpp>
+
+//TODO: move the response code to the response
 
 
 void	correctPath(std::string& path) {
@@ -74,6 +77,7 @@ void	Server::_listen() {
 }
 
 Server::Server(t_config& config) : config(config) {
+	currentRequest = NULL;
 	if ((this->serverSocketfd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
 	{
 		perror("socket() : ");
@@ -106,59 +110,8 @@ void	uploadFile(Data& d) {
 }
 
 
-void	Server::initRequest(int clientFd) {
-	/** @test we will work on some examples without getting the request from browser*/
-	std::string	bufferLine;
-	char		buffer[MAX_LEN];
 
-	bzero(buffer, MAX_LEN);
-	read(clientFd, buffer, MAX_LEN);
- 
-	bufferLine = buffer;
-	std::cout << bufferLine << std::endl;
-	// bufferLine =("POST /cgi/scripts/upload.py HTTP/1.1\r\n"
-	// 			"Host: localhost:8080\r\n"
-	// 			"Transfer-Encoding: chunked\r\n"
-	// 			"Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW\r\n\r\n"
-	// 			"----WebKitFormBoundary7MA4YWxkTrZu0gW\r\n"
-	// 			"Content-Disposition: form-data; name=\"file1\" ; filename=file1\r\n\r\n"
-	// 			"25\r\n"
-	// 			"Text data goes here !!!!!\r\n"
-	// 			"19\r\n"
-	// 			"Text data goes here\r\n"
-	// 			"20\r\n"
-	// 			"Text data goes here.\r\n"
-	// 			"----WebKitFormBoundary7MA4YWxkTrZu0gW\r\n"
-	// 			"----WebKitFormBoundary7MA4YWxkTrZu0gW\r\n"
-	// 			"Content-Disposition: form-data; name=\"file2\" ; filename=file2\r\n\r\n"
-	// 			"19\r\n"
-	// 			"Text data goes here\r\n"
-	// 			"----WebKitFormBoundary7MA4YWxkTrZu0gW\r\n");
-	request = requestParse(bufferLine);
 
-	/*testing the upload*/
-	PostRequest *p = dynamic_cast<PostRequest *>(request);
-	if (p) {
-		BoundaryRequest *b = dynamic_cast<BoundaryRequest *>(p);
-		for (size_t i = 0; i < b->getData().size(); i++) {
-			Data d = b->getData()[i];
-			uploadFile(d);
-		}
-		// exit(0);
-	}
-	/*testing the upload*/
-}
-
-fd_set Server::getReadyFds() {
-	fd_set ready_socket;
-	FD_ZERO(&ready_socket);
-	ready_socket = this->current_sockets;
-	//read, write, error , timout
-	if (select(FD_SETSIZE, &ready_socket, NULL, NULL, NULL) < 0) {
-		perror("Select : ");
-	}
-	return ready_socket;
-}
 
 void	Server::acceptNewConnection() {
 	struct sockaddr_in	clientAddr;
@@ -178,13 +131,13 @@ void	Server::serverExists() {
 	std::vector<t_server>	servers = config.servers;	
 
 	for (int serverIndex = 0; serverIndex < (int)config.servers.size(); serverIndex++) {
-		if (servers[serverIndex].serverName == request->getValueByKey(REQ_SERVER_NAME)
-			&& atoi(request->getValueByKey(REQ_PORT).c_str()) == servers[serverIndex].port) {
-			request->serverIndex = serverIndex;
+		if (servers[serverIndex].serverName == currentRequest->getValueByKey(REQ_SERVER_NAME)
+			&& atoi(currentRequest->getValueByKey(REQ_PORT).c_str()) == servers[serverIndex].port) {
+			currentRequest->serverIndex = serverIndex;
 			return ;
 		}
 	}
-	request->serverIndex = -1;
+	currentRequest->serverIndex = -1;
 	//error page : SERVER_NOT_FOUND
 }
 
@@ -228,25 +181,25 @@ void	Server::locationExists() {
 
 	std::vector<std::string> locationPaths;
 	for (size_t i = 0; i < locations.size(); i++) {
-		index = findCgiLocation(request, locations[i]);
+		index = findCgiLocation(currentRequest, locations[i]);
 		if (index != std::string::npos) {
-			std::string	cgiPath = getCgiPath(request, locations[i]);
+			std::string	cgiPath = getCgiPath(currentRequest, locations[i]);
 			if (access(cgiPath.c_str(), F_OK) != -1) {
-				request->locationIndex = i;
-				config.servers[request->serverIndex].locations[i].isCgi = true;
-				request->addToHead(REQ_PATH, cgiPath);
+				currentRequest->locationIndex = i;
+				config.servers[currentRequest->serverIndex].locations[i].isCgi = true;
+				currentRequest->addToHead(REQ_PATH, cgiPath);
 				return ;
 			}
 		}
 		locationPaths.push_back(locations[i].path);
-		config.servers[request->serverIndex].locations[i].isCgi = false;
+		config.servers[currentRequest->serverIndex].locations[i].isCgi = false;
 	}
 	
-	std::string lookFor = request->getValueByKey(REQ_PATH);
+	std::string lookFor = currentRequest->getValueByKey(REQ_PATH);
 	while (lookFor.size() > 0) {
 		std::vector<std::string>::iterator it = std::find(locationPaths.begin(), locationPaths.end(), lookFor);
 		if (it != locationPaths.end()) {
-			request->locationIndex = std::distance(locationPaths.begin(), it);
+			currentRequest->locationIndex = std::distance(locationPaths.begin(), it);
 			return ;
 		}
 		size_t	last = lookFor.find_last_of('/');
@@ -254,19 +207,19 @@ void	Server::locationExists() {
 			break ;
 		lookFor.erase(last, -1);
 	}
-	if (request->getValueByKey(REQ_PATH)[0] == '/' && lookFor.empty()) {
+	if (currentRequest->getValueByKey(REQ_PATH)[0] == '/' && lookFor.empty()) {
 		std::vector<std::string>::iterator it = std::find(locationPaths.begin(), locationPaths.end(), "/");
 		if (it != locationPaths.end()) {
-			request->locationIndex = std::distance(locationPaths.begin(), it);
+			currentRequest->locationIndex = std::distance(locationPaths.begin(), it);
 			return ;
 		}
 	}
 }
 
 const std::string&	Server::returnError(int status) {
-	if (request->serverIndex >= 0) {
+	if (currentRequest->serverIndex >= 0) {
 		t_server server = getServer();
-		if (request->locationIndex >= 0) {
+		if (currentRequest->locationIndex >= 0) {
 			t_location location = getLocation();
 			try {
 				response.setBody(fileToString(location.errorPages[status], status));
@@ -294,34 +247,34 @@ const std::string&	Server::returnError(int status) {
 std::string	Server::matching() {
 	serverExists(); // check error later!
 	locationExists();
-	if (request->locationIndex == -1) {
+	if (currentRequest->locationIndex == -1) {
 		throw std::runtime_error(returnError(NOT_FOUND_STATUS));
 	}
-	t_location	location = config.servers[request->serverIndex].locations[request->locationIndex];
-	std::string	pathToBeLookFor = request->getValueByKey(REQ_PATH);
+	t_location	location = config.servers[currentRequest->serverIndex].locations[currentRequest->locationIndex];
+	std::string	pathToBeLookFor = currentRequest->getValueByKey(REQ_PATH);
 	if (location.isCgi) {
-		return (request->getValueByKey(REQ_PATH));
+		return (currentRequest->getValueByKey(REQ_PATH));
 	}
 	location.isCgi = false;
 	pathToBeLookFor.erase(0, location.path.size());
 	if (!location.root.empty()) {
 		pathToBeLookFor.insert(0, location.root);
 	} else {
-		pathToBeLookFor.insert(0, config.servers[request->serverIndex].root);
+		pathToBeLookFor.insert(0, config.servers[currentRequest->serverIndex].root);
 	}
 	return (pathToBeLookFor);
 }
 
 t_location&	Server::getLocation() {
-	if (request->serverIndex < 0 || request->locationIndex < 0)
+	if (currentRequest->serverIndex < 0 || currentRequest->locationIndex < 0)
 		throw std::out_of_range("getLocation()");
-	return (config.servers[request->serverIndex].locations[request->locationIndex]);
+	return (config.servers[currentRequest->serverIndex].locations[currentRequest->locationIndex]);
 }
 
 t_server&	Server::getServer() {
-	if (request->serverIndex < 0)
+	if (currentRequest->serverIndex < 0)
 		throw std::out_of_range("getServer()");
-	return (config.servers[request->serverIndex]);
+	return (config.servers[currentRequest->serverIndex]);
 }
 
 static void	findAllowedMethod(std::string method, t_server& server, t_location& location) {
@@ -346,12 +299,12 @@ static void	findAllowedMethod(std::string method, t_server& server, t_location& 
 void	Server::methodNotAllowed() {
 	t_server	server = getServer();
 	t_location	location = getLocation();
-	std::string method = request->getValueByKey(REQ_METHOD);
+	std::string method = currentRequest->getValueByKey(REQ_METHOD);
 	if (method != "GET" && method != "POST" && method != "DELETE") {
 		throw std::runtime_error(returnError(NOT_IMPLEMENTED_STATUS));
 	}
 	try {
-		findAllowedMethod(request->getValueByKey(REQ_METHOD), server, location);
+		findAllowedMethod(currentRequest->getValueByKey(REQ_METHOD), server, location);
 	} catch (std::exception &ex) {
 		throw std::runtime_error(returnError(METHOD_NOT_ALLOWED_STATUS));
 	}
@@ -385,7 +338,7 @@ void	Server::listDirectory(DIR *dir) {
 	
 	if (location.autoindex) {
 		response.setContentType(".html");
-		response.setBody(directory_listing(dir, request->getValueByKey(REQ_PATH)));
+		response.setBody(directory_listing(dir, currentRequest->getValueByKey(REQ_PATH)));
 		response.setHeader(200);
 		response.setResponse(response.getHeader() + response.getBody());
 	} else if (!location.index.empty()) {
@@ -452,7 +405,7 @@ void	Server::executeCgi(std::string path) {
 	pid_t pid;
 	int			fd[2];
 	char		buffer[MAX_LEN];
-	t_location	location = config.servers[request->serverIndex].locations[request->locationIndex];
+	t_location	location = config.servers[currentRequest->serverIndex].locations[currentRequest->locationIndex];
 	program[0] = (char *)location.cgiExecutable.c_str();
 	program[1] = (char *)path.c_str();
 	program[2] = NULL;
@@ -466,11 +419,11 @@ void	Server::executeCgi(std::string path) {
 		dup2(fd[1], STDOUT_FILENO);
 		close(fd[1]);
 		close(fd[0]);
-		execve(program[0], program, (char* const*)getEnv(request->getHead()));
+		execve(program[0], program, (char* const*)getEnv(currentRequest->getHead()));
 		perror("Execve");
 	}
-	std::cout << "BODY REQUEST" << request->getValueByKey(REQ_QUERY_STRING) << std::endl;
-	write(fd[1], request->getValueByKey(REQ_QUERY_STRING).c_str(), request->getValueByKey(REQ_QUERY_STRING).length());
+	std::cout << "BODY REQUEST" << currentRequest->getValueByKey(REQ_QUERY_STRING) << std::endl;
+	write(fd[1], currentRequest->getValueByKey(REQ_QUERY_STRING).c_str(), currentRequest->getValueByKey(REQ_QUERY_STRING).length());
 	wait(0);
 	bzero(buffer, MAX_LEN);
 
@@ -496,14 +449,24 @@ void	Server::initResponseClass(std::string& path) {
 	} else {
 		response.setContentType("");
 	}
-	response.setHttpVersion(request->getValueByKey(REQ_HTTP_VERSION));
+	response.setHttpVersion(currentRequest->getValueByKey(REQ_HTTP_VERSION));
 	response.setStatusCode();
 }
 
-void	Server::responseFunc(int clientFd) {
-	try {
+Request *Server::getRequestByFd(int clientFd) {
+	for (size_t i = 0; i < clients.size(); i++) {
+		if (clients[i].getFd() == clientFd)
+			return (clients[i].getRequest());
+	}
+	return (NULL);
+}
 
-		initResponseClass(request->getValueByKey(REQ_PATH));
+void	Server::responseFunc(int fd) {
+	try {
+		currentRequest = getRequestByFd(fd);
+		if (!currentRequest)
+			return ;
+		initResponseClass(currentRequest->getValueByKey(REQ_PATH));
 		std::string path = matching();
 		t_location location = getLocation();
 		correctPath(path);
@@ -525,24 +488,36 @@ void	Server::responseFunc(int clientFd) {
 	} catch (std::exception &ex) {
 		// just to catch the thrown error the response is already ready
 	}
-	// std::cerr << response.getResponse();
-	write(clientFd, response.getResponse().c_str(), response.getResponse().length());
-	close(clientFd);
-	FD_CLR(clientFd, &current_sockets);
+	write(fd, response.getResponse().c_str(), response.getResponse().length());
+	std::cout << response.getResponse() << std::endl;
+	currentRequest = NULL;
 }
 
 void	Server::serve() {
-	fd_set readySocket = getReadyFds();
+	fd_set readyToRead;
+	fd_set readyToWrite;
+
+	FD_ZERO(&readyToRead);
+	FD_ZERO(&readyToWrite);
+	readyToRead = this->current_sockets;
+	// readyToWrite = this->current_sockets;
+
+	//read, write, error , timout
+	if (select(FD_SETSIZE, &readyToRead, NULL, NULL, NULL) < 0) {
+		perror("Select : ");
+	}
 	for (int fd = 0; fd < FD_SETSIZE; fd++) {
-		if (FD_ISSET(fd, &readySocket)) {
+		if (FD_ISSET(fd, &readyToRead)) {
 			if (fd == this->serverSocketfd) {
+				// The server is ready to read				
 				acceptNewConnection();
 			} else {
 				try {
-					initRequest(fd);
-					write(fd, "HTTP/1.1 200 OK\r\n\r\n", 19);
-					// responseFunc(fd);
-					delete (this->request);
+					Client client(fd);
+
+					client.initRequest();
+					clients.push_back(client);
+					responseFunc(fd);
 				} catch(const std::exception& e) { // not handled !!!!!!!!
 					std::string error = e.what();
 					if (error == "Bad Request")
@@ -550,11 +525,16 @@ void	Server::serve() {
 					std::cout << PRINT_LINE_AND_FILE;
 					std::cout << e.what() << std::endl;
 				}
-				std::cerr << "CLOSING CONNECTION" << std::endl;
-				FD_CLR(fd, &current_sockets);
-				close(fd);
-				std::cerr << "CLOSING CONNECTION" << std::endl;
 			}
 		}
+		// if (FD_ISSET(fd, &readyToWrite)) {
+		// 	//The client ready to get the reponse
+		// 	try { 
+		// 		FD_CLR(fd, &this->current_sockets);
+		// 	} catch (std::exception &e) {
+		// 		std::cout << e.what();
+		// 	}
+		// }
 	}
+
 }

@@ -16,15 +16,17 @@
 # include <Request.hpp>
 # include <Response.hpp>
 # include <macros.hpp>
+# include <Client.hpp>
 
 class Server {
 	private:
-		int			serverSocketfd;
-		struct		sockaddr_in serverAddr;
-		fd_set		current_sockets;
-		t_config	config;
-		Request		*request;
-		Response	response;
+		int							serverSocketfd;
+		struct						sockaddr_in serverAddr;
+		fd_set						current_sockets;
+		t_config					config;
+		std::vector<Client>			clients;
+		Response					response;
+		Request				*currentRequest;
 
 	private:
 		std::string			matching();
@@ -44,7 +46,6 @@ class Server {
 		t_server&			getServer();
 		const std::string&	returnError(int status);
 		// void				deleteFile(std::string& path);
-		void				initRequest(int clientFd);
 
 	public:
 		Server();
@@ -54,4 +55,5 @@ class Server {
 		void		serve();
 	public: // responseClass fuctions
 		void	initResponseClass(std::string& path);
+		Request	*getRequestByFd(int clientFd);
 };

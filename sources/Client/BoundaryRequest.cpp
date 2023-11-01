@@ -1,6 +1,7 @@
 #include <BoundaryRequest.hpp>
 
 Data::Data() {}
+
 Data::~Data() {}
 
 
@@ -21,6 +22,9 @@ const std::string &Data::getContent() const {
 }
 
 BoundaryRequest::BoundaryRequest()   {}
+
+BoundaryRequest::BoundaryRequest(std::map<std::string, std::string> head) : PostRequest(head){}
+
 
 void    BoundaryRequest::parseBoundary(){}
 

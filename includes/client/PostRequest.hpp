@@ -7,7 +7,7 @@ class PostRequest : public Request {
 		std::string	body;
 	public :
 		PostRequest();
-		PostRequest(int parsingType);
+		PostRequest(std::map<std::string, std::string> head);
 		const std::string&			getBody() const;
 		void						setBody(std::string body);
 };

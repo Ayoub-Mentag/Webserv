@@ -4,5 +4,6 @@
 
 class DelGetRequest : public Request {
 	public :
-		DelGetRequest(REQUEST_TYPE requestType);
+		DelGetRequest();
+		DelGetRequest(std::map<std::string, std::string>);
 };

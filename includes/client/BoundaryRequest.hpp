@@ -22,6 +22,7 @@ class BoundaryRequest : public PostRequest {
         std::vector<Data> dataOfBoundaries;
 	public :
 		BoundaryRequest();
+		BoundaryRequest(std::map<std::string, std::string> head);
         void    parseBoundary();
 
         void                		setDataByValues(std::map<std::string, std::string> head, std::string content);

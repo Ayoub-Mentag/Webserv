@@ -14,7 +14,7 @@
 # include <map>
 # include <sstream>
 # include <macros.hpp>
-# include <Request.hpp>
+# include <PostRequest.hpp>
 
 Request			*requestParse(std::string buffer);
 
@@ -76,3 +76,10 @@ t_config					        parseConFile(const char* file);
 std::map<std::string, std::string>  fillContentTypeMap();
 void	correctPath(std::string& path); // just for now
 std::vector<std::string>	splitLine(std::string line, std::string delimiter);
+
+
+void	parseBody(PostRequest *post);
+void	parseHead(std::map<std::string, std::string>& headMap, std::vector<std::string> lines);
+void	parseStartLine(std::map<std::string, std::string> &headMap, std::string line);
+void	checkRequest(std::string	buffer);
+void	checkPath(std::string path);

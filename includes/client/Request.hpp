@@ -19,19 +19,17 @@ enum REQUEST_TYPE{
 class Request {
 	protected :
 		std::map<std::string, std::string>	head;
-		REQUEST_TYPE						typeOfRequest;
 	public :
 
     	int         serverIndex;
     	int         locationIndex;
 		virtual ~Request();
 		Request();
-		Request(REQUEST_TYPE type);
+		Request(std::map<std::string, std::string> head);
 	
 		void									setHead( std::map<std::string, std::string>  head);
 		std::map<std::string, std::string>&		getHead();
 		void									setTypeOfRequest(REQUEST_TYPE typeOfRequest);
-		REQUEST_TYPE							getTypeOfRequest() const;
 
 		// ADDING TO MAP
 		void									addToHead(std::string key, std::string value);

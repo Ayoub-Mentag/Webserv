@@ -4,6 +4,8 @@
 
 PostRequest::PostRequest() {}
 
+PostRequest::PostRequest(std::map<std::string, std::string> head) : Request(head){}
+
 const std::string&	PostRequest::getBody() const {
 	return this->body;
 }

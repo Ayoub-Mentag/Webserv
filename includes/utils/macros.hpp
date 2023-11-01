@@ -8,10 +8,10 @@
 # define REQ_ENTITY_POST    "Entity_Post"
 # define REQ_BOUNDARY       "boundary"
 # define REQ_TRANSFER       "Transfer-Encoding"
-
+# define REQ_CONTENT_LENGTH "Content-Length"
 // Server
 # define MAX_LEN	300000
-# define PORT		18000
+# define PORT		8080
 # define BACKLOG	5
 
 # define DEFAULT_400_ERROR_PAGE 		"<!DOCTYPE><html><body><h1>400 Bad Request</h1></body></html>"
