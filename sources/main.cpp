@@ -40,6 +40,8 @@ void	handleConnection(std::vector<Server> servers, int fd, fd_set& allSocketFds)
 }
 
 
+
+
 // TODO: Reads the request body, if any (length specified by the Content-Length header)
 // TODO: A few methods (e.g., GET) forbid entity body data in request messages.
 // Before the web server can deliver content to the client, it needs to identify the source
@@ -48,7 +50,7 @@ void	handleConnection(std::vector<Server> servers, int fd, fd_set& allSocketFds)
 int	main(int argc, char* argv[]) {
 	t_config			config;
 	std::vector<Server>	servers;
-
+	// add a struct of set to keep track of the ready W/R and the whole fds
 	argv[1] = (argc == 2) ? argv[1] : (char*)DEFAULT_CONFIG_FILE;
 	if (argc <= 2) {
 		try {
@@ -65,9 +67,12 @@ int	main(int argc, char* argv[]) {
 					perror("Select : ");
 				}
 				for (int fd = 0; fd < FD_SETSIZE; fd++) {
-					if (FD_ISSET(fd)) {
+					if (FD_ISSET(fd, &readyToReadFrom)) {
 						handleConnection(fd, servers, allSocketFds);
 						FD_CLR(fd, &readyToReadFrom);
+					}
+					if (FD_ISSET(fd, &readyToWrite)) {
+						
 					}
 				}
 				// server.serve(readyToReadFrom, readyToWrite);

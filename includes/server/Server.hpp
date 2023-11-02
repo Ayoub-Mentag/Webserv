@@ -18,6 +18,12 @@
 # include <macros.hpp>
 # include <Client.hpp>
 
+typedef struct	s_set_fd {
+	fd_set	allSocketFds;
+	fd_set	readyToReadFrom;
+	fd_set	readyToWriteTo;
+}	t_set_fd;
+
 class Server {
 	private:
 		int					serverSocketfd;
