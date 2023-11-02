@@ -98,9 +98,14 @@ Server::Server(t_config& config) : config(config) {
 }
 
 Server::~Server() {
+	for (size_t i = 0; i < clients.size(); i++) {
+		FD_CLR(clients[i].getFd(), &current_sockets);
+		close(clients[i].getFd());
+	}
+
 	close(serverSocketfd);
-}
- 
+	FD_CLR(serverSocketfd, &current_sockets);
+} 
 
 void	uploadFile(Data& d) {
 	std::string filename = d.getHead().at("filename");
@@ -493,12 +498,28 @@ void	Server::responseFunc(int fd) {
 	currentRequest = NULL;
 }
 
+void	Server::removeClients() {
+	unsigned long current = clock();
+	unsigned long diff;
+	int				clientFd;
+
+	for (size_t i = 0; i < clients.size(); i++) {
+		diff = current - clients[i].getLastSeen();
+		clientFd = clients[i].getFd();
+		if (diff >= LAST_SEEN_TIMEOUT) {
+			FD_CLR(clientFd, &current_sockets);
+			close(clientFd);
+		}
+	}
+}
+
 void	Server::serve() {
 	fd_set readyToRead;
 	fd_set readyToWrite;
 
 	FD_ZERO(&readyToRead);
 	FD_ZERO(&readyToWrite);
+	removeClients();
 	readyToRead = this->current_sockets;
 	readyToWrite = this->current_sockets;
 
@@ -517,10 +538,13 @@ void	Server::serve() {
 				try {
 					clients[i].initRequest();
 					if (FD_ISSET(clientFd, &readyToWrite)) {
-						if (clients[i].getRequest())
+						currentRequest = clients[i].getRequest();
+						if (currentRequest) {
 							responseFunc(clientFd);
-						delete (clients[i].getRequest());
-						clients[i].setRequest(NULL);
+							delete (currentRequest);
+							currentRequest = NULL;
+							clients[i].setRequest(NULL);
+						}
 					}
 				} catch(const std::exception& e) {
 					std::string error = e.what();

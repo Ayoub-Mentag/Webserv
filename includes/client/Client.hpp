@@ -8,6 +8,7 @@ class Client {
         Request*		request;
         const int		fd;
         bool			statusHeadRead;
+		unsigned long	lastSeen;
 
 	public :
 		Client(int fd);
@@ -18,4 +19,6 @@ class Client {
 		void	setStatusHeadRead(bool statusHeadRead);
 		void	initRequest();
 		bool	headEnds(std::string bufferLine);
+		unsigned long	getLastSeen() const;
+		void			setLastSeen(unsigned long lastSeen);
 };

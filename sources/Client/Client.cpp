@@ -6,6 +6,7 @@
 Client::Client(int fd) : fd(fd){
 	statusHeadRead = false;
 	request = NULL;
+	lastSeen = clock();
 }
 
 Request	*Client::getRequest() {
@@ -37,7 +38,13 @@ bool	Client::headEnds(std::string bufferLine) {
 	return (bufferLine == "\r\n\r\n");
 }
 
+unsigned long	Client::getLastSeen() const {
+	return (this->lastSeen);
+}
 
+void	Client::setLastSeen(unsigned long lastSeen) {
+	this->lastSeen = lastSeen;
+}
 
 void	Client::initRequest() {
 	/** @test we will work on some examples without getting the request from browser*/

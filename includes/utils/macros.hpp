@@ -10,9 +10,10 @@
 # define REQ_TRANSFER       "Transfer-Encoding"
 # define REQ_CONTENT_LENGTH "Content-Length"
 // Server
-# define MAX_LEN	300000
-# define PORT		8080
-# define BACKLOG	5
+# define MAX_LEN			300000
+# define PORT				8080
+# define BACKLOG			5
+# define LAST_SEEN_TIMEOUT	60
 
 # define DEFAULT_400_ERROR_PAGE 		"<!DOCTYPE><html><body><h1>400 Bad Request</h1></body></html>"
 # define DEFAULT_403_ERROR_PAGE 		"<!DOCTYPE><html><body><h1>403 Forbidden</h1></body></html>"
@@ -21,8 +22,8 @@
 # define DEFAULT_501_ERROR_PAGE 		"<!DOCTYPE><html><body><h1>501 Not Implemented</h1></body></html>"
 
 # define BAD_REQUEST_STATUS			400
-# define NOT_FOUND_STATUS 			404
-# define METHOD_NOT_ALLOWED_STATUS 	405
+# define NOT_FOUND_STATUS			404
+# define METHOD_NOT_ALLOWED_STATUS	405
 # define FORBIDDEN_STATUS			403
 # define NOT_IMPLEMENTED_STATUS		501
 # define MOVED_PERMANENTLY_STATUS	301

@@ -20,12 +20,12 @@
 
 class Server {
 	private:
-		int							serverSocketfd;
-		struct						sockaddr_in serverAddr;
-		fd_set						current_sockets;
-		t_config					config;
-		std::vector<Client>			clients;
-		Response					response;
+		int					serverSocketfd;
+		struct				sockaddr_in serverAddr;
+		fd_set				current_sockets;
+		t_config			config;
+		std::vector<Client>	clients;
+		Response			response;
 		Request				*currentRequest;
 
 	private:
@@ -46,7 +46,7 @@ class Server {
 		t_server&			getServer();
 		const std::string&	returnError(int status);
 		// void				deleteFile(std::string& path);
-
+		void				removeClients(); 
 	public:
 		Server();
 		Server(t_config& config);
