@@ -127,6 +127,7 @@ void	Server::acceptNewConnection() {
 		perror("Accept : ");
 	} else {
 		std::cout << "A new connection Accepted " << std::endl;
+
 		Client client(clientFd);
 		clients.push_back(client);
 		FD_SET(clientFd, &(this->current_sockets));
