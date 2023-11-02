@@ -33,7 +33,7 @@ class Server {
 		void				bindServerWithAddress();
 		void				_listen();
 		fd_set				getReadyFds();
-		void				acceptNewConnection();
+		int					acceptNewConnection();
 		void				responseFunc(int clientFd);
 		void				methodNotAllowed();
 		void				locationRedirection();
@@ -51,8 +51,9 @@ class Server {
 		Server();
 		Server(t_config& config);
 		~Server();
+		const int&	getServerSocketFd() const;
+		void	serve(fd_set& readyToReadFrom, fd_set& readyTowrite);
 
-		void		serve();
 	public: // responseClass fuctions
 		void	initResponseClass(std::string& path);
 		Request	*getRequestByFd(int clientFd);

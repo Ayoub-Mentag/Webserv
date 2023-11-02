@@ -8,6 +8,37 @@ static void	usage(const char* programName) {
 	exit(1);
 }
 
+void	initServers(t_config& config, std::vector<Server>& servers, fd_set& allSocketFds) {
+	for (size_t i = 0; i < config.servers.size(); i++) {
+		Server server(config);
+		FD_SET(server.getServerSocketFd(), &allSocketFds);
+		servers.push_back(server);
+	}
+}
+
+
+void	dealWithClient(int i) {
+	Client client = clients[i];
+
+
+}
+
+void	handleConnection(std::vector<Server> servers, int fd, fd_set& allSocketFds) {
+	for (size_t i = 0; i < servers.size(); i++) {
+		if (servers[i].getServerSocketFd() == fd) {
+			FD_SET(servers[i].acceptNewConnection(), &allSocketFds);
+		}
+		else {
+			for (size_t j = 0; servers[i].getClients().size(); j++) {
+				if (servers[i].getClients()[j].getClientFd() == fd) {
+					servers[i].dealWithClient(j);
+				}
+			}
+		}
+
+	}
+}
+
 
 // TODO: Reads the request body, if any (length specified by the Content-Length header)
 // TODO: A few methods (e.g., GET) forbid entity body data in request messages.
@@ -15,15 +46,31 @@ static void	usage(const char* programName) {
 // of the content, by mapping the URI from the request message to the proper content
 // or content generator on the web server.
 int	main(int argc, char* argv[]) {
-	t_config	config;
+	t_config			config;
+	std::vector<Server>	servers;
 
 	argv[1] = (argc == 2) ? argv[1] : (char*)DEFAULT_CONFIG_FILE;
 	if (argc <= 2) {
-		config = parseConFile(argv[1]);
 		try {
-			Server server(config);
+			fd_set allSocketFds;
+			fd_set readyToReadFrom;
+			fd_set readyToWrite;
+			config = parseConFile(argv[1]);
+			initServers(config, servers, allSocketFds);
 			while (1) {
-				server.serve();
+				FD_ZERO(&readyToReadFrom);
+				FD_ZERO(&readyToWrite);
+				readyToReadFrom = allSocketFds;
+				if (select(FD_SETSIZE, &readyToReadFrom, &readyToWrite, NULL, NULL) < 0) {
+					perror("Select : ");
+				}
+				for (int fd = 0; fd < FD_SETSIZE; fd++) {
+					if (FD_ISSET(fd)) {
+						handleConnection(fd, servers, allSocketFds);
+						FD_CLR(fd, &readyToReadFrom);
+					}
+				}
+				// server.serve(readyToReadFrom, readyToWrite);
 			}
 		} catch (std::exception &ex) {
 			std::cout << "--" << ex.what() << std::endl;

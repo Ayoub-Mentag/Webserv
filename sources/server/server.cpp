@@ -91,8 +91,6 @@ Server::Server(t_config& config) : config(config) {
 	serverAddr.sin_family = AF_INET;
 	serverAddr.sin_addr.s_addr = htonl(INADDR_ANY);
 	serverAddr.sin_port = htons(PORT);
-	FD_ZERO(&current_sockets);
-	FD_SET(serverSocketfd, &current_sockets);
 	bindServerWithAddress();
 	_listen();
 }
@@ -115,10 +113,13 @@ void	uploadFile(Data& d) {
 }
 
 
+const int&	Server::getServerSocketFd() const {
+	return this->serverSocketfd;
+}
 
 
 
-void	Server::acceptNewConnection() {
+int	Server::acceptNewConnection() {
 	struct sockaddr_in	clientAddr;
 	int					clientFd;
 	socklen_t			clientAddrLen;
@@ -132,6 +133,7 @@ void	Server::acceptNewConnection() {
 		clients.push_back(client);
 		FD_SET(clientFd, &(this->current_sockets));
 	}
+	return clientFd;
 }
 
 void	Server::serverExists() {
@@ -514,7 +516,7 @@ void	Server::removeClients() {
 	}
 }
 
-void	Server::serve() {
+void	Server::serve(fd_set& readyToReadFrom, fd_set& readyTowrite) {
 	fd_set readyToRead;
 	fd_set readyToWrite;
 
