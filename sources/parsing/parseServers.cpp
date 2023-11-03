@@ -13,7 +13,7 @@ static void	parseServerDirectives(std::string& key, std::string& value, t_server
 	if (key == "server_name") {
 		server.serverName = getServerName(value, key);
 	} else if (key == "listen") {
-		server.port = getPort(value, key);
+		server.port = getPortAndIpAddress(value, key, server.ipAddress);
 	} else if (key == "root") {
 		server.root = getRoot(value, key);
 	} else if (key == "index") {

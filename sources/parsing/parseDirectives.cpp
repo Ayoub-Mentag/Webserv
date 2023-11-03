@@ -1,6 +1,6 @@
 #include <Parsing.hpp>
  
-std::vector<std::string>		getAllowedMethods(std::string& value, std::string& key) {
+std::vector<std::string>		getAllowedMethods(std::string& value, const std::string& key) {
 	std::string					token;
 	std::vector<std::string>	allowedMethods;
 		
@@ -22,7 +22,7 @@ std::vector<std::string>		getAllowedMethods(std::string& value, std::string& key
 	return (allowedMethods);
 }
 
-std::string	getIndex(std::string& value, std::string& key) {
+std::string	getIndex(std::string& value, const std::string& key) {
 	value = trim(value);
 	if (value.empty() || value == ";") {
 		std::cerr << NO_VALUE;
@@ -32,7 +32,7 @@ std::string	getIndex(std::string& value, std::string& key) {
 	return (value);
 }
 
-bool	getAutoIndex(std::string& value, std::string& key) {
+bool	getAutoIndex(std::string& value, const std::string& key) {
 	value = trim(value);
 	if (value.empty() || value == ";") {
 		std::cerr << NO_VALUE;
@@ -50,7 +50,7 @@ bool	getAutoIndex(std::string& value, std::string& key) {
 	}
 }
 
-void	getRedirect(std::string& value, std::string& key, int& redirectionCode, std::string& redirectTo) {
+void	getRedirect(std::string& value, const std::string& key, int& redirectionCode, std::string& redirectTo) {
 	if (value.empty() || value == ";") {
 		std::cerr << NO_VALUE;
 		std::cerr << PRINT_LINE_AND_FILE;
@@ -85,7 +85,7 @@ void	getRedirect(std::string& value, std::string& key, int& redirectionCode, std
 	// }
 }
 
-std::string	getRoot(std::string& value, std::string& key) {
+std::string	getRoot(std::string& value, const std::string& key) {
 	value = trim(value);
 	if (value.empty() || value == ";") {
 		std::cerr << NO_VALUE;
@@ -95,7 +95,7 @@ std::string	getRoot(std::string& value, std::string& key) {
 	return (value);
 }
 
-std::string getServerName(std::string& value, std::string& key) {
+std::string getServerName(std::string& value, const std::string& key) {
 	value = trim(value);
 	if (value.empty() || value == ";") {
 		std::cerr << NO_VALUE;
@@ -104,23 +104,76 @@ std::string getServerName(std::string& value, std::string& key) {
 	}
 	return (value);
 }
-
-int	getPort(std::string& value, std::string& key) {
-	value = trim(value);
-	if (value.empty() || value == ";") {
-		std::cerr << NO_VALUE;
-		std::cerr << PRINT_LINE_AND_FILE;
-		exit(1);
-	}
-	if (value.find_first_not_of("0123456789") != value.npos) {
+static std::string	parseIpAddress(std::string& ipAdd, const std::string& key) {
+	if (ipAdd == "localhost") return ("127.0.0.1");
+	if (ipAdd.find_first_not_of("0123456789.") != ipAdd.npos
+		|| std::count(ipAdd.begin(), ipAdd.end(), '.') != 3) {
 		std::cerr << INVALID_ARGUMENT;
 		std::cerr << PRINT_LINE_AND_FILE;
 		exit(1);
 	}
-	return (atoi(value.c_str()));
+	std::istringstream	iss(ipAdd);
+	std::string			tmp;
+	while (std::getline(iss, tmp, '.')) {
+		if (tmp.length() < 4 && tmp.find_first_not_of("0123456789") != tmp.npos) {
+			if (std::atoi(tmp.c_str()) > 255) {
+				std::cerr << INVALID_ARGUMENT;
+				std::cerr << PRINT_LINE_AND_FILE;
+				exit(1);
+			}
+		}
+	}
+	return (ipAdd);
 }
 
-void	getErrorPages(std::string& value, std::string& key, std::map<int, std::string>& errorPages) {
+static int	parsePort(std::string& port, const std::string& key) {
+	if (port.find_first_not_of("0123456789") != port.npos) {
+		std::cerr << INVALID_ARGUMENT;
+		std::cerr << PRINT_LINE_AND_FILE;
+		exit(1);
+	}
+	return (std::atoi(port.c_str()));
+}
+
+int	getPortAndIpAddress(std::string& value, const std::string& key, std::string& ipAddress) {
+	value = trim(value);
+	if (value.empty() || value == ";") {
+		std::cerr << NO_VALUE;
+		std::cerr << PRINT_LINE_AND_FILE;
+		exit(1);
+	}
+
+	size_t	sep = value.find(':');
+	if (sep != value.npos) {
+		std::string	ipAdd = value.substr(0, sep);
+		std::string port = value.substr(sep + 1, -1);
+		if (ipAdd.empty() || port.empty()) {
+			std::cerr << INVALID_ARGUMENT;
+			std::cerr << PRINT_LINE_AND_FILE;
+			exit(1);
+		}
+		ipAddress = parseIpAddress(ipAdd, key);
+		return (parsePort(port, key));
+	} else {
+		if (value == "localhost") {
+			ipAddress = "127.0.0.1";
+			return (80);
+		}
+		if (value.find('.') != value.npos) {
+			ipAddress = parseIpAddress(value, key);
+			return (80);
+		} else if (value.find_first_not_of("0123456789") == value.npos) {
+			ipAddress = "0.0.0.0";
+			return (parsePort(value, key));
+		} else {
+			std::cerr << INVALID_ARGUMENT;
+			std::cerr << PRINT_LINE_AND_FILE;
+			exit(1);
+		}
+	}
+}
+
+void	getErrorPages(std::string& value, const std::string& key, std::map<int, std::string>& errorPages) {
 	if (value.empty() || value == ";") {
 		std::cerr << NO_VALUE;
 		std::cerr << PRINT_LINE_AND_FILE;
@@ -151,7 +204,7 @@ void	getErrorPages(std::string& value, std::string& key, std::map<int, std::stri
 	// return (errorPages);
 }
 
-int	getLimitClientBody(std::string& value, std::string& key) {
+int	getLimitClientBody(std::string& value, const std::string& key) {
 	if (value.empty() || value == ";") {
 		std::cerr << NO_VALUE;
 		std::cerr << PRINT_LINE_AND_FILE;
@@ -176,7 +229,7 @@ int	getLimitClientBody(std::string& value, std::string& key) {
 	return (0);
 }
 
-std::string	getCgiExecutable(std::string& value, std::string& key) {
+std::string	getCgiExecutable(std::string& value, const std::string& key) {
 	if (value.empty() || value == ";") {
 		std::cerr << NO_VALUE;
 		std::cerr << PRINT_LINE_AND_FILE;

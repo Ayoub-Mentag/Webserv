@@ -122,8 +122,8 @@ Server::Server(t_config& config) : config(config) {
 		exit(EXIT_FAILURE);
 	}
 	serverAddr.sin_family = AF_INET;
-	serverAddr.sin_addr.s_addr = INADDR_ANY;
-	serverAddr.sin_port = htons(PORT);
+	serverAddr.sin_addr.s_addr = inet_addr(config.servers[0].ipAddress.c_str());
+	serverAddr.sin_port = htons(config.servers[0].port);
 	FD_ZERO(&current_sockets);
 	FD_SET(serverSocketfd, &current_sockets);
 	bindServerWithAddress();
@@ -190,7 +190,7 @@ void	Server::initRequest(int clientFd) {
 	bzero(buffer, MAX_LEN);
 	recv(clientFd, buffer, MAX_LEN, 0);
 	bufferLine = buffer;
-	// std::cerr << buffer;
+	std::cerr << buffer;
 	
 	// print buffer after the checking
 	request = requestParse(bufferLine);
@@ -204,7 +204,9 @@ void	Server::serverExists() {
 	std::vector<t_server>	servers = config.servers;
 
 	for (int serverIndex = 0; serverIndex < (int)config.servers.size(); serverIndex++) {
-		if (servers[serverIndex].serverName == request->getHead()[REQ_SERVER_NAME]
+		std::string ipAdd = (servers[serverIndex].ipAddress == "127.0.0.1")
+			? "localhost" : servers[serverIndex].ipAddress;
+		if ((ipAdd == request->getHead()[REQ_SERVER_NAME]) // REQ_SERVER_NAME should become REQ_IP_ADD
 			&& atoi(request->getHead()[REQ_PORT].c_str()) == servers[serverIndex].port) {
 			request->serverIndex = serverIndex;
 			return ;

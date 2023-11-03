@@ -23,7 +23,6 @@ typedef struct LocationDirectives {
 	std::string					path;
 	std::string					root;
 	std::string					index;
-	// std::string					redirectFrom;
 	int							redirectionCode;
 	std::string 				redirectTo;
 	std::vector<std::string>	allowedMethods;
@@ -35,6 +34,7 @@ typedef struct LocationDirectives {
 
 typedef struct ServerDirectives {
 	int								port;
+	std::string						ipAddress;
 	int					    		clientMaxBodySize;
 	std::map<int, std::string> 		errorPages;
 	std::string						serverName;
@@ -55,16 +55,16 @@ std::string					        trim(const std::string& str);
 bool						        bracketsBalance(const std::string& str);
 
 /* Parsing Directives */
-void                                getErrorPages(std::string& value, std::string& key, std::map<int, std::string>& errorPages);
-std::vector<std::string>	        getAllowedMethods(std::string& value, std::string& key);
-std::string					        getIndex(std::string& value, std::string& key);
-std::string					        getRoot(std::string& value, std::string& key);
-std::string					        getCgiExecutable(std::string& value, std::string& key);
-std::string					        getServerName(std::string& value, std::string& key);
-void						        getRedirect(std::string& value, std::string& key, int& redirectionCode, std::string& redirectTo);
-bool						        getAutoIndex(std::string& value, std::string& key);
-int							        getPort(std::string& value, std::string& key);
-int							        getLimitClientBody(std::string& value, std::string& key);
+void                                getErrorPages(std::string& value, const std::string& key, std::map<int, std::string>& errorPages);
+std::vector<std::string>	        getAllowedMethods(std::string& value, const std::string& key);
+std::string					        getIndex(std::string& value, const std::string& key);
+std::string					        getRoot(std::string& value, const std::string& key);
+std::string					        getCgiExecutable(std::string& value, const std::string& key);
+std::string					        getServerName(std::string& value, const std::string& key);
+void						        getRedirect(std::string& value, const std::string& key, int& redirectionCode, std::string& redirectTo);
+bool						        getAutoIndex(std::string& value, const std::string& key);
+int									getPortAndIpAddress(std::string& value, const std::string& key, std::string& ipAddress);
+int							        getLimitClientBody(std::string& value, const std::string& key);
 
 /* Parse Locations */
 void						        splitLocationBlocks(t_server& server, std::string res);
