@@ -104,6 +104,7 @@ std::string getServerName(std::string& value, const std::string& key) {
 	}
 	return (value);
 }
+
 static std::string	parseIpAddress(std::string& ipAdd, const std::string& key) {
 	if (ipAdd == "localhost") return ("127.0.0.1");
 	if (ipAdd.find_first_not_of("0123456789.") != ipAdd.npos
@@ -132,7 +133,13 @@ static int	parsePort(std::string& port, const std::string& key) {
 		std::cerr << PRINT_LINE_AND_FILE;
 		exit(1);
 	}
-	return (std::atoi(port.c_str()));
+	int portNumber = std::atoi(port.c_str());
+	if (portNumber < 1 || portNumber > 65535) {
+		std::cerr << INVALID_ARGUMENT;
+		std::cerr << PRINT_LINE_AND_FILE;
+		exit(1);
+	}
+	return (portNumber);
 }
 
 int	getPortAndIpAddress(std::string& value, const std::string& key, std::string& ipAddress) {

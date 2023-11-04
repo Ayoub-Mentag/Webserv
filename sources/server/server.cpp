@@ -202,16 +202,21 @@ void	Server::initRequest(int clientFd) {
 void	Server::serverExists() {
 	
 	std::vector<t_server>	servers = config.servers;
+	int			reqPort	= atoi(request->getHead()[REQ_PORT].c_str());
+	std::string	reqHost = request->getHead()[REQ_SERVER_NAME];
 
+	// i should check if the host is a server_name or an ip address check ./server/temp.cpp
 	for (int serverIndex = 0; serverIndex < (int)config.servers.size(); serverIndex++) {
 		std::string ipAdd = (servers[serverIndex].ipAddress == "127.0.0.1")
 			? "localhost" : servers[serverIndex].ipAddress;
-		if ((ipAdd == request->getHead()[REQ_SERVER_NAME]) // REQ_SERVER_NAME should become REQ_IP_ADD
-			&& atoi(request->getHead()[REQ_PORT].c_str()) == servers[serverIndex].port) {
+
+		if ((ipAdd == reqHost) // REQ_SERVER_NAME should become REQ_IP_ADD
+			&& reqPort == servers[serverIndex].port) {
 			request->serverIndex = serverIndex;
 			return ;
 		}
 	}
+	// in this case i should peek a default server if found else -1
 	request->serverIndex = -1; // this line is usless cuz this var already contain this value as a def val
 	//error page : SERVER_NOT_FOUND
 }

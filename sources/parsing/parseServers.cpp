@@ -71,15 +71,15 @@ static t_server	parseServerBlock(std::string res) {
 		serverTokens.push_back(token);  
 	}
 	fillServerStruct(server, serverTokens);
-	size_t	floc = res.find("location");
-	if (floc != res.npos)
-		splitLocationBlocks(server, res.substr(floc, -1));
+	size_t	findLoc = res.find("location");
+	if (findLoc != res.npos)
+		splitLocationBlocks(server, res.substr(findLoc, -1));
 	return (server);
 }
 
 void	splitServerBlocks(t_config& config, std::string res) {
 	while (res.size()) {
-		std::string	serverBlock;
+		// std::string	serverBlock;
 		size_t fserv = res.find("Server");
 		if (fserv != std::string::npos) {
 			res = res.substr(6, std::string::npos);

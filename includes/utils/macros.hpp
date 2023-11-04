@@ -1,4 +1,5 @@
-#pragma once 
+#pragma once
+
 # define REQ_METHOD     	"Method"
 # define REQ_PATH           "Path"
 # define REQ_HTTP_VERSION    "HttpVersion"
