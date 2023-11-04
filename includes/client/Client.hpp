@@ -12,6 +12,7 @@ class Client {
 
 	public :
 		Client(int fd);
+		~Client();
 		Request	*getRequest();
 		void	setRequest(Request *request);
 		int		getFd() const;

@@ -28,7 +28,6 @@ class Server {
 	private:
 		int					serverSocketfd;
 		struct				sockaddr_in serverAddr;
-		fd_set				current_sockets;
 		t_config			config;
 		std::vector<Client>	clients;
 		Response			response;
@@ -39,7 +38,6 @@ class Server {
 		void				bindServerWithAddress();
 		void				_listen();
 		fd_set				getReadyFds();
-		int					acceptNewConnection();
 		void				responseFunc(int clientFd);
 		void				methodNotAllowed();
 		void				locationRedirection();
@@ -55,10 +53,13 @@ class Server {
 		void				removeClients(); 
 	public:
 		Server();
+		void				dealWithClient(int clientIndex);
+		int					acceptNewConnection();
 		Server(t_config& config);
 		~Server();
 		const int&	getServerSocketFd() const;
-		void	serve(fd_set& readyToReadFrom, fd_set& readyTowrite);
+		// void	serve(fd_set& readyToReadFrom, fd_set& readyTowrite);
+		void	serve();
 
 	public: // responseClass fuctions
 		void	initResponseClass(std::string& path);

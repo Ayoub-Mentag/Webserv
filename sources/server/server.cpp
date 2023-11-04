@@ -77,7 +77,6 @@ void	Server::_listen() {
 }
 
 Server::Server(t_config& config) : config(config) {
-	currentRequest = NULL;
 	if ((this->serverSocketfd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
 	{
 		perror("socket() : ");
@@ -90,19 +89,17 @@ Server::Server(t_config& config) : config(config) {
 	}
 	serverAddr.sin_family = AF_INET;
 	serverAddr.sin_addr.s_addr = htonl(INADDR_ANY);
-	serverAddr.sin_port = htons(PORT);
+	serverAddr.sin_port = htons(8080);
 	bindServerWithAddress();
 	_listen();
 }
 
 Server::~Server() {
 	for (size_t i = 0; i < clients.size(); i++) {
-		FD_CLR(clients[i].getFd(), &current_sockets);
 		close(clients[i].getFd());
 	}
 
 	close(serverSocketfd);
-	FD_CLR(serverSocketfd, &current_sockets);
 } 
 
 void	uploadFile(Data& d) {
@@ -121,7 +118,7 @@ const int&	Server::getServerSocketFd() const {
 
 int	Server::acceptNewConnection() {
 	struct sockaddr_in	clientAddr;
-	int					clientFd;
+	int					clientFd = -1;
 	socklen_t			clientAddrLen;
 
 	if ((clientFd = accept(serverSocketfd, (struct sockaddr*)&clientAddr, &clientAddrLen)) == -1) {
@@ -131,7 +128,6 @@ int	Server::acceptNewConnection() {
 
 		Client client(clientFd);
 		clients.push_back(client);
-		FD_SET(clientFd, &(this->current_sockets));
 	}
 	return clientFd;
 }
@@ -501,62 +497,82 @@ void	Server::responseFunc(int fd) {
 	currentRequest = NULL;
 }
 
-void	Server::removeClients() {
-	unsigned long current = clock();
-	unsigned long diff;
-	int				clientFd;
+// void	Server::removeClients() {
+// 	std::cout << "Hello " << std::endl;
+// 	unsigned long current = clock();
+// 	unsigned long diff;
+// 	int				clientFd;
 
-	for (size_t i = 0; i < clients.size(); i++) {
-		diff = current - clients[i].getLastSeen();
-		clientFd = clients[i].getFd();
-		if (diff >= LAST_SEEN_TIMEOUT) {
-			FD_CLR(clientFd, &current_sockets);
-			close(clientFd);
+// 	for (size_t i = 0; i < clients.size(); i++) {
+// 		diff = current - clients[i].getLastSeen();
+// 		clientFd = clients[i].getFd();
+// 		if (diff >= LAST_SEEN_TIMEOUT) {
+// 			FD_CLR(clientFd, &current_sockets);
+// 			close(clientFd);
+// 		}
+// 	}
+// }
+
+void	Server::dealWithClient(int clientIndex) {
+	int fd = clients[clientIndex].getFd();
+	try {
+		clients[clientIndex].initRequest();
+		currentRequest = clients[clientIndex].getRequest();
+		if (currentRequest) {
+			responseFunc(fd);
+			delete (currentRequest);
+			currentRequest = NULL;
+			clients[clientIndex].setRequest(NULL);
 		}
+	} catch(const std::exception& e) {
+		std::string error = e.what();
+		if (error == "Bad Request")
+			write(fd, "HTTP/1.1 400 BAD\r\n\r\n", 20);
+		std::cout << PRINT_LINE_AND_FILE;
+		std::cout << e.what() << std::endl;
 	}
 }
 
-void	Server::serve(fd_set& readyToReadFrom, fd_set& readyTowrite) {
-	fd_set readyToRead;
-	fd_set readyToWrite;
 
-	FD_ZERO(&readyToRead);
-	FD_ZERO(&readyToWrite);
-	removeClients();
-	readyToRead = this->current_sockets;
-	readyToWrite = this->current_sockets;
+// void	Server::serve(fd_set& readyToReadFrom, fd_set& readyTowrite) {
+// void	Server::serve() {
+// 	fd_set readyToRead;
 
-	//read, write, error , timout
-	if (select(serverSocketfd + clients.size() + 1, &readyToRead, &readyToWrite, NULL, NULL) < 0) {
-		perror("Select : ");
-	}
+// 	FD_ZERO(&readyToRead);
 
-	if (FD_ISSET(serverSocketfd, &readyToRead))
-		acceptNewConnection();
-	else
-	{
-		for (size_t i = 0; i < clients.size(); i++) {
-			int clientFd = clients[i].getFd();
-			if (FD_ISSET(clientFd, &readyToRead)) {
-				try {
-					clients[i].initRequest();
-					if (FD_ISSET(clientFd, &readyToWrite)) {
-						currentRequest = clients[i].getRequest();
-						if (currentRequest) {
-							responseFunc(clientFd);
-							delete (currentRequest);
-							currentRequest = NULL;
-							clients[i].setRequest(NULL);
-						}
-					}
-				} catch(const std::exception& e) {
-					std::string error = e.what();
-					if (error == "Bad Request")
-						write(clientFd, "HTTP/1.1 400 BAD\r\n\r\n", 20);
-					std::cout << PRINT_LINE_AND_FILE;
-					std::cout << e.what() << std::endl;
-				}
-			}
-		}
-	}
-}
+// 	// removeClients(); [remove the clients that are less active]
+
+// 	readyToRead = this->current_sockets;
+
+// 	//read, write, error , timout
+// 	if (select(FD_SETSIZE, &readyToRead, NULL, NULL, NULL) < 0) {
+// 		perror("Select : ");
+// 	}
+
+// 	if (FD_ISSET(serverSocketfd, &readyToRead))
+// 		acceptNewConnection();
+// 	else
+// 	{
+// 		for (size_t i = 0; i < clients.size(); i++) {
+// 			int fd = clients[i].getFd();
+// 			if (FD_ISSET(fd, &readyToRead) && fd != serverSocketfd) {
+// 				try {
+// 					clients[i].initRequest();
+// 					currentRequest = clients[i].getRequest();
+// 					if (currentRequest) {
+// 						responseFunc(fd);
+// 						delete (currentRequest);
+// 						currentRequest = NULL;
+// 						clients[i].setRequest(NULL);
+// 					}
+// 				} catch(const std::exception& e) {
+// 					std::string error = e.what();
+// 					if (error == "Bad Request")
+// 						write(fd, "HTTP/1.1 400 BAD\r\n\r\n", 20);
+// 					std::cout << PRINT_LINE_AND_FILE;
+// 					std::cout << e.what() << std::endl;
+// 				}
+// 			}
+// 		}
+// 	}
+// }

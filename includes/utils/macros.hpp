@@ -13,7 +13,7 @@
 # define MAX_LEN			300000
 # define PORT				8080
 # define BACKLOG			5
-# define LAST_SEEN_TIMEOUT	60
+# define LAST_SEEN_TIMEOUT	6000000000
 
 # define DEFAULT_400_ERROR_PAGE 		"<!DOCTYPE><html><body><h1>400 Bad Request</h1></body></html>"
 # define DEFAULT_403_ERROR_PAGE 		"<!DOCTYPE><html><body><h1>403 Forbidden</h1></body></html>"

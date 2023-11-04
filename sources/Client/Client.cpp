@@ -9,6 +9,10 @@ Client::Client(int fd) : fd(fd){
 	lastSeen = clock();
 }
 
+Client::~Client() {
+	std::cout << "Dis" << std::endl;
+}
+
 Request	*Client::getRequest() {
 	return (this->request);
 }
