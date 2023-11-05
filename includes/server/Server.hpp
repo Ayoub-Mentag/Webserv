@@ -64,4 +64,5 @@ class Server {
 	public: // responseClass fuctions
 		void	initResponseClass(std::string& path);
 		Request	*getRequestByFd(int clientFd);
+		const std::vector<Client>&	getClients() const;
 };

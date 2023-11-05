@@ -2,7 +2,7 @@
 #include <Server.hpp>
 #include <Utils.hpp>
 
-int nfds = 1;
+int nfds = -1;
 
 static void	usage(const char* programName) {
 	std::cerr << GREEN "Usage: " RED << programName << " [config_file_path]" << RESET_COLOR << std::endl;
@@ -61,7 +61,7 @@ t_server_client 	getCurrentServerAndClient(std::vector<Server*>& servers, int fd
 			return (current);
 		}
 		for (size_t clientIndex = 0; clientIndex < servers.size(); clientIndex++) {
-			if (fd == servers[serverIndex]->getServerSocketFd())
+			if (fd == servers[serverIndex]->getClients()[clientIndex].getFd())
 			{
 				current.server = servers[serverIndex];
 				current.clientIndex = clientIndex;
@@ -72,11 +72,25 @@ t_server_client 	getCurrentServerAndClient(std::vector<Server*>& servers, int fd
 	return (current);
 }
 
+int getMax(fd_set *mySet) {
+	int max = -1;
+	for (int fd = 0 ; fd < FD_SETSIZE; fd++) {
+		if (FD_ISSET(fd, mySet))
+		{
+			std::cout << "---fd " << fd << std::endl;
+			max = (fd > max) ? fd : max;
+		}
+	}
+	// std::cout << "max " << max << std::endl;
+	return (max);
+}
+
 int	main(int argc, char* argv[]) {
 	t_config				config;
 	std::vector<Server *>	servers;
 	fd_set					mySet;
 	fd_set					readyToReadFrom;
+	int						newFd;
 
 	// add a struct of set to keep track of the ready W/R and the whole fds
 	argv[1] = (argc == 2) ? argv[1] : (char*)DEFAULT_CONFIG_FILE;
@@ -87,39 +101,33 @@ int	main(int argc, char* argv[]) {
 			// init servers
 			for (size_t i = 0; i < config.servers.size(); i++) {
 				Server *server = new Server(config);
-				FD_SET(server->getServerSocketFd(), &mySet);
-				nfds++;
+				newFd = server->getServerSocketFd();
+				FD_SET(newFd, &mySet);
 				servers.push_back(server);
 			}
-
 			while (1) {
 				FD_ZERO(&readyToReadFrom);
 				readyToReadFrom = mySet;
-				int n;
-				struct timeval t;
-				t.tv_sec = 5;
-				t.tv_usec = 0;
-				if ((n = select(nfds, &readyToReadFrom, NULL, NULL, &t)) < 0) {
+				if (select(FD_SETSIZE, &readyToReadFrom, NULL, NULL, NULL) <= 0) {
 					perror("Select ");
 					std::cout << errno << std::endl;
 					break;
 				}
-				for (int fd = 0; fd < nfds; fd++) {
+				// std::cout << nfds;
+				for (int fd = 0; fd < FD_SETSIZE; fd++) {
+
 					if (FD_ISSET(fd, &readyToReadFrom)) {
 						t_server_client current = getCurrentServerAndClient(servers, fd);
 						if (current.server) {
 							if (current.clientIndex == -1) {
-								FD_SET(current.server->acceptNewConnection(), &mySet);
-								nfds++;
+								newFd = current.server->acceptNewConnection();
+								FD_SET(newFd, &mySet);
 							}
 							else {
 								current.server->dealWithClient(current.clientIndex);
-								FD_CLR(fd, &mySet);
-								nfds--;
 							}
-						} 
+						}
 					}
-
 				}
 			}
 		} catch (std::exception &ex) {

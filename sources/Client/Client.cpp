@@ -10,7 +10,6 @@ Client::Client(int fd) : fd(fd){
 }
 
 Client::~Client() {
-	std::cout << "Dis" << std::endl;
 }
 
 Request	*Client::getRequest() {

@@ -82,6 +82,8 @@ Server::Server(t_config& config) : config(config) {
 		perror("socket() : ");
 		throw std::runtime_error("socket()");
 	}
+
+
 	int opt = 1;
 	if (setsockopt(this->serverSocketfd, SOL_SOCKET,  SO_REUSEPORT , &opt, sizeof(opt))) {
 		perror("setsockopt");
@@ -110,10 +112,15 @@ void	uploadFile(Data& d) {
 }
 
 
+
+
 const int&	Server::getServerSocketFd() const {
 	return this->serverSocketfd;
 }
 
+const std::vector<Client>&	Server::getClients() const {
+	return this->clients;
+}
 
 
 int	Server::acceptNewConnection() {
@@ -124,7 +131,7 @@ int	Server::acceptNewConnection() {
 	if ((clientFd = accept(serverSocketfd, (struct sockaddr*)&clientAddr, &clientAddrLen)) == -1) {
 		perror("Accept : ");
 	} else {
-		std::cout << "A new connection Accepted " << std::endl;
+		// std::cout << "A new connection Accepted " << std::endl;
 
 		Client client(clientFd);
 		clients.push_back(client);
@@ -515,6 +522,7 @@ void	Server::responseFunc(int fd) {
 
 void	Server::dealWithClient(int clientIndex) {
 	int fd = clients[clientIndex].getFd();
+	std::cout << "Deal with client " << fd << std::endl;
 	try {
 		clients[clientIndex].initRequest();
 		currentRequest = clients[clientIndex].getRequest();
