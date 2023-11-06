@@ -206,28 +206,13 @@ static std::string	directory_listing(DIR* dir, std::string root) {
 	return (response);
 }
 
-void	Server::initRequest(int clientFd) {
-	/** @test we will work on some examples without getting the request from browser*/
-	char		buffer[MAX_LEN];
-	std::string	bufferLine;
 
-	bzero(buffer, MAX_LEN);
-	recv(clientFd, buffer, MAX_LEN, 0);
-	bufferLine = buffer;
-	std::cerr << buffer;
-	
-	// print buffer after the checking
-	request = requestParse(bufferLine);
-	// i add this default valus in 24-10-2023 00:20
-	request->serverIndex = -1; 
-	request->locationIndex = -1;
-}
 
 void	Server::serverExists() {
 	
 	std::vector<t_server>	servers = config.servers;
-	int			reqPort	= atoi(request->getHead()[REQ_PORT].c_str());
-	std::string	reqHost = request->getHead()[REQ_SERVER_NAME];
+	int			reqPort	= atoi(currentRequest->getValueByKey(REQ_PORT).c_str());
+	std::string	reqHost = currentRequest->getValueByKey(REQ_SERVER_NAME);
 
 	// i should check if the host is a server_name or an ip address check ./server/temp.cpp
 	for (int serverIndex = 0; serverIndex < (int)config.servers.size(); serverIndex++) {
@@ -236,12 +221,12 @@ void	Server::serverExists() {
 
 		if ((ipAdd == reqHost) // REQ_SERVER_NAME should become REQ_IP_ADD
 			&& reqPort == servers[serverIndex].port) {
-			request->serverIndex = serverIndex;
+			currentRequest->serverIndex = serverIndex;
 			return ;
 		}
 	}
 	// in this case i should peek a default server if found else -1
-	request->serverIndex = -1; // this line is usless cuz this var already contain this value as a def val
+	currentRequest->serverIndex = -1; // this line is usless cuz this var already contain this value as a def val
 	//error page : SERVER_NOT_FOUND
 }
 
@@ -284,13 +269,13 @@ void	Server::locationExists() {
 
 	for (size_t i = 0; i < locations.size(); i++) {
 		// here where the CGI location handled!
-		if (findCgiLocation(request, locations[i])) {
+		if (findCgiLocation(currentRequest, locations[i])) {
 			// is this the normal behavior?
-			std::string	cgiPath = getCgiPath(request, locations[i]);
+			std::string	cgiPath = getCgiPath(currentRequest, locations[i]);
 			if (access(cgiPath.c_str(), F_OK) != -1) {
-				request->locationIndex = i;
-				config.servers[request->serverIndex].locations[i].isCgi = true;
-				request->getHead()[REQ_PATH] = cgiPath;
+				currentRequest->locationIndex = i;
+				config.servers[currentRequest->serverIndex].locations[i].isCgi = true;
+				currentRequest->getHead()[REQ_PATH] = cgiPath;
 				// I have updated the request path that I received. Will this modification cause any issues?
 				return ;
 			}
@@ -330,7 +315,7 @@ void	Server::locationExists() {
 	The response is then returned as a string.
 */
 const std::string&	Server::returnError(int status) {
-    if (request->serverIndex < 0) {
+    if (currentRequest->serverIndex < 0) {
         // Handle the case when the server index is not set.
         response.setContentType(".html");
         response.setHeader(status);
@@ -338,7 +323,7 @@ const std::string&	Server::returnError(int status) {
     } else {
         t_server server = getServer();
 
-        if (request->locationIndex >= 0) {
+        if (currentRequest->locationIndex >= 0) {
             // Handle the case when the location index is set.
             t_location location = getLocation();
             try {
@@ -423,7 +408,7 @@ static bool findAllowedMethod(const std::string& method, t_server& server, t_loc
 void	Server::methodNotAllowed() {
 	t_server			server = getServer();
 	t_location			location = getLocation();
-    const std::string&	method = request->getHead()[REQ_METHOD];
+    const std::string&	method = currentRequest->getValueByKey(REQ_METHOD);
 
 	if (method != "GET" && method != "POST" && method != "DELETE") {
 		throw std::runtime_error(returnError(NOT_IMPLEMENTED_STATUS));
@@ -476,7 +461,7 @@ void	Server::initResponseClass(std::string& path) {
 	size_t dot = path.find_last_of('.');
 
 	(dot != path.npos) ? response.setContentType(path.substr(dot, len)) : response.setContentType("");
-	response.setHttpVersion(request->getHead()[REQ_HTTP_VERSION]);
+	response.setHttpVersion(currentRequest->getHead()[REQ_HTTP_VERSION]);
 	response.setStatusCode();
 }
 
@@ -574,14 +559,14 @@ char	**getEnv(std::map<std::string, std::string> headMap) {
 	return (env);
 }
 
-static void assignHeadAndBody(std::string buffer, std::string& head, std::string& body) {
-	size_t index = buffer.find("\r\n\r\n");
+// static void assignHeadAndBody(std::string buffer, std::string& head, std::string& body) {
+// 	size_t index = buffer.find("\r\n\r\n");
 
-	if (index != std::string::npos) {
-		head = buffer.substr(0, index + 4);
-		body = buffer.substr(index + 4, buffer.length());
-	}
-}
+// 	if (index != std::string::npos) {
+// 		head = buffer.substr(0, index + 4);
+// 		body = buffer.substr(index + 4, buffer.length());
+// 	}
+// }
 
 void	Server::executeCgi(std::string path) {
 	std::string head;
@@ -633,10 +618,10 @@ Request *Server::getRequestByFd(int clientFd) {
 	return (NULL);
 }
 
-void	Server::responseFunc(int fd) {
+void	Server::responseFunc(int clientFd) {
 	try {
 		// std::cout << "req_path: " << request->getHead()[REQ_PATH] << std::endl;
-		initResponseClass(request->getHead()[REQ_PATH]);
+		initResponseClass(currentRequest->getHead()[REQ_PATH]);
 		std::string path = matching();
 		DIR *dir = opendir(path.c_str());
 		methodNotAllowed(); // should i check location errpage first when no method in the location?
