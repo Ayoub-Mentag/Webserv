@@ -29,11 +29,16 @@ std::string	Response::getBodylength() {
 	return (to_string(this->body.length()));
 }
 
+void	Response::setHeader(std::string& _header) {
+	header = _header;
+}
+
 void	Response::setHeader(int status) {
 	header = getHttpVersion();
 	header += getStatusCode(status) + "\r\n";
 	header += "Content-type: " + getContentType() + "\r\n";
-	header += "Content-length: " + getBodylength();
+	header += "Content-length: " + getBodylength() + "\r\n";
+	header += "Server: zaitouna";
 	header += " \r\n\r\n";
 }
 
@@ -45,11 +50,16 @@ void	Response::setHttpVersion(const std::string& httpVersion) {
 	this->httpVersion = httpVersion;
 }
 
-void	Response::setResponse(std::string _response) {
-	this->response = _response;
+void	Response::setResponse(std::string& resp) {
+	this->response = resp;
+}
+
+void	Response::setResponse() {
+	this->response = getHeader() + getBody();
 }
 
 const std::string&	Response::getResponse() {
+	// setResponse();
 	return (response);
 }
 
@@ -63,6 +73,7 @@ void	Response::setStatusCode() {
 		statusCode[404] = " 404 Not Found";
 		statusCode[405] = " 405 Method Not Allowed";
 		statusCode[501] = " 501 Not Implemented";
+		statusCode[304] = " 304 Not Modified";
 		i = 1;
 	}
 }
@@ -153,7 +164,7 @@ void	Response::setContentType(const std::string& extention) {
 	}
 	std::string tmp = contentTypeMap[extention];
 	if (tmp.empty()) {
-		tmp = "text/plain";
+		tmp = "application/octet-stream";
 	}
 	this->contentType = tmp;
 }

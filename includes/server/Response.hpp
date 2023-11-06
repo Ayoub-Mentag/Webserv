@@ -21,10 +21,12 @@ class Response {
 		std::string					getBodylength();
 		const std::string&			getResponse();
 
+		void						setHeader(std::string& _header);
 		void						setHeader(int status);
 		void						setBody(const std::string& body);
 		void			 			setStatusCode();
 		void						setHttpVersion(const std::string&);
 		void						setContentType(const std::string& extention);
-		void						setResponse(std::string _response);
+		void						setResponse(std::string& resp);
+		void			 			setResponse();
 };

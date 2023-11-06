@@ -41,8 +41,8 @@ class Server {
 		void				responseFunc(int clientFd);
 		void				methodNotAllowed();
 		void				locationRedirection();
-		void				listDirectory(DIR *dir);
-		void				servFile(std::string& src);
+		void				listDirectory(DIR *dir, std::string& path);
+		void				servFile(std::string& src, int status);
 		void				serverExists();
 		void				locationExists();
 		void				executeCgi(std::string path);

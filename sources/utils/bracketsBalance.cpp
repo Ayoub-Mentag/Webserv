@@ -1,5 +1,6 @@
 #include <Utils.hpp>
- 
+
+// the config file does not contain '[]'!
 bool	bracketsBalance(const std::string& str) {
     std::stack<char> stack;
     for (size_t i = 0; i < str.length(); i++) {

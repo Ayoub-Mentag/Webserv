@@ -27,6 +27,7 @@
 # define FORBIDDEN_STATUS			403
 # define NOT_IMPLEMENTED_STATUS		501
 # define MOVED_PERMANENTLY_STATUS	301
+# define NOT_MODIFIED_STATUS		304
 
 
 
@@ -61,4 +62,4 @@
 # define INVALID_DIRECTIVE		RED "Error: " GREEN "Invalid Directive." << RESET_COLOR << "\n"
 
 # define DEFAULT_PORT				8080
-# define DEFAULT_ROOT				"."
+// # define DEFAULT_ROOT				"."
