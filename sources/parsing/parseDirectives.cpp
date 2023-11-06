@@ -23,7 +23,7 @@ std::vector<std::string>		getAllowedMethods(std::string& value, const std::strin
 }
 
 std::string	getIndex(std::string& value, const std::string& key) {
-	value = trim(value);
+	// value = trim(value);
 	if (value.empty() || value == ";") {
 		std::cerr << NO_VALUE;
 		std::cerr << PRINT_LINE_AND_FILE;
@@ -33,7 +33,7 @@ std::string	getIndex(std::string& value, const std::string& key) {
 }
 
 bool	getAutoIndex(std::string& value, const std::string& key) {
-	value = trim(value);
+	// value = trim(value);
 	if (value.empty() || value == ";") {
 		std::cerr << NO_VALUE;
 		std::cerr << PRINT_LINE_AND_FILE;
@@ -211,7 +211,7 @@ void	getErrorPages(std::string& value, const std::string& key, std::map<int, std
 	// return (errorPages);
 }
 
-int	getLimitClientBody(std::string& value, const std::string& key) {
+long long	getLimitClientBody(std::string& value, const std::string& key) {
 	if (value.empty() || value == ";") {
 		std::cerr << NO_VALUE;
 		std::cerr << PRINT_LINE_AND_FILE;

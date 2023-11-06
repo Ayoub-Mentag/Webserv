@@ -1,22 +1,13 @@
 #include <Parsing.hpp>
  
-static void	parseLocationDirectives(std::string& key, std::string value, t_location& location) {
-	if (value[value.length() - 1] != ';') {
-		std::cerr << EXPECTED_SEM;
-		std::cerr << PRINT_LINE_AND_FILE;
-		exit(1);
-	}
-	size_t last = value.find_last_not_of(';');
-	if (last != value.npos && value[last + 1] == ';')
-		value = value.substr(0, last + 1);
+void	parseLocationDirectives(std::string& key, std::string& value, t_location& location) {
+	value.erase(value.length() - 1, 1);
 	if (key == "allowed_methods") {
 		location.allowedMethods = getAllowedMethods(value, key);
 	} else if (key == "index") {
 		location.index = getIndex(value, key);
 	} else if (key == "autoindex") {
 		location.autoindex = getAutoIndex(value, key);
-	// } else if (key == "redirect") {
-	// 	getRedirect(value, key, location.redirectFrom, location.redirectTo);
 	} else if (key == "error_page") {
 		getErrorPages(value, key, location.errorPages);
 	} else if (key == "limit_client_body") {
@@ -25,7 +16,6 @@ static void	parseLocationDirectives(std::string& key, std::string value, t_locat
 		location.root = getRoot(value, key);
 	} else if (key == "return") {
 		getRedirect(value, key, location.redirectionCode, location.redirectTo);
-		// location.cgiExecutable = getCgiExecutable(value, key);
 	} else if (key == "cgi_executable") {
 		location.cgiExecutable = getCgiExecutable(value, key);
 	} else {
@@ -34,66 +24,67 @@ static void	parseLocationDirectives(std::string& key, std::string value, t_locat
 		exit(1);
 	}
 }
-static void	fillLocationStruct(t_location& location, std::vector<std::string>& tokens) {
 
-	std::string test = "none";
-	for (size_t i = 0; i < tokens.size(); i++) {
-		std::istringstream	tokenStream(tokens[i]);
-		std::string			key;
-		std::string			value;
-
-		std::getline(tokenStream, key, '=');
-		std::getline(tokenStream, value);
-		key = trim(key);
-		value = trim(value);
-		parseLocationDirectives(key, value, location);
-	}
-}
-
-static t_location	parseLocationBlock(std::string res) {
-	std::vector<std::string>	locationTokens;
-	t_location					location;
-	std::string					token;
-
-	location.autoindex = 0;
-	location.clientMaxBodySize = -1;
-	size_t findBrack = res.find("{");
-	if (findBrack != res.npos) {
-		location.path = trim(res.substr(0, findBrack));
-		if (location.path.empty()) {
-			std::cerr << NO_LOC_PATH;
+void	parseLocationLines(std::string& line, t_location& location) {
+	while (line.length() > 0) {
+		size_t sem = line.find(';');
+		if (sem == line.npos && line.size() > 0) {
+			std::cerr << EXPECTED_SEM;
 			std::cerr << PRINT_LINE_AND_FILE;
 			exit(1);
 		}
-		res = res.substr(findBrack + 1, -1); 
-	}
-	if (res[0] == UNKNOWN_CHAR)
-		res[0] = ' ';
-	std::istringstream			tokenStream(res);
-	while (std::getline(tokenStream, token, UNKNOWN_CHAR)) {
-		if (token[0] == '}' && token[token.length() - 1] == '}') {
-			continue ;
+		std::string semLine = line.substr(0, sem + 1);
+		size_t eq = semLine.find('=');
+		if (eq == semLine.npos) {
+			std::cerr << INVALID_LOC_DIRECTIVE;
+			std::cerr << PRINT_LINE_AND_FILE;
+			exit(1);
 		}
-		locationTokens.push_back(token);
+		std::string	key = trim(semLine.substr(0, eq));
+		std::string	value = trim(semLine.substr(eq + 1, -1));
+		if (value.find('=') != value.npos) {
+			std::cerr << EXPECTED_SEM;
+			std::cerr << PRINT_LINE_AND_FILE;
+			exit(1);
+		}
+		parseLocationDirectives(key, value, location);
+		line.erase(0, sem + 1);
 	}
-	fillLocationStruct(location, locationTokens);
-	return (location);
 }
 
-void	splitLocationBlocks(t_server& server, std::string res) {
-	while (res.size()) {
-		std::string	serverBlock;
-		size_t fserv = res.find("location");
-		if (fserv != std::string::npos) {
-			res = res.substr(9, std::string::npos);
-			fserv = res.find("location");
-			if (fserv != std::string::npos) {
-				server.locations.push_back(parseLocationBlock(res.substr(0, fserv)));
-				res = res.substr(fserv, std::string::npos);
-			}
-		} else if (fserv == std::string::npos && res.size()) {
-			server.locations.push_back(parseLocationBlock(res));
-			break ;
-		}
+static void	locationDefaultValues(t_location& location) {
+	location.autoindex = 0;
+	location.isCgi = 0;
+	location.redirectionCode = -1;
+	location.clientMaxBodySize = -1;
+	location.cgiExecutable = "";
+	location.index = "";
+	location.path = "";
+	location.redirectTo = "";
+}
+
+
+t_location	parseLocationBlock(std::string line) {
+	t_location location;
+
+	locationDefaultValues(location);
+	if (line.substr(0, 8) != "location") {
+		std::cerr << GREEN << "Invalid location Block!\n" << RESET_COLOR;
+		std::cerr << PRINT_LINE_AND_FILE;
+		exit(1);
 	}
+	line.erase(0, 8);
+	line.erase(line.length() - 1, 1);
+	line = trim(line);
+	size_t bracket = line.find('{');
+	if (bracket == 0) {
+		std::cerr << NO_LOC_PATH;
+		std::cerr << PRINT_LINE_AND_FILE;
+		exit(1);
+	}
+	location.path = trim(line.substr(0, bracket));
+	
+	line = trim(line.substr(bracket + 1, -1));
+	parseLocationLines(line, location);
+	return (location);
 }

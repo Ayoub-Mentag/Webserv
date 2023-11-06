@@ -1,33 +1,28 @@
 #include <Parsing.hpp>
 
+static int findMatchingOpenCurlyBrace(const std::string& text) {
+    int nestingLevel = 0;
 
-void	initWIthDefault(t_config& config) {
-	for (size_t i = 0; i < config.servers.size(); i++) {
-		if (config.servers[i].root.empty()) {
-			// config.servers[i].root = DEFAULT_ROOT;
-		}
-		if (config.servers[i].allowedMethods.size() == 0) {
-			config.servers[i].allowedMethods.push_back("GET");
-			// config.servers[i].allowedMethods.push_back("POST");
-			// config.servers[i].allowedMethods.push_back("DELETE");
-		}
-	}
+    for (size_t i = 0; i < text.length(); i++) {
+        if (text[i] == '{') {
+            nestingLevel++;
+        } else if (text[i] == '}') {
+            nestingLevel--;
+            if (nestingLevel == 0) {
+                return (i);  // Found the matching open curly brace
+            }
+        }
+    }
+    return (-1);  // No matching open curly brace found
 }
 
-t_config	parseConFile(const char* file) {
-	t_location	currentLocation;
-	t_server	currentServer;
-	t_config	config;
-	std::string	line;
-	std::string	res;
-
-	std::ifstream configFile(file);
-	if (configFile.fail()) {
-		std::cerr << RED "Error: " GREEN "Failed to open the configuration file." RESET_COLOR << std::endl;
-		std::cerr << PRINT_LINE_AND_FILE;
-		exit(1);
-	}
-
+/*
+	This function processes an input configuration file, removing comments and unnecessary whitespace,
+	and checks the balance of curly brackets. It storesult the cleaned configuration data in the 'res' string.
+	it prints corresponding error messages to the standard error stream and exits with an error code.
+*/
+static void	cleanFile(std::ifstream& configFile, std::string& result) {
+	std::string line;
 	while (std::getline(configFile, line)) {
 		size_t commentPos = line.find("#");
 		if (commentPos != std::string::npos) {
@@ -37,72 +32,59 @@ t_config	parseConFile(const char* file) {
 		if (line.empty()) {
 			continue ;
 		}
-		res += line + "\n";
-		// res += line + UNKNOWN_CHAR;
+		result += line;
 	}
-	if (res.empty() || res.find('{') == res.npos) {
+	if (result.empty() || result.find('{') == result.npos) {
 		std::cerr << RED "Error: " GREEN "invalid config file." RESET_COLOR << std::endl;
 		std::cerr << PRINT_LINE_AND_FILE;
 		exit(1);
 	}
 
-	if (!bracketsBalance(res)) {
+	if (!bracketsBalance(result)) {
 		std::cerr << RED "Error: " GREEN "Unclosed bracket in configuration file." RESET_COLOR << std::endl;
 		std::cerr << PRINT_LINE_AND_FILE;
 		exit(1);
 	}
+}
 
-	while (res.size() > 0) {
-		res = trim(res);
-		line = res.substr(0, 6);
-		if (trim(line) != "Server") {
+t_config	parseConFile(const char* file) {
+	t_location	currentLocation;
+	t_server	currentServer;
+	t_config	config;
+	std::string	line;
+	std::string	result;
+
+	std::ifstream configFile(file);
+	if (configFile.fail()) {
+		std::cerr << RED "Error: " GREEN "Failed to open the configuration file." RESET_COLOR << std::endl;
+		std::cerr << PRINT_LINE_AND_FILE;
+		exit(1);
+	}
+
+	cleanFile(configFile, result);
+	while (result.size() > 0) {
+		result = trim(result);
+		if (trim(result.substr(0, 6)) != "server") {
 			std::cerr << GREEN << "No Server Block Found!\n" << RESET_COLOR;
 			std::cerr << PRINT_LINE_AND_FILE;
 			exit(1);
 		}
-
-		res = res.substr(6, -1);
-		res = trim(res);
-		if (res[0] != '{') {
+		result = trim(result.substr(6, -1));
+		if (result[0] != '{') {
 			std::cerr << PRINT_LINE_AND_FILE;
 			exit(1);
 		}
-		size_t countOpenBrackets = std::count(res.begin(), find(res.begin(), res.end(), '}'), '{');
-		size_t blockLen = 0;
-		line = res;
-		while (countOpenBrackets) {
-			size_t j = line.find('}');
-			if (j != line.npos) {
-				line.erase(0, j + 1);
-				blockLen += j + 1;
-				countOpenBrackets--;
-			}
+		int blockLen = findMatchingOpenCurlyBrace(result);
+		if (blockLen == -1) {
+			std::cerr << PRINT_LINE_AND_FILE;
+			exit(1);
 		}
-		line = res.substr(0, blockLen);
-		std::cout << line + "\n";
-		std::string::iterator currentPos = res.begin();
-		std::string::iterator simPos = std::find(currentPos, res.end(), ';');
-		if (std::find(currentPos, simPos, '{') != res.end()) {
-			// get location blocks
-		} else {
-			currentPos = simPos;
-			// parse server line
-		}
-
-		// parse the block then erase it
-		res.erase(res.find(line), line.length());
+		result.erase(0, 1); // remove the first bracket in the current server block
+		result.erase(blockLen - 1, 1); // remove the last bracket in the current server block
+		line = result.substr(0, blockLen);
+		config.servers.push_back(parseServerBlock(line));
+		result.erase(result.find(line), line.length());
 	}
-
 	return (config);
 }
 
-
-	// size_t findServ = res.find("Server");
-	// if (findServ == res.npos) {
-	// 	std::cerr << GREEN << "No Server Block Found!\n" << RESET_COLOR;
-	// 	std::cerr << PRINT_LINE_AND_FILE;
-	// 	exit(1);
-	// }
-	// splitServerBlocks(config, res);
-	// configFile.close();
-	// initWIthDefault(config);
