@@ -125,7 +125,7 @@ const std::vector<Client>&	Server::getClients() const {
 
 int	Server::acceptNewConnection() {
 	struct sockaddr_in	clientAddr;
-	int					clientFd = -1;
+	int					clientFd;
 	socklen_t			clientAddrLen;
 
 	if ((clientFd = accept(serverSocketfd, (struct sockaddr*)&clientAddr, &clientAddrLen)) == -1) {
@@ -522,7 +522,6 @@ void	Server::responseFunc(int fd) {
 
 void	Server::dealWithClient(int clientIndex) {
 	int fd = clients[clientIndex].getFd();
-	std::cout << "Deal with client " << fd << std::endl;
 	try {
 		clients[clientIndex].initRequest();
 		currentRequest = clients[clientIndex].getRequest();

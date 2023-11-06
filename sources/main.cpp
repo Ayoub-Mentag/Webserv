@@ -91,6 +91,7 @@ int	main(int argc, char* argv[]) {
 	fd_set					mySet;
 	fd_set					readyToReadFrom;
 	int						newFd;
+	int						nfds = -1;
 
 	// add a struct of set to keep track of the ready W/R and the whole fds
 	argv[1] = (argc == 2) ? argv[1] : (char*)DEFAULT_CONFIG_FILE;
@@ -102,28 +103,33 @@ int	main(int argc, char* argv[]) {
 			for (size_t i = 0; i < config.servers.size(); i++) {
 				Server *server = new Server(config);
 				newFd = server->getServerSocketFd();
+				if (newFd > nfds)
+					nfds = newFd;
 				FD_SET(newFd, &mySet);
 				servers.push_back(server);
 			}
 			while (1) {
 				FD_ZERO(&readyToReadFrom);
 				readyToReadFrom = mySet;
-				if (select(FD_SETSIZE, &readyToReadFrom, NULL, NULL, NULL) <= 0) {
+				if (select(nfds + 1, &readyToReadFrom, NULL, NULL, NULL) <= 0) {
 					perror("Select ");
 					std::cout << errno << std::endl;
 					break;
 				}
 				// std::cout << nfds;
-				for (int fd = 0; fd < FD_SETSIZE; fd++) {
-
+				for (int fd = 0; fd <= nfds; fd++) {
 					if (FD_ISSET(fd, &readyToReadFrom)) {
 						t_server_client current = getCurrentServerAndClient(servers, fd);
 						if (current.server) {
 							if (current.clientIndex == -1) {
 								newFd = current.server->acceptNewConnection();
+								if (newFd > nfds)
+									nfds = newFd;
+								// std::cout << "newFd " << newFd <<std::endl;
 								FD_SET(newFd, &mySet);
 							}
 							else {
+								std::cout << "Handle " << current.server->getClients()[current.clientIndex].getFd() << "nfds " << nfds << std::endl;
 								current.server->dealWithClient(current.clientIndex);
 							}
 						}
