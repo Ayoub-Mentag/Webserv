@@ -10,32 +10,6 @@ static void	usage(const char* programName) {
 	exit(1);
 }
 
-
-
-
-// void	dealWithClient(int i) {
-// 	Client client = clients[i];
-// }
-
-// void	handleConnection(std::vector<Server> servers, int fd, fd_set& allSocketFds) {
-// 	for (size_t i = 0; i < servers.size(); i++) {
-// 		if (servers[i].getServerSocketFd() == fd) {
-// 			FD_SET(servers[i].acceptNewConnection(), &allSocketFds);
-// 		}
-// 		else {
-// 			for (size_t j = 0; servers[i].getClients().size(); j++) {
-// 				if (servers[i].getClients()[j].getClientFd() == fd) {
-// 					servers[i].dealWithClient(j);
-// 				}
-// 			}
-// 		}
-
-// 	}
-// }
-
-
-
-
 // TODO: Reads the request body, if any (length specified by the Content-Length header)
 // TODO: A few methods (e.g., GET) forbid entity body data in request messages.
 // Before the web server can deliver content to the client, it needs to identify the source
@@ -43,7 +17,7 @@ static void	usage(const char* programName) {
 // or content generator on the web server.
 
 typedef struct s_server_client {
-	Server *server;
+	Server	*server;
 	int		clientIndex;
 } t_server_client;
 
@@ -60,13 +34,12 @@ t_server_client 	getCurrentServerAndClient(std::vector<Server*>& servers, int fd
 			current.clientIndex = -1;
 			return (current);
 		}
-		for (size_t clientIndex = 0; clientIndex < servers.size(); clientIndex++) {
-			if (fd == servers[serverIndex]->getClients()[clientIndex].getFd())
-			{
+		for (size_t clientIndex = 0; clientIndex < servers[serverIndex]->getClients().size(); clientIndex++) {
+			if (fd == servers[serverIndex]->getClients()[clientIndex].getFd()) {
 				current.server = servers[serverIndex];
 				current.clientIndex = clientIndex;
 				return (current);
-			}	
+			}
 		}
 	}
 	return (current);
@@ -101,7 +74,7 @@ int	main(int argc, char* argv[]) {
 			FD_ZERO(&mySet);
 			// init servers
 			for (size_t i = 0; i < config.servers.size(); i++) {
-				Server *server = new Server(config);
+				Server *server = new Server(config.servers[i]);
 				newFd = server->getServerSocketFd();
 				if (newFd > nfds)
 					nfds = newFd;
@@ -129,7 +102,6 @@ int	main(int argc, char* argv[]) {
 								FD_SET(newFd, &mySet);
 							}
 							else {
-								std::cout << "Handle " << current.server->getClients()[current.clientIndex].getFd() << "nfds " << nfds << std::endl;
 								current.server->dealWithClient(current.clientIndex);
 							}
 						}

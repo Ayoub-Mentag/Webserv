@@ -28,7 +28,8 @@ class Server {
 	private:
 		int					serverSocketfd;
 		struct				sockaddr_in serverAddr;
-		t_config			config;
+		t_server			server;
+		// t_config			config;
 		std::vector<Client>	clients;
 		Response			response;
 		Request				*currentRequest;
@@ -55,7 +56,7 @@ class Server {
 		Server();
 		void				dealWithClient(int clientIndex);
 		int					acceptNewConnection();
-		Server(t_config& config);
+		Server(t_server& server);
 		~Server();
 		const int&	getServerSocketFd() const;
 		// void	serve(fd_set& readyToReadFrom, fd_set& readyTowrite);

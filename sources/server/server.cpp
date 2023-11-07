@@ -120,7 +120,7 @@ void	Server::_listen() {
 }
 
 //TODO: Change t_config to t_server
-Server::Server(t_config& config) : config(config) {
+Server::Server(t_server& server) : server(server) {
 	if ((this->serverSocketfd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
 		perror("socket() : ");
 		throw std::runtime_error("socket()");
@@ -133,8 +133,8 @@ Server::Server(t_config& config) : config(config) {
 		exit(EXIT_FAILURE);
 	}
 	serverAddr.sin_family = AF_INET;
-	serverAddr.sin_addr.s_addr = inet_addr(config.servers[0].ipAddress.c_str());
-	serverAddr.sin_port = htons(config.servers[0].port);
+	serverAddr.sin_addr.s_addr = inet_addr(server.ipAddress.c_str());
+	serverAddr.sin_port = htons(server.port);
 	bindServerWithAddress();
 	_listen();
 }
@@ -174,7 +174,7 @@ int	Server::acceptNewConnection() {
 	if ((clientFd = accept(serverSocketfd, (struct sockaddr*)&clientAddr, &clientAddrLen)) == -1) {
 		perror("Accept : ");
 	} else {
-		// std::cout << "A new connection Accepted " << std::endl;
+		std::cout << "A new connection Accepted " << std::endl;
 
 		Client client(clientFd);
 		clients.push_back(client);
@@ -208,27 +208,27 @@ static std::string	directory_listing(DIR* dir, std::string root) {
 
 
 
-void	Server::serverExists() {
+// void	Server::serverExists() {
 	
-	std::vector<t_server>	servers = config.servers;
-	int			reqPort	= atoi(currentRequest->getValueByKey(REQ_PORT).c_str());
-	std::string	reqHost = currentRequest->getValueByKey(REQ_SERVER_NAME);
+// 	std::vector<t_server>	servers = config.servers;
+// 	int			reqPort	= atoi(currentRequest->getValueByKey(REQ_PORT).c_str());
+// 	std::string	reqHost = currentRequest->getValueByKey(REQ_SERVER_NAME);
 
-	// i should check if the host is a server_name or an ip address check ./server/temp.cpp
-	for (int serverIndex = 0; serverIndex < (int)config.servers.size(); serverIndex++) {
-		std::string ipAdd = (servers[serverIndex].ipAddress == "127.0.0.1")
-			? "localhost" : servers[serverIndex].ipAddress;
+// 	// i should check if the host is a server_name or an ip address check ./server/temp.cpp
+// 	for (int serverIndex = 0; serverIndex < (int)config.servers.size(); serverIndex++) {
+// 		std::string ipAdd = (servers[serverIndex].ipAddress == "127.0.0.1")
+// 			? "localhost" : servers[serverIndex].ipAddress;
 
-		if ((ipAdd == reqHost) // REQ_SERVER_NAME should become REQ_IP_ADD
-			&& reqPort == servers[serverIndex].port) {
-			currentRequest->serverIndex = serverIndex;
-			return ;
-		}
-	}
-	// in this case i should peek a default server if found else -1
-	currentRequest->serverIndex = -1; // this line is usless cuz this var already contain this value as a def val
-	//error page : SERVER_NOT_FOUND
-}
+// 		if ((ipAdd == reqHost) // REQ_SERVER_NAME should become REQ_IP_ADD
+// 			&& reqPort == servers[serverIndex].port) {
+// 			currentRequest->serverIndex = serverIndex;
+// 			return ;
+// 		}
+// 	}
+// 	// in this case i should peek a default server if found else -1
+// 	currentRequest->serverIndex = -1; // this line is usless cuz this var already contain this value as a def val
+// 	//error page : SERVER_NOT_FOUND
+// }
 
 /*
 	This function checks if the specified location is intended for CGI handling.
@@ -264,7 +264,8 @@ static std::string	getCgiPath(Request* request, t_location& location) {
 }
 
 void	Server::locationExists() {
-	std::vector<t_location>		locations = getServer().locations;
+	// std::vector<t_location>		locations = getServer().locations;
+	std::vector<t_location>		locations = server.locations;
 	std::vector<std::string>	locationPaths;
 
 	for (size_t i = 0; i < locations.size(); i++) {
@@ -274,14 +275,16 @@ void	Server::locationExists() {
 			std::string	cgiPath = getCgiPath(currentRequest, locations[i]);
 			if (access(cgiPath.c_str(), F_OK) != -1) {
 				currentRequest->locationIndex = i;
-				config.servers[currentRequest->serverIndex].locations[i].isCgi = true;
+				// config.servers[currentRequest->serverIndex].locations[i].isCgi = true;
+				server.locations[i].isCgi = true;
 				currentRequest->getHead()[REQ_PATH] = cgiPath;
 				// I have updated the request path that I received. Will this modification cause any issues?
 				return ;
 			}
 		}
 		locationPaths.push_back(locations[i].path);
-		config.servers[currentRequest->serverIndex].locations[i].isCgi = false;
+		// config.servers[currentRequest->serverIndex].locations[i].isCgi = false;
+		server.locations[i].isCgi = false;
 	}
 	
 	std::string lookFor = currentRequest->getValueByKey(REQ_PATH);
@@ -321,7 +324,7 @@ const std::string&	Server::returnError(int status) {
         response.setHeader(status);
         response.setBody("Server index is not set.");
     } else {
-        t_server server = getServer();
+        // t_server server = getServer();
 
         if (currentRequest->locationIndex >= 0) {
             // Handle the case when the location index is set.
@@ -348,8 +351,9 @@ const std::string&	Server::returnError(int status) {
 }
 
 std::string	Server::matching() {
-	serverExists(); // check error later!
+	// serverExists(); // check error later!
 	locationExists();
+
 	if (currentRequest->locationIndex == -1) {
 		throw std::runtime_error(returnError(NOT_FOUND_STATUS));
 	}
@@ -365,7 +369,8 @@ std::string	Server::matching() {
 	if (!location.root.empty()) {
 		pathToBeLookFor.insert(0, location.root);
 	} else {
-		pathToBeLookFor.insert(0, config.servers[currentRequest->serverIndex].root);
+		// pathToBeLookFor.insert(0, config.servers[currentRequest->serverIndex].root);
+		pathToBeLookFor.insert(0, server.root);
 	}
 	return (pathToBeLookFor);
 }
@@ -373,14 +378,14 @@ std::string	Server::matching() {
 t_location&	Server::getLocation() {
 	if (currentRequest->serverIndex < 0 || currentRequest->locationIndex < 0)
 		throw std::out_of_range("getLocation()");
-	return (config.servers[currentRequest->serverIndex].locations[currentRequest->locationIndex]);
+	return (server.locations[currentRequest->locationIndex]);
 }
 
-t_server&	Server::getServer() {
-	if (currentRequest->serverIndex < 0)
-		throw std::out_of_range("getServer()");
-	return (config.servers[currentRequest->serverIndex]);
-}
+// t_server&	Server::getServer() {
+// 	if (currentRequest->serverIndex < 0)
+// 		throw std::out_of_range("getServer()");
+// 	return (config.servers[currentRequest->serverIndex]);
+// }
 
 /*
 	Determines if a given HTTP request method is allowed based on the configuration settings.
@@ -406,7 +411,7 @@ static bool findAllowedMethod(const std::string& method, t_server& server, t_loc
 	If the method is not allowed, it throws a "Method Not Allowed" error.
 */
 void	Server::methodNotAllowed() {
-	t_server			server = getServer();
+	// t_server			server = getServer();
 	t_location			location = getLocation();
     const std::string&	method = currentRequest->getValueByKey(REQ_METHOD);
 
@@ -419,7 +424,7 @@ void	Server::methodNotAllowed() {
 
 // I should refactor this function to handle the format "return {code} {uri/path}".
 void	Server::locationRedirection() {
-	t_server	server = getServer();
+	// t_server	server = getServer();
 	t_location	location = getLocation();
 	std::string redirTo;
 	int			redirCode;
@@ -625,7 +630,7 @@ void	Server::responseFunc(int clientFd) {
 		std::string path = matching();
 		DIR *dir = opendir(path.c_str());
 		methodNotAllowed(); // should i check location errpage first when no method in the location?
-		if (!getServer().redirectTo.empty()
+		if (!server.redirectTo.empty()
 			|| !getLocation().redirectTo.empty()) {
 			locationRedirection();
 		} else if (dir) {
@@ -666,6 +671,7 @@ void	Server::dealWithClient(int clientIndex) {
 	try {
 		clients[clientIndex].initRequest();
 		currentRequest = clients[clientIndex].getRequest();
+		// if (currentRequest->getValueByKey() )
 		if (currentRequest) {
 			responseFunc(fd);
 			delete (currentRequest);

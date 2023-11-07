@@ -81,7 +81,7 @@ t_config	parseConFile(const char* file) {
 		}
 		result.erase(0, 1); // remove the first bracket in the current server block
 		result.erase(blockLen - 1, 1); // remove the last bracket in the current server block
-		line = result.substr(0, blockLen);
+		line = result.substr(0, blockLen - 1);
 		config.servers.push_back(parseServerBlock(line));
 		result.erase(result.find(line), line.length());
 	}
